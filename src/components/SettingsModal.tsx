@@ -23,30 +23,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // Only reveals the trap slider after 10 silent seconds
   const [sliderRevealed, setSliderRevealed] = useState(false);
   
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+// Check if the global prompt was already intercepted before this modal mounted
+  const [isInstallable, setIsInstallable] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && Boolean((window as any).deferredPrompt);
+  });
 
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Capture PWA beforeinstallprompt
+  // Listen to global PWA events dispatched from index.html
   useEffect(() => {
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
+    if ((window as any).deferredPrompt) {
       setIsInstallable(true);
+    }
+
+    const handlePromptReady = () => setIsInstallable(true);
+    const handleInstalled = () => setIsInstallable(false);
+
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
+    window.addEventListener('pwa-installed', handleInstalled);
+
+    return () => {
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
+      window.removeEventListener('pwa-installed', handleInstalled);
     };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    const promptEvent = (window as any).deferredPrompt;
+    if (!promptEvent) return;
+
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
     if (outcome === 'accepted') {
+      (window as any).deferredPrompt = null;
       setIsInstallable(false);
     }
-    setDeferredPrompt(null);
   };
 
   // Matrix combination check:

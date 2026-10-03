@@ -28,13 +28,27 @@
     <div id="root" class="w-full h-full"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // 1. Register Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/ydrbn-app/sw.js', { scope: '/ydrbn-app/' })
-            .then(reg => console.log('SW registered successfully:', reg.scope))
+            .then(reg => console.log('SW registered:', reg.scope))
             .catch(err => console.log('SW registration failed:', err));
         });
       }
+
+      // 2. Global PWA Install Interceptor (Catches the event before React mounts)
+      window.deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        window.dispatchEvent(new Event('pwa-prompt-ready'));
+      });
+
+      window.addEventListener('appinstalled', () => {
+        window.deferredPrompt = null;
+        window.dispatchEvent(new Event('pwa-installed'));
+      });
     </script>
   </body>
 </html>
