@@ -288,11 +288,16 @@ export default function App() {
 
   // 100% Client-Side Procedural Daily Drop Pipeline (<50ms execution)
   const handleDailyDrop = async () => {
-    // 1. Snapshot the user's intent
+    // --- 1. THE GUARD CLAUSE ---
+    // Physically block the drop if they aren't in Dev Mode and the timer is still ticking
+    if (!isDevMode && cooldownMs > 0) {
+      addToast('error', 'You must wait 24 hours between drops!');
+      return;
+    }
+
     const appliedPhoto = selectedPhotoBase64;
     const applyCustom = useCustomPhotos;
 
-    // 2. Instantly nuke the UI state and physical file input
     handleToggleUseCustomPhotos(false);
     setSelectedPhotoBase64(null);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -302,12 +307,9 @@ export default function App() {
     setLoadingStepText('Pressing Vinyl...');
 
     try {
-      // 3. Fetch the payload and IMMEDIATELY create a shallow clone.
-      // This guarantees we never mutate the generator's internal cache!
       const generatedRecord = await generateDailyDrop();
       const newEntry = { ...generatedRecord };
 
-      // 4. If a custom photo was requested, process it and override the clone's image
       if (applyCustom && appliedPhoto) {
         try {
           const { url } = await gagCanvasEngine.processCustomPhoto(appliedPhoto);
@@ -321,11 +323,15 @@ export default function App() {
         const next = [...prev, newEntry];
         const capped = next.length > 8 ? next.slice(next.length - 8) : next;
         saveAlbums(capped);
-        
-        // Force carousel to snap to the newest record
         setCurrentIndex(capped.length - 1);
         return capped;
       });
+
+      // --- 2. START THE CLOCK ---
+      // Record the exact moment this drop finished so the 24-hour cooldown begins
+      const now = Date.now();
+      recordDropTimestamp(now);
+      setLastDropTime(now);
 
       setIsGenerating(false);
       addToast('success', `Pressed: ${newEntry.bandName} — "${newEntry.albumTitle}"`);

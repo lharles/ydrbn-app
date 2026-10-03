@@ -15,7 +15,7 @@ export function loadAsset(filename: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = `/assets/${cleanName}`;
+    img.src = `${import.meta.env.BASE_URL}assets/${cleanName}`;
 
     img.onload = () => {
       if (loadedKeys.length >= MAX_CACHED_IMAGES) {
@@ -52,7 +52,7 @@ export function getOrLoadImage(filename: string): HTMLImageElement | undefined {
   if (imageCache[filename]) return imageCache[filename];
   const img = new Image();
   img.crossOrigin = 'anonymous';
-  img.src = `/assets/${filename}`;
+  img.src = `${import.meta.env.BASE_URL}assets/${filename}`;
   img.onload = () => { imageCache[filename] = img; };
   imageCache[filename] = img;
   return img;
