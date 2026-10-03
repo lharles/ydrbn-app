@@ -50,10 +50,16 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStepText, setLoadingStepText] = useState('Forging Vinyl Artwork...');
 
-  // Cooldown & Dev Mode
-  const [isDevMode, setIsDevMode] = useState(false);
-  const [lastDropTime, setLastDropTime] = useState(0);
-  const [cooldownMs, setCooldownMs] = useState(0);
+  // Cooldown & Dev Mode (Synchronous init kills the render flicker)
+  const [isDevMode, setIsDevMode] = useState<boolean>(() => getDevModeUnlocked());
+  const [lastDropTime, setLastDropTime] = useState<number>(() => getLastDropTimestamp());
+  const [cooldownMs, setCooldownMs] = useState<number>(() => {
+    const dropTime = getLastDropTimestamp();
+    const dev = getDevModeUnlocked();
+    if (dev || dropTime === 0) return 0;
+    const remaining = (24 * 60 * 60 * 1000) - (Date.now() - dropTime);
+    return remaining > 0 ? remaining : 0;
+  });
 
   // Modals & Drawers
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -298,12 +304,16 @@ export default function App() {
 
   // 100% Client-Side Procedural Daily Drop Pipeline (<50ms execution)
   const handleDailyDrop = async () => {
-    // --- 1. THE GUARD CLAUSE (Bulletproof Math) ---
+    // Prevent physical double-click spam
+    if (isGenerating) return; 
+
+    // --- 1. THE GUARD CLAUSE (Bulletproof Math & Disk Check) ---
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    const timePassed = Date.now() - lastDropTime;
+    const realLastDrop = getLastDropTimestamp(); // Read from disk instantly, bypassing React state delay
+    const timePassed = Date.now() - realLastDrop;
     
     // Physically block the drop if they aren't in Dev Mode and 24 hours haven't passed
-    if (!isDevMode && lastDropTime !== 0 && timePassed < ONE_DAY_MS) {
+    if (!isDevMode && realLastDrop !== 0 && timePassed < ONE_DAY_MS) {
       addToast('error', 'You must wait 24 hours between drops!');
       return;
     }
