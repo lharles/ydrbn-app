@@ -1,20 +1,45 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Y.D.R.B.N. — Your Daily Random Band Name
 
-# Run and deploy your AI Studio app
+A procedural 1970s vinyl album generator and audio synthesizer built as an offline-first Progressive Web App (PWA).
 
-This contains everything you need to run your app locally.
+Inspired by the classic aesthetic of *"Random Band Names, Volume One"*.
 
-View your app in AI Studio: https://ai.studio/apps/29778005-d2f4-4a60-8c43-ce8fc721aee6
+---
 
-## Run Locally
+## Features
 
-**Prerequisites:**  Node.js
+- **Procedural Canvas Compositor**: Generates multi-layered vintage album art using dynamic 2D canvas routines, retro color palettes, and randomized gag modifiers.
+- **Synthesized Audio Drops**: Web Audio API engine creates era-accurate retro synthesizer audio clips for each generated record.
+- **Custom Darkroom Processing**: Upload custom artwork or photos with simulated analog darkroom filters and effects.
+- **Offline PWA Architecture**: Fully client-side execution with zero external API dependencies, cloud databases, or runtime hosting costs.
+- **Vinyl Archive & Lore Vault**: Keeps track of daily pressings, album lore, reviews, and tracklists locally in your browser.
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Live App & Installation
+
+Access the live app: **[https://lharles.github.io/ydrbn-app/](https://lharles.github.io/ydrbn-app/)**
+
+### Installing as a PWA
+- **Android / Desktop (Chrome/Edge)**: Click the **Install** button inside the System Settings menu or use the install prompt in your browser's address bar.
+- **iOS (Safari)**: Tap the **Share** button in Safari, scroll down, and select **Add to Home Screen**.
+
+---
+
+## Local Development
+
+### Prerequisites
+- Node.js (v18+)
+- npm
+
+### Setup
+```bash
+# Clone the repository
+git clone [https://github.com/lharles/ydrbn-app.git](https://github.com/lharles/ydrbn-app.git)
+cd ydrbn-app
+
+# Install dependencies
+npm install --legacy-peer-deps
+
+# Start local development server
+npm run dev
