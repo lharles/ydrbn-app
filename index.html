@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en" class="dark">
   <head>
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="manifest" href="/ydrbn-app/manifest.json" />
     <meta name="theme-color" content="#0c101d" />
-    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <link rel="apple-touch-icon" href="/ydrbn-app/icon-192.png" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Y.D.R.B.N. - Your Daily Random Band Name</title>
@@ -31,13 +31,9 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('ServiceWorker registration successful');
-            })
-            .catch(err => {
-              console.log('ServiceWorker registration failed: ', err);
-            });
+          navigator.serviceWorker.register('/ydrbn-app/sw.js', { scope: '/ydrbn-app/' })
+            .then(reg => console.log('SW registered successfully:', reg.scope))
+            .catch(err => console.log('SW registration failed:', err));
         });
       }
     </script>

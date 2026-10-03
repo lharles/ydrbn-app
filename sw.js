@@ -1,12 +1,11 @@
 const CACHE_NAME = 'ydrbn-cache-v1';
 
-// The critical assets the app needs to function offline
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/ydrbn-app/',
+  '/ydrbn-app/index.html',
+  '/ydrbn-app/manifest.json',
+  '/ydrbn-app/icon-192.png',
+  '/ydrbn-app/icon-512.png'
 ];
 
 // Install Event: Cache the essential shell
