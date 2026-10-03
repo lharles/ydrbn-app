@@ -97,11 +97,21 @@ export default function App() {
     setUseCustomPhotos(getUseCustomPhotosPref());
   }, []);
 
-  // Cooldown countdown timer
+  // Cooldown countdown timer (Bulletproof Math)
   useEffect(() => {
+    const calculateRemaining = () => {
+      if (isDevMode || lastDropTime === 0) return 0;
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+      const timePassed = Date.now() - lastDropTime;
+      const timeRemaining = ONE_DAY_MS - timePassed;
+      return timeRemaining > 0 ? timeRemaining : 0;
+    };
+
+    // Set immediately so it doesn't wait 1 second to lock the button
+    setCooldownMs(calculateRemaining());
+
     const interval = setInterval(() => {
-      const remaining = getCooldownRemaining(lastDropTime, isDevMode);
-      setCooldownMs(remaining);
+      setCooldownMs(calculateRemaining());
     }, 1000);
 
     return () => clearInterval(interval);
@@ -288,9 +298,12 @@ export default function App() {
 
   // 100% Client-Side Procedural Daily Drop Pipeline (<50ms execution)
   const handleDailyDrop = async () => {
-    // --- 1. THE GUARD CLAUSE ---
-    // Physically block the drop if they aren't in Dev Mode and the timer is still ticking
-    if (!isDevMode && cooldownMs > 0) {
+    // --- 1. THE GUARD CLAUSE (Bulletproof Math) ---
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const timePassed = Date.now() - lastDropTime;
+    
+    // Physically block the drop if they aren't in Dev Mode and 24 hours haven't passed
+    if (!isDevMode && lastDropTime !== 0 && timePassed < ONE_DAY_MS) {
       addToast('error', 'You must wait 24 hours between drops!');
       return;
     }
