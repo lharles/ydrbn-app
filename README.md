@@ -2,7 +2,7 @@
 
 A procedural 1970s vinyl album generator and audio synthesizer built as an offline-first Progressive Web App (PWA).
 
-Inspired by the classic aesthetic of *"Random Band Names, Volume One"*.
+Inspired by the aesthetic of [*“Random Band Names, Volume One”*](https://www.google.com/search?q=Random+Band+Names+Charles+Key).
 
 ---
 
