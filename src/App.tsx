@@ -1,0 +1,469 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { SleeveZoomModal } from './components/SleeveZoomModal';
+import React, { useState, useEffect } from 'react';
+import { AlbumEntry, ToastMessage } from './types';
+import { TopBar } from './components/TopBar';
+import { SubHeaderNav } from './components/SubHeaderNav';
+import { ActionButtonsRow } from './components/ActionButtonsRow';
+import { VinylSleeve } from './components/VinylSleeve';
+import { CustomPhotoControls } from './components/CustomPhotoControls';
+import { DailyDropButton } from './components/DailyDropButton';
+import { FooterInfo } from './components/FooterInfo';
+import { SettingsModal } from './components/SettingsModal';
+import { ArchiveDrawer } from './components/ArchiveDrawer';
+import { Toast } from './components/Toast';
+import {
+  loadAlbums,
+  saveAlbums,
+  getDevModeUnlocked,
+  setDevModeUnlocked,
+  getLastDropTimestamp,
+  recordDropTimestamp,
+  getUseCustomPhotosPref,
+  setUseCustomPhotosPref,
+  getCooldownRemaining,
+} from './services/storageService';
+import { generateDailyDrop, generateProceduralBand } from './services/proceduralGenerator';
+import { gagCanvasEngine } from './services/gagCanvasEngine';
+import { audioSynthesizer } from './services/audioSynthesizer';
+
+export default function App() {
+  // Albums and carousel navigation
+  const [albums, setAlbums] = useState<AlbumEntry[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Sleeve flip state
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  // Audio playback state
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  // Custom photo controls
+  const [useCustomPhotos, setUseCustomPhotos] = useState(false);
+  const [selectedPhotoBase64, setSelectedPhotoBase64] = useState<string | null>(null);
+
+  // Generation loading states
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingStepText, setLoadingStepText] = useState('Forging Vinyl Artwork...');
+
+  // Cooldown & Dev Mode
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [lastDropTime, setLastDropTime] = useState(0);
+  const [cooldownMs, setCooldownMs] = useState(0);
+
+  // Modals & Drawers
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+
+  // Toast notices / errors
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: 'error' | 'success' | 'info', text: string) => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    setToasts((prev) => [...prev, { id, type, text }]);
+
+    if (type !== 'error') {
+      setTimeout(() => {
+        dismissToast(id);
+      }, 4000);
+    }
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+
+  // Initial load
+  useEffect(() => {
+    const loaded = loadAlbums();
+    setAlbums(loaded);
+    if (loaded.length > 0) {
+      // Default to today's or latest record
+      setCurrentIndex(loaded.length - 1);
+    }
+
+    const devUnlocked = getDevModeUnlocked();
+    setIsDevMode(devUnlocked);
+
+    const dropTime = getLastDropTimestamp();
+    setLastDropTime(dropTime);
+
+    setUseCustomPhotos(getUseCustomPhotosPref());
+  }, []);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = getCooldownRemaining(lastDropTime, isDevMode);
+      setCooldownMs(remaining);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastDropTime, isDevMode]);
+
+  const currentAlbum = albums[currentIndex] || null;
+
+  // Handlers for Navigation
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+      setIsFlipped(false);
+      audioSynthesizer.stopAll();
+      setIsPlayingAudio(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < albums.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      setIsFlipped(false);
+      audioSynthesizer.stopAll();
+      setIsPlayingAudio(false);
+    }
+  };
+
+  const handleGoToToday = () => {
+    if (albums.length > 0) {
+      setCurrentIndex(albums.length - 1);
+      setIsFlipped(false);
+      audioSynthesizer.stopAll();
+      setIsPlayingAudio(false);
+    }
+  };
+
+  const isTodayActive = albums.length > 0 && currentIndex === albums.length - 1;
+
+  // Favorite toggle
+  const handleToggleFavorite = (albumId?: string) => {
+    const targetId = albumId || currentAlbum?.id;
+    if (!targetId) return;
+
+    setAlbums((prev) => {
+      const updated = prev.map((a) =>
+        a.id === targetId ? { ...a, isFavorite: !a.isFavorite } : a
+      );
+      saveAlbums(updated);
+      return updated;
+    });
+  };
+
+  // Delete from archive
+  const handleDeleteAlbum = (id: string) => {
+    setAlbums((prev) => {
+      const updated = prev.filter((a) => a.id !== id);
+      saveAlbums(updated);
+      if (currentIndex >= updated.length) {
+        setCurrentIndex(Math.max(0, updated.length - 1));
+      }
+      return updated;
+    });
+    addToast('info', 'Record removed from vault.');
+  };
+
+  // Share
+  const handleShare = async () => {
+    if (!currentAlbum) return;
+
+    const shareData = {
+      title: `${currentAlbum.bandName} - ${currentAlbum.albumTitle} (${currentAlbum.year})`,
+      text: `Check out today's random band: "${currentAlbum.bandName}" - "${currentAlbum.albumTitle}" (${currentAlbum.year}).\n\nBio: ${currentAlbum.bandBio}\n\nGenerated with Y.D.R.B.N. (100% Offline PWA)`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        addToast('success', 'Shared successfully!');
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          copyToClipboard(shareData.text);
+        }
+      }
+    } else {
+      copyToClipboard(shareData.text);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    addToast('success', 'Album lore copied to clipboard!');
+  };
+
+  // Audio Playback: Synthesize procedural retro audio clip from album vibe
+  const handleToggleAudio = async () => {
+    if (isPlayingAudio) {
+      audioSynthesizer.stopAll();
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    if (!currentAlbum) {
+      addToast('info', 'Press ⚡ Daily Drop to generate a record first!');
+      return;
+    }
+
+    try {
+      setIsPlayingAudio(true);
+      await audioSynthesizer.playAlbumClip(currentAlbum.albumTitle, currentAlbum.year);
+      setIsPlayingAudio(false);
+    } catch (err: any) {
+      setIsPlayingAudio(false);
+      addToast('error', `Audio error: ${err.message || err}`);
+    }
+  };
+
+  // Custom photo toggles
+  const handleToggleUseCustomPhotos = (enabled: boolean) => {
+    setUseCustomPhotos(enabled);
+    setUseCustomPhotosPref(enabled);
+  };
+
+  const handleSelectPhoto = (base64: string | null) => {
+    setSelectedPhotoBase64(base64);
+    if (base64) {
+      addToast('success', 'Photo loaded. Choose [Modify Your Photos] or [Use Your Photos (as is)].');
+    }
+  };
+
+  // Action: Use Photo As Is
+  const handleUsePhotoAsIs = () => {
+    if (!selectedPhotoBase64) return;
+    if (!currentAlbum) {
+      addToast('info', 'Select or generate a band album first!');
+      return;
+    }
+
+    const updatedAlbum: AlbumEntry = {
+      ...currentAlbum,
+      coverImageUrl: selectedPhotoBase64,
+    };
+
+    setAlbums((prev) => {
+      const updated = prev.map((a) => (a.id === updatedAlbum.id ? updatedAlbum : a));
+      saveAlbums(updated);
+      return updated;
+    });
+
+    addToast('success', 'Custom photo applied to current vinyl sleeve.');
+  };
+
+  // Action: Modify Photo with Random Analog Darkroom Filter
+  const handleModifyPhoto = async () => {
+    if (!selectedPhotoBase64) return;
+    if (!currentAlbum) {
+      addToast('info', 'Select or generate a band album first!');
+      return;
+    }
+
+    setIsGenerating(true);
+    setLoadingStepText('Processing Custom Photo...');
+    try {
+      const { url, description } = await gagCanvasEngine.processCustomPhoto(selectedPhotoBase64);
+
+      const updatedAlbum: AlbumEntry = {
+        ...currentAlbum,
+        coverImageUrl: url,
+      };
+
+      setAlbums((prev) => {
+        const updated = prev.map((a) => (a.id === updatedAlbum.id ? updatedAlbum : a));
+        saveAlbums(updated);
+        return updated;
+      });
+
+      addToast('success', description);
+    } catch (err: any) {
+      const errStr = err?.message || String(err);
+      addToast('error', errStr);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // 100% Client-Side Procedural Daily Drop Pipeline (<50ms execution)
+  const handleDailyDrop = async () => {
+    // 1. Snapshot the user's intent
+    const appliedPhoto = selectedPhotoBase64;
+    const applyCustom = useCustomPhotos;
+
+    // 2. Instantly nuke the UI state and physical file input
+    handleToggleUseCustomPhotos(false);
+    setSelectedPhotoBase64(null);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+
+    setIsGenerating(true);
+    setLoadingStepText('Pressing Vinyl...');
+
+    try {
+      // 3. Fetch the payload and IMMEDIATELY create a shallow clone.
+      // This guarantees we never mutate the generator's internal cache!
+      const generatedRecord = await generateDailyDrop();
+      const newEntry = { ...generatedRecord };
+
+      // 4. If a custom photo was requested, process it and override the clone's image
+      if (applyCustom && appliedPhoto) {
+        try {
+          const { url } = await gagCanvasEngine.processCustomPhoto(appliedPhoto);
+          newEntry.coverImageUrl = url;
+        } catch {
+          // fallback to procedural gag art
+        }
+      }
+
+      setAlbums((prev) => {
+        const next = [...prev, newEntry];
+        const capped = next.length > 8 ? next.slice(next.length - 8) : next;
+        saveAlbums(capped);
+        
+        // Force carousel to snap to the newest record
+        setCurrentIndex(capped.length - 1);
+        return capped;
+      });
+
+      setIsGenerating(false);
+      addToast('success', `Pressed: ${newEntry.bandName} — "${newEntry.albumTitle}"`);
+    } catch (err: any) {
+      const errStr = err?.message || String(err);
+      addToast('error', errStr);
+      setIsGenerating(false);
+    }
+  };
+
+  const handleToggleDevMode = (unlocked: boolean) => {
+    setDevModeUnlocked(unlocked);
+    setIsDevMode(unlocked);
+    if (unlocked) {
+      addToast('success', '✓ Dev Mode Unlocked: 24h countdown bypassed for instant drops!');
+    } else {
+      addToast('info', 'Dev Mode locked. Standard 24h cooldown restored.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#0c101d] text-slate-100 select-none font-sans">
+      {/* Toast Banners */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Main Single Mobile-Viewport Layout Container */}
+      <div className="w-full max-w-md mx-auto min-h-full flex flex-col justify-between py-2 pb-14 relative">
+        {/* TOP SECTION */}
+
+        <div className="w-full shrink-0 flex flex-col">
+          {/* Top Bar */}
+          <TopBar
+            onOpenArchive={() => setIsArchiveOpen(true)}
+            isToday={isTodayActive}
+            onGoToToday={handleGoToToday}
+            isFavorite={currentAlbum?.isFavorite || false}
+            onToggleFavorite={() => handleToggleFavorite()}
+            onShare={handleShare}
+            hasEntries={albums.length > 0}
+          />
+
+          {/* Sub-Header Navigation Carousel */}
+          <SubHeaderNav
+            entries={albums}
+            currentIndex={currentIndex}
+            onPrev={handlePrev}
+            onNext={handleNext}
+          />
+        </div>
+
+        {/* CENTER SECTION */}
+        <div className="w-full flex-1 flex flex-col justify-center items-center px-3 py-1 gap-1.5">
+          {/* Action Buttons Row */}
+          <ActionButtonsRow
+            isFlipped={isFlipped}
+            onToggleFlip={() => setIsFlipped(!isFlipped)}
+            isPlayingAudio={isPlayingAudio}
+            onPlayAudio={handleToggleAudio}
+            disabled={isGenerating || !currentAlbum}
+          />
+
+          {/* Center Album Sleeve Container */}
+          <div className="w-full flex items-center justify-center py-1">
+            <VinylSleeve
+              album={currentAlbum}
+              isFlipped={isFlipped}
+              isLoading={isGenerating}
+              loadingStepText={loadingStepText}
+              onToggleFlip={() => setIsFlipped(!isFlipped)}
+              onOpenZoom={() => setIsZoomOpen(true)}
+            />
+          </div>
+
+          {/* Custom Photo Controls */}
+          <CustomPhotoControls
+            useCustomPhotos={useCustomPhotos}
+            onToggleUseCustomPhotos={handleToggleUseCustomPhotos}
+            selectedPhoto={selectedPhotoBase64}
+            onSelectPhoto={handleSelectPhoto}
+            onModifyPhoto={handleModifyPhoto}
+            onUsePhotoAsIs={handleUsePhotoAsIs}
+            isLoading={isGenerating}
+          />
+        </div>
+
+        {/* BOTTOM ACTIONS & FOOTER */}
+        <div className="w-full shrink-0 flex flex-col">
+          {/* Full-width [⚡ Daily Drop] button */}
+          <DailyDropButton
+            onDailyDrop={handleDailyDrop}
+            isLoading={isGenerating}
+            cooldownMs={cooldownMs}
+            isDevMode={isDevMode}
+          />
+
+          {/* Footer Info & Floating Settings Gear Icon */}
+          <FooterInfo
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            isDevMode={isDevMode}
+          />
+        </div>
+      </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        customApiKey=""
+        onSaveApiKey={() => {}}
+        isDevMode={isDevMode}
+        onToggleDevMode={handleToggleDevMode}
+        hasServerKey={false}
+      />
+
+      {/* Sleeve Zoom & Inspect Modal */}
+      <SleeveZoomModal
+        isOpen={isZoomOpen}
+        onClose={() => setIsZoomOpen(false)}
+        album={currentAlbum}
+        initialFlipped={isFlipped}
+      />      
+
+      {/* Vinyl Vault Archive Drawer */}
+      <ArchiveDrawer
+        isOpen={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        albums={albums}
+        currentId={currentAlbum?.id}
+        onSelectAlbum={(alb) => {
+          const idx = albums.findIndex((a) => a.id === alb.id);
+          if (idx !== -1) {
+            setCurrentIndex(idx);
+            setIsFlipped(false);
+          }
+        }}
+        onToggleFavorite={handleToggleFavorite}
+        onDeleteAlbum={handleDeleteAlbum}
+      />
+    </div>
+  );
+}
