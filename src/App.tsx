@@ -72,7 +72,7 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
       ctx.font = 'bold 65px "Georgia", serif';
       ctx.textBaseline = 'bottom';
       ctx.fillText(album.albumTitle.toUpperCase(), 512, 960, 960);
-
+      
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject('Blob failed')),
         'image/jpeg',
@@ -80,14 +80,18 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
       );
     };
 
-    if (album.coverImageUrl) {
+    // Dynamically rebuild the cover art if the base64 string was stripped from storage
+    const coverArt = album.coverImageUrl || (album.recipe ? gagCanvasEngine.renderCover(album.recipe) : null);
+
+    if (coverArt) {
       const img = new Image();
+      // Ensure crossOrigin remains removed here
       img.onload = () => {
         ctx.drawImage(img, 0, 0, 1024, 1024);
         finalizeCanvas();
       };
-      img.onerror = finalizeCanvas; // Fallback to blank if it fails
-      img.src = album.coverImageUrl;
+      img.onerror = finalizeCanvas; 
+      img.src = coverArt;
     } else {
       finalizeCanvas();
     }
@@ -175,6 +179,45 @@ export default function App() {
       const timeRemaining = ONE_DAY_MS - timePassed;
       return timeRemaining > 0 ? timeRemaining : 0;
     };
+
+  // Preloader States
+  const [hasPreloaded, setHasPreloaded] = useState(false);
+  const [triggerRender, setTriggerRender] = useState(0);
+
+  // --- THE ASSET PRELOADER (Fixes the primitive fallback on app launch) ---
+  useEffect(() => {
+    // Only run if we have albums and haven't preloaded yet
+    if (albums.length === 0 || hasPreloaded) return;
+    
+    const preloadArchiveAssets = async () => {
+      // Silently pull all images for the archive into memory
+      const promises = albums.map(a => 
+        a.recipe ? loadRecipeAssets(a.recipe.backdrop, a.recipe.subject) : Promise.resolve()
+      );
+      await Promise.all(promises);
+      
+      setHasPreloaded(true);
+      // Change the state to force the UI to physically redraw
+      setTriggerRender(Date.now()); 
+    };
+    
+    preloadArchiveAssets();
+  }, [albums, hasPreloaded]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Set immediately so it doesn't wait 1 second to lock the button
     setCooldownMs(calculateRemaining());
@@ -498,6 +541,7 @@ export default function App() {
           {/* Center Album Sleeve Container */}
           <div className="w-full flex items-center justify-center py-1">
             <VinylSleeve
+              key={`sleeve-${triggerRender}`}
               album={currentAlbum}
               isFlipped={isFlipped}
               isLoading={isGenerating}
@@ -558,6 +602,7 @@ export default function App() {
 
       {/* Vinyl Vault Archive Drawer */}
       <ArchiveDrawer
+        key={`archive-${triggerRender}`}
         isOpen={isArchiveOpen}
         onClose={() => setIsArchiveOpen(false)}
         albums={albums}
