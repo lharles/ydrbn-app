@@ -26,9 +26,5 @@ jobs:
           NOTEBOOKLM_COOKIES: ${{ secrets.NOTEBOOKLM_COOKIES }}
           NOTEBOOKLM_METADATA: ${{ secrets.NOTEBOOKLM_METADATA }}
         run: |
-          # Use a bash loop to find and upload all Markdown files
-          find . -name "*.md" -type f | while read -r file; do
-            echo "Uploading $file to Gemini Notebook..."
-            # The new syntax passes the file path positionally, not via a flag
-            nlm source add "$NOTEBOOK_ID" "$file"
-          done
+          # Calls the unified directory command block against your workspace
+          nlm sync dir .
