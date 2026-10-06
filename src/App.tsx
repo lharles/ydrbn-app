@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { loadRecipeAssets } from './services/assetManager';
 import { SleeveZoomModal } from './components/SleeveZoomModal';
 import React, { useState, useEffect } from 'react';
 import { AlbumEntry, ToastMessage } from './types';
@@ -81,7 +82,6 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
 
     if (album.coverImageUrl) {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.onload = () => {
         ctx.drawImage(img, 0, 0, 1024, 1024);
         finalizeCanvas();
@@ -406,9 +406,10 @@ export default function App() {
       const generatedRecord = await generateDailyDrop();
       const newEntry = { ...generatedRecord };
 
-      // === THE PERSISTENCE FIX ===
+      // === THE FIX: WAIT FOR IMAGES TO LOAD INTO CACHE BEFORE BAKING ===
+      await loadRecipeAssets(newEntry.recipe.backdrop, newEntry.recipe.subject);
+
       // Instantly bake the procedural canvas to Base64 while assets are in memory. 
-      // (This prevents the "primitive fallback" on refresh)
       newEntry.coverImageUrl = gagCanvasEngine.renderCover(newEntry.recipe);
 
       if (applyCustom && appliedPhoto) {
