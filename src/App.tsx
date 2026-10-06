@@ -180,6 +180,16 @@ export default function App() {
       return timeRemaining > 0 ? timeRemaining : 0;
     };
 
+    // Set immediately so it doesn't wait 1 second to lock the button
+    setCooldownMs(calculateRemaining());
+
+    const interval = setInterval(() => {
+      setCooldownMs(calculateRemaining());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastDropTime, isDevMode]);
+
   // Preloader States
   const [hasPreloaded, setHasPreloaded] = useState(false);
   const [triggerRender, setTriggerRender] = useState(0);
