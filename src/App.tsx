@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import React, { useState, useEffect } from 'react';
 import { loadRecipeAssets } from './services/assetManager';
 import { SleeveZoomModal } from './components/SleeveZoomModal';
-import React, { useState, useEffect } from 'react';
 import { AlbumEntry, ToastMessage } from './types';
 import { TopBar } from './components/TopBar';
 import { SubHeaderNav } from './components/SubHeaderNav';
@@ -26,14 +26,12 @@ import {
   recordDropTimestamp,
   getUseCustomPhotosPref,
   setUseCustomPhotosPref,
-  getCooldownRemaining,
 } from './services/storageService';
-import { generateDailyDrop, generateProceduralBand } from './services/proceduralGenerator';
+import { generateDailyDrop } from './services/proceduralGenerator';
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer } from './services/audioSynthesizer';
 
 // --- COMPOSITE SHARE IMAGE GENERATOR ---
-// Stamps typography over the background image to create a shareable JPEG
 const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
@@ -43,21 +41,18 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
     if (!ctx) return reject('Canvas error');
 
     const finalizeCanvas = () => {
-      // Top dark gradient to make the Band Name pop
       const topGrad = ctx.createLinearGradient(0, 0, 0, 300);
       topGrad.addColorStop(0, 'rgba(0,0,0,0.85)');
       topGrad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = topGrad;
       ctx.fillRect(0, 0, 1024, 300);
 
-      // Bottom dark gradient to make the Album Title pop
       const botGrad = ctx.createLinearGradient(0, 724, 0, 1024);
       botGrad.addColorStop(0, 'rgba(0,0,0,0)');
       botGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
       ctx.fillStyle = botGrad;
       ctx.fillRect(0, 724, 1024, 1024);
 
-      // Burn in Band Name (Top)
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -67,7 +62,6 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
       ctx.shadowOffsetY = 6;
       ctx.fillText(album.bandName.toUpperCase(), 512, 60, 960);
 
-      // Burn in Album Title (Bottom)
       ctx.fillStyle = '#facc15';
       ctx.font = 'bold 65px "Georgia", serif';
       ctx.textBaseline = 'bottom';
@@ -80,12 +74,10 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
       );
     };
 
-    // Dynamically rebuild the cover art if the base64 string was stripped from storage
     const coverArt = album.coverImageUrl || (album.recipe ? gagCanvasEngine.renderCover(album.recipe) : null);
 
     if (coverArt) {
       const img = new Image();
-      // Ensure crossOrigin remains removed here
       img.onload = () => {
         ctx.drawImage(img, 0, 0, 1024, 1024);
         finalizeCanvas();
@@ -99,25 +91,15 @@ const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
 };
 
 export default function App() {
-  // Albums and carousel navigation
   const [albums, setAlbums] = useState<AlbumEntry[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Sleeve flip state
   const [isFlipped, setIsFlipped] = useState(false);
-
-  // Audio playback state
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-
-  // Custom photo controls
   const [useCustomPhotos, setUseCustomPhotos] = useState(false);
   const [selectedPhotoBase64, setSelectedPhotoBase64] = useState<string | null>(null);
-
-  // Generation loading states
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStepText, setLoadingStepText] = useState('Forging Vinyl Artwork...');
 
-  // Cooldown & Dev Mode (Synchronous init kills the render flicker)
   const [isDevMode, setIsDevMode] = useState<boolean>(() => getDevModeUnlocked());
   const [lastDropTime, setLastDropTime] = useState<number>(() => getLastDropTimestamp());
   const [cooldownMs, setCooldownMs] = useState<number>(() => {
@@ -128,21 +110,16 @@ export default function App() {
     return remaining > 0 ? remaining : 0;
   });
 
-  // Modals & Drawers
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-
-  // Toast notices / errors
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   const addToast = (type: 'error' | 'success' | 'info', text: string) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
     setToasts((prev) => [...prev, { id, type, text }]);
-
     if (type !== 'error') {
-      setTimeout(() => {
-        dismissToast(id);
-      }, 4000);
+      setTimeout(() => dismissToast(id), 4000);
     }
   };
 
@@ -150,24 +127,39 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const [isZoomOpen, setIsZoomOpen] = useState(false);
-
-  // Initial load
+  // Initial load & Silent Cache Warmer
   useEffect(() => {
-    const loaded = loadAlbums();
-    setAlbums(loaded);
-    if (loaded.length > 0) {
-      // Default to today's or latest record
-      setCurrentIndex(loaded.length - 1);
+    try {
+      const loaded = loadAlbums();
+      setAlbums(loaded);
+      if (loaded.length > 0) {
+        setCurrentIndex(loaded.length - 1);
+      }
+
+      const devUnlocked = getDevModeUnlocked();
+      setIsDevMode(devUnlocked);
+
+      const dropTime = getLastDropTimestamp();
+      setLastDropTime(dropTime);
+
+      setUseCustomPhotos(getUseCustomPhotosPref());
+
+      // Silently fetch assets into memory so VinylSleeve doesn't draw primitives
+      const warmAssets = async () => {
+        const promises = loaded.map(a => {
+          if (a.recipe) {
+            return loadRecipeAssets(a.recipe.backdrop || '', a.recipe.subject || '').catch(() => {});
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(promises);
+        // Gently redraw the sleeves now that memory is warm
+        setAlbums([...loaded]);
+      };
+      warmAssets();
+    } catch (err) {
+      console.error("Storage load error:", err);
     }
-
-    const devUnlocked = getDevModeUnlocked();
-    setIsDevMode(devUnlocked);
-
-    const dropTime = getLastDropTimestamp();
-    setLastDropTime(dropTime);
-
-    setUseCustomPhotos(getUseCustomPhotosPref());
   }, []);
 
   // Cooldown countdown timer (Bulletproof Math)
@@ -180,7 +172,6 @@ export default function App() {
       return timeRemaining > 0 ? timeRemaining : 0;
     };
 
-    // Set immediately so it doesn't wait 1 second to lock the button
     setCooldownMs(calculateRemaining());
 
     const interval = setInterval(() => {
@@ -190,37 +181,8 @@ export default function App() {
     return () => clearInterval(interval);
   }, [lastDropTime, isDevMode]);
 
-  // Preloader States
-  const [hasPreloaded, setHasPreloaded] = useState(false);
-  const [triggerRender, setTriggerRender] = useState(0);
-
-  // --- THE ASSET PRELOADER (Fixes the primitive fallback on app launch) ---
-  useEffect(() => {
-    // Only run if we have albums and haven't preloaded yet
-    if (albums.length === 0 || hasPreloaded) return;
-
-    const preloadArchiveAssets = async () => {
-      const promises = albums.map(a => {
-        if (!a.recipe) return Promise.resolve();
-        // Safely default to empty strings to prevent legacy albums from crashing the loader
-        const backdrop = a.recipe.backdrop || '';
-        const subject = a.recipe.subject || '';
-        // Catch individual errors so the redraw command ALWAYS fires
-        return loadRecipeAssets(backdrop, subject).catch(() => {});
-      });
-
-      await Promise.all(promises);
-
-      setHasPreloaded(true);
-      setTriggerRender(Date.now());
-    };
-
-    preloadArchiveAssets();
-  }, [albums, hasPreloaded]);
-
   const currentAlbum = albums[currentIndex] || null;
 
-  // Handlers for Navigation
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
@@ -250,7 +212,6 @@ export default function App() {
 
   const isTodayActive = albums.length > 0 && currentIndex === albums.length - 1;
 
-  // Favorite toggle
   const handleToggleFavorite = (albumId?: string) => {
     const targetId = albumId || currentAlbum?.id;
     if (!targetId) return;
@@ -264,7 +225,6 @@ export default function App() {
     });
   };
 
-  // Delete from archive
   const handleDeleteAlbum = (id: string) => {
     setAlbums((prev) => {
       const updated = prev.filter((a) => a.id !== id);
@@ -277,7 +237,10 @@ export default function App() {
     addToast('info', 'Record removed from vault.');
   };
 
-  // Share (Upgraded to Image + Text)
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   const handleShare = async () => {
     if (!currentAlbum) return;
     
@@ -290,7 +253,6 @@ export default function App() {
       const fileName = `${currentAlbum.bandName.replace(/[^a-z0-9]/gi, '_')}_Cover.jpg`;
       const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-      // If the device supports sharing actual files (like Android/iOS native menus)
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: `${currentAlbum.bandName} - ${currentAlbum.albumTitle}`,
@@ -299,7 +261,6 @@ export default function App() {
         });
         addToast('success', 'Shared successfully!');
       } else {
-        // Fallback for Desktop/Unsupported browsers: Trigger image download & copy text
         copyToClipboard(shareText);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -316,7 +277,6 @@ export default function App() {
     }
   };
 
-  // Audio Playback: Synthesize procedural retro audio clip from album vibe
   const handleToggleAudio = async () => {
     if (isPlayingAudio) {
       audioSynthesizer.stopAll();
@@ -339,7 +299,6 @@ export default function App() {
     }
   };
 
-  // Custom photo toggles
   const handleToggleUseCustomPhotos = (enabled: boolean) => {
     setUseCustomPhotos(enabled);
     setUseCustomPhotosPref(enabled);
@@ -352,7 +311,6 @@ export default function App() {
     }
   };
 
-  // Action: Use Photo As Is
   const handleUsePhotoAsIs = () => {
     if (!selectedPhotoBase64) return;
     if (!currentAlbum) {
@@ -374,7 +332,6 @@ export default function App() {
     addToast('success', 'Custom photo applied to current vinyl sleeve.');
   };
 
-  // Action: Modify Photo with Random Analog Darkroom Filter
   const handleModifyPhoto = async () => {
     if (!selectedPhotoBase64) return;
     if (!currentAlbum) {
@@ -407,17 +364,13 @@ export default function App() {
     }
   };
 
-  // 100% Client-Side Procedural Daily Drop Pipeline (<50ms execution)
   const handleDailyDrop = async () => {
-    // Prevent physical double-click spam
     if (isGenerating) return; 
 
-    // --- 1. THE GUARD CLAUSE (Bulletproof Math & Disk Check) ---
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    const realLastDrop = getLastDropTimestamp(); // Read from disk instantly, bypassing React state delay
+    const realLastDrop = getLastDropTimestamp(); 
     const timePassed = Date.now() - realLastDrop;
     
-    // Physically block the drop if they aren't in Dev Mode and 24 hours haven't passed
     if (!isDevMode && realLastDrop !== 0 && timePassed < ONE_DAY_MS) {
       addToast('error', 'You must wait 24 hours between drops!');
       return;
@@ -438,18 +391,16 @@ export default function App() {
       const generatedRecord = await generateDailyDrop();
       const newEntry = { ...generatedRecord };
 
-      // === THE FIX: WAIT FOR IMAGES TO LOAD INTO CACHE BEFORE BAKING ===
+      // Wait for images to load into cache BEFORE baking
       await loadRecipeAssets(newEntry.recipe.backdrop, newEntry.recipe.subject);
-
-      // Instantly bake the procedural canvas to Base64 while assets are in memory. 
       newEntry.coverImageUrl = gagCanvasEngine.renderCover(newEntry.recipe);
 
       if (applyCustom && appliedPhoto) {
         try {
           const { url } = await gagCanvasEngine.processCustomPhoto(appliedPhoto);
-          newEntry.coverImageUrl = url; // Overwrites the procedural art if custom photo is used
+          newEntry.coverImageUrl = url;
         } catch {
-          // fallback to procedural gag art already assigned above
+          // fallback
         }
       }
 
@@ -461,8 +412,6 @@ export default function App() {
         return capped;
       });
 
-      // --- 2. START THE CLOCK ---
-      // Record the exact moment this drop finished so the 24-hour cooldown begins
       const now = Date.now();
       recordDropTimestamp(now);
       setLastDropTime(now);
@@ -488,15 +437,10 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#0c101d] text-slate-100 select-none font-sans">
-      {/* Toast Banners */}
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Main Single Mobile-Viewport Layout Container */}
       <div className="w-full max-w-md mx-auto min-h-full flex flex-col justify-between py-2 pb-14 relative">
-        {/* TOP SECTION */}
-
         <div className="w-full shrink-0 flex flex-col">
-          {/* Top Bar */}
           <TopBar
             onOpenArchive={() => setIsArchiveOpen(true)}
             isToday={isTodayActive}
@@ -506,8 +450,6 @@ export default function App() {
             onShare={handleShare}
             hasEntries={albums.length > 0}
           />
-
-          {/* Sub-Header Navigation Carousel */}
           <SubHeaderNav
             entries={albums}
             currentIndex={currentIndex}
@@ -516,9 +458,7 @@ export default function App() {
           />
         </div>
 
-        {/* CENTER SECTION */}
         <div className="w-full flex-1 flex flex-col justify-center items-center px-3 py-1 gap-1.5">
-          {/* Action Buttons Row */}
           <ActionButtonsRow
             isFlipped={isFlipped}
             onToggleFlip={() => setIsFlipped(!isFlipped)}
@@ -527,10 +467,8 @@ export default function App() {
             disabled={isGenerating || !currentAlbum}
           />
 
-          {/* Center Album Sleeve Container */}
           <div className="w-full flex items-center justify-center py-1">
             <VinylSleeve
-              key={`sleeve-${triggerRender}`}
               album={currentAlbum}
               isFlipped={isFlipped}
               isLoading={isGenerating}
@@ -540,7 +478,6 @@ export default function App() {
             />
           </div>
 
-          {/* Custom Photo Controls */}
           <CustomPhotoControls
             useCustomPhotos={useCustomPhotos}
             onToggleUseCustomPhotos={handleToggleUseCustomPhotos}
@@ -552,17 +489,13 @@ export default function App() {
           />
         </div>
 
-        {/* BOTTOM ACTIONS & FOOTER */}
         <div className="w-full shrink-0 flex flex-col">
-          {/* Full-width [⚡ Daily Drop] button */}
           <DailyDropButton
             onDailyDrop={handleDailyDrop}
             isLoading={isGenerating}
             cooldownMs={cooldownMs}
             isDevMode={isDevMode}
           />
-
-          {/* Footer Info & Floating Settings Gear Icon */}
           <FooterInfo
             onOpenSettings={() => setIsSettingsOpen(true)}
             isDevMode={isDevMode}
@@ -570,7 +503,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Settings Modal */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -581,7 +513,6 @@ export default function App() {
         hasServerKey={false}
       />
 
-      {/* Sleeve Zoom & Inspect Modal */}
       <SleeveZoomModal
         isOpen={isZoomOpen}
         onClose={() => setIsZoomOpen(false)}
@@ -589,9 +520,7 @@ export default function App() {
         initialFlipped={isFlipped}
       />      
 
-      {/* Vinyl Vault Archive Drawer */}
       <ArchiveDrawer
-        key={`archive-${triggerRender}`}
         isOpen={isArchiveOpen}
         onClose={() => setIsArchiveOpen(false)}
         albums={albums}
