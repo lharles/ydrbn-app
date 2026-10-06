@@ -188,36 +188,25 @@ export default function App() {
   useEffect(() => {
     // Only run if we have albums and haven't preloaded yet
     if (albums.length === 0 || hasPreloaded) return;
-    
+
     const preloadArchiveAssets = async () => {
-      // Silently pull all images for the archive into memory
-      const promises = albums.map(a => 
-        a.recipe ? loadRecipeAssets(a.recipe.backdrop, a.recipe.subject) : Promise.resolve()
-      );
+      const promises = albums.map(a => {
+        if (!a.recipe) return Promise.resolve();
+        // Safely default to empty strings to prevent legacy albums from crashing the loader
+        const backdrop = a.recipe.backdrop || '';
+        const subject = a.recipe.subject || '';
+        // Catch individual errors so the redraw command ALWAYS fires
+        return loadRecipeAssets(backdrop, subject).catch(() => {});
+      });
+
       await Promise.all(promises);
-      
+
       setHasPreloaded(true);
-      // Change the state to force the UI to physically redraw
-      setTriggerRender(Date.now()); 
+      setTriggerRender(Date.now());
     };
-    
+
     preloadArchiveAssets();
   }, [albums, hasPreloaded]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // Set immediately so it doesn't wait 1 second to lock the button
     setCooldownMs(calculateRemaining());

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ydrbn-cache-v6';
+const CACHE_NAME = 'ydrbn-cache-v7';
 
 const ASSETS_TO_CACHE = [
   '/ydrbn-app/',
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
       // Otherwise, fetch from the network
       return fetch(event.request).then((networkResponse) => {
         // Cache new successful requests dynamically (like JS/CSS bundles)
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
