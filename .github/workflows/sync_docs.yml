@@ -1,0 +1,33 @@
+name: Sync Docs to NotebookLM
+
+on:
+  push:
+    branches:
+      - main  # Change to 'master' if your primary branch uses that name
+    paths:
+      - '**/*.md'  # This targets and monitors all Markdown documentation files
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Synchronization Engine
+        run: |
+          pip install notebooklm-mcp-cli
+
+      - name: Execute Sync Pipeline
+        env:
+          NOTEBOOK_ID: ${{ secrets.NOTEBOOK_ID }}
+          NOTEBOOKLM_COOKIES: ${{ secrets.NOTEBOOKLM_COOKIES }}
+          NOTEBOOKLM_METADATA: ${{ secrets.NOTEBOOKLM_METADATA }}
+        run: |
+          # Pulls all modified Markdown files and updates your notebook
+          python -m notebooklm_mcp_cli.sync --dir .
