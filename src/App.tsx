@@ -170,44 +170,6 @@ export default function App() {
     setUseCustomPhotos(getUseCustomPhotosPref());
   }, []);
 
-/*   // Cooldown countdown timer (Bulletproof Math)
-  useEffect(() => {
-    const calculateRemaining = () => {
-      if (isDevMode || lastDropTime === 0) return 0;
-      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-      const timePassed = Date.now() - lastDropTime;
-      const timeRemaining = ONE_DAY_MS - timePassed;
-      return timeRemaining > 0 ? timeRemaining : 0;
-    };
-
-  // Preloader States
-  const [hasPreloaded, setHasPreloaded] = useState(false);
-  const [triggerRender, setTriggerRender] = useState(0);
-
-  // --- THE ASSET PRELOADER (Fixes the primitive fallback on app launch) ---
-  useEffect(() => {
-    // Only run if we have albums and haven't preloaded yet
-    if (albums.length === 0 || hasPreloaded) return;
-
-    const preloadArchiveAssets = async () => {
-      const promises = albums.map(a => {
-        if (!a.recipe) return Promise.resolve();
-        // Safely default to empty strings to prevent legacy albums from crashing the loader
-        const backdrop = a.recipe.backdrop || '';
-        const subject = a.recipe.subject || '';
-        // Catch individual errors so the redraw command ALWAYS fires
-        return loadRecipeAssets(backdrop, subject).catch(() => {});
-      });
-
-      await Promise.all(promises);
-
-      setHasPreloaded(true);
-      setTriggerRender(Date.now());
-    };
-
-    preloadArchiveAssets();
-  }, [albums, hasPreloaded]); */
-
   // Cooldown countdown timer (Bulletproof Math)
   useEffect(() => {
     const calculateRemaining = () => {
@@ -255,16 +217,6 @@ export default function App() {
 
     preloadArchiveAssets();
   }, [albums, hasPreloaded]);
-
-    // Set immediately so it doesn't wait 1 second to lock the button
-    setCooldownMs(calculateRemaining());
-
-    const interval = setInterval(() => {
-      setCooldownMs(calculateRemaining());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [lastDropTime, isDevMode]);
 
   const currentAlbum = albums[currentIndex] || null;
 
