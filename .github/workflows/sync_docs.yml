@@ -29,5 +29,5 @@ jobs:
           NOTEBOOKLM_COOKIES: ${{ secrets.NOTEBOOKLM_COOKIES }}
           NOTEBOOKLM_METADATA: ${{ secrets.NOTEBOOKLM_METADATA }}
         run: |
-          # Pulls all modified Markdown files and updates your notebook
-          python -m notebooklm_mcp_cli.sync --dir .
+          # Calls the official command-line sync entrypoint
+          notebooklm-mcp sync --dir .
