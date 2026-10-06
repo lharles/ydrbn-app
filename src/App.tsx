@@ -144,18 +144,23 @@ export default function App() {
 
       setUseCustomPhotos(getUseCustomPhotosPref());
 
-      // Silently fetch assets into memory so VinylSleeve doesn't draw primitives
+      // Silently fetch assets into memory and RE-BAKE the images for the UI
       const warmAssets = async () => {
-        const promises = loaded.map(a => {
+        const promises = loaded.map(async (a) => {
           if (a.recipe) {
-            return loadRecipeAssets(a.recipe.backdrop || '', a.recipe.subject || '').catch(() => {});
+            // Wait for background/subject to load into memory
+            await loadRecipeAssets(a.recipe.backdrop || '', a.recipe.subject || '').catch(() => {});
+            // Re-bake the beautiful canvas cover and attach it to a fresh object
+            return { ...a, coverImageUrl: gagCanvasEngine.renderCover(a.recipe) };
           }
-          return Promise.resolve();
+          return a;
         });
-        await Promise.all(promises);
-        // Gently redraw the sleeves now that memory is warm
-        setAlbums([...loaded]);
+        
+        const warmedAlbums = await Promise.all(promises);
+        // Push the fully baked images directly into the UI state to replace primitives
+        setAlbums(warmedAlbums);
       };
+      
       warmAssets();
     } catch (err) {
       console.error("Storage load error:", err);
