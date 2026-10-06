@@ -31,6 +31,69 @@ import { generateDailyDrop, generateProceduralBand } from './services/procedural
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer } from './services/audioSynthesizer';
 
+// --- COMPOSITE SHARE IMAGE GENERATOR ---
+// Stamps typography over the background image to create a shareable JPEG
+const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return reject('Canvas error');
+
+    const finalizeCanvas = () => {
+      // Top dark gradient to make the Band Name pop
+      const topGrad = ctx.createLinearGradient(0, 0, 0, 300);
+      topGrad.addColorStop(0, 'rgba(0,0,0,0.85)');
+      topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, 1024, 300);
+
+      // Bottom dark gradient to make the Album Title pop
+      const botGrad = ctx.createLinearGradient(0, 724, 0, 1024);
+      botGrad.addColorStop(0, 'rgba(0,0,0,0)');
+      botGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
+      ctx.fillStyle = botGrad;
+      ctx.fillRect(0, 724, 1024, 1024);
+
+      // Burn in Band Name (Top)
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.font = '900 85px "Impact", "Arial Black", sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetY = 6;
+      ctx.fillText(album.bandName.toUpperCase(), 512, 60, 960);
+
+      // Burn in Album Title (Bottom)
+      ctx.fillStyle = '#facc15';
+      ctx.font = 'bold 65px "Georgia", serif';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(album.albumTitle.toUpperCase(), 512, 960, 960);
+
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject('Blob failed')),
+        'image/jpeg',
+        0.92
+      );
+    };
+
+    if (album.coverImageUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, 1024, 1024);
+        finalizeCanvas();
+      };
+      img.onerror = finalizeCanvas; // Fallback to blank if it fails
+      img.src = album.coverImageUrl;
+    } else {
+      finalizeCanvas();
+    }
+  });
+};
+
 export default function App() {
   // Albums and carousel navigation
   const [albums, setAlbums] = useState<AlbumEntry[]>([]);
@@ -182,33 +245,43 @@ export default function App() {
     addToast('info', 'Record removed from vault.');
   };
 
-  // Share
+  // Share (Upgraded to Image + Text)
   const handleShare = async () => {
     if (!currentAlbum) return;
+    
+    addToast('info', 'Compositing vinyl cover for sharing...');
 
-    const shareData = {
-      title: `${currentAlbum.bandName} - ${currentAlbum.albumTitle} (${currentAlbum.year})`,
-      text: `Check out today's random band: "${currentAlbum.bandName}" - "${currentAlbum.albumTitle}" (${currentAlbum.year}).\n\nBio: ${currentAlbum.bandBio}\n\nGenerated with Y.D.R.B.N. (100% Offline PWA)`,
-      url: window.location.href,
-    };
+    const shareText = `Check out today's random band: "${currentAlbum.bandName}" - "${currentAlbum.albumTitle}" (${currentAlbum.year}).\n\nBio: ${currentAlbum.bandBio}\n\nGenerated with Y.D.R.B.N.`;
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
+    try {
+      const blob = await compositeShareImage(currentAlbum);
+      const fileName = `${currentAlbum.bandName.replace(/[^a-z0-9]/gi, '_')}_Cover.jpg`;
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+      // If the device supports sharing actual files (like Android/iOS native menus)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `${currentAlbum.bandName} - ${currentAlbum.albumTitle}`,
+          text: shareText,
+          files: [file],
+        });
         addToast('success', 'Shared successfully!');
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          copyToClipboard(shareData.text);
-        }
+      } else {
+        // Fallback for Desktop/Unsupported browsers: Trigger image download & copy text
+        copyToClipboard(shareText);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        addToast('success', 'Cover downloaded & Lore copied to clipboard!');
       }
-    } else {
-      copyToClipboard(shareData.text);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        copyToClipboard(shareText);
+      }
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    addToast('success', 'Album lore copied to clipboard!');
   };
 
   // Audio Playback: Synthesize procedural retro audio clip from album vibe
@@ -333,12 +406,17 @@ export default function App() {
       const generatedRecord = await generateDailyDrop();
       const newEntry = { ...generatedRecord };
 
+      // === THE PERSISTENCE FIX ===
+      // Instantly bake the procedural canvas to Base64 while assets are in memory. 
+      // (This prevents the "primitive fallback" on refresh)
+      newEntry.coverImageUrl = gagCanvasEngine.renderCover(newEntry.recipe);
+
       if (applyCustom && appliedPhoto) {
         try {
           const { url } = await gagCanvasEngine.processCustomPhoto(appliedPhoto);
-          newEntry.coverImageUrl = url;
+          newEntry.coverImageUrl = url; // Overwrites the procedural art if custom photo is used
         } catch {
-          // fallback to procedural gag art
+          // fallback to procedural gag art already assigned above
         }
       }
 
