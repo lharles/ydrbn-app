@@ -2,8 +2,6 @@ name: Sync Docs to NotebookLM
 
 on:
   push:
-    branches:
-      - main
     paths:
       - '**/*.md'
 
@@ -17,11 +15,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Synchronization Engine
-        run: |
-          pip install notebooklm-mcp-cli
+        run: pip install notebooklm-mcp-cli
 
       - name: Execute Sync Pipeline
         env:
@@ -29,8 +26,7 @@ jobs:
           NOTEBOOKLM_COOKIES: ${{ secrets.NOTEBOOKLM_COOKIES }}
           NOTEBOOKLM_METADATA: ${{ secrets.NOTEBOOKLM_METADATA }}
         run: |
-          # The CLI doesn't have a native 'sync' subcommand for directories.
-          # We use a bash loop to find and upload all Markdown files directly.
+          # Use a bash loop to find and upload all Markdown files
           find . -name "*.md" -type f | while read -r file; do
             echo "Uploading $file to Gemini Notebook..."
             nlm source add "$NOTEBOOK_ID" --file "$file"
