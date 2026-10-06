@@ -3,9 +3,9 @@ name: Sync Docs to NotebookLM
 on:
   push:
     branches:
-      - main  # Change to 'master' if your primary branch uses that name
+      - main
     paths:
-      - '**/*.md'  # This targets and monitors all Markdown documentation files
+      - '**/*.md'
 
 jobs:
   sync:
@@ -29,5 +29,4 @@ jobs:
           NOTEBOOKLM_COOKIES: ${{ secrets.NOTEBOOKLM_COOKIES }}
           NOTEBOOKLM_METADATA: ${{ secrets.NOTEBOOKLM_METADATA }}
         run: |
-          # Calls the official command-line sync entrypoint
           notebooklm-mcp sync --dir .
