@@ -29,5 +29,5 @@ jobs:
           NOTEBOOKLM_COOKIES: ${{ secrets.NOTEBOOKLM_COOKIES }}
           NOTEBOOKLM_METADATA: ${{ secrets.NOTEBOOKLM_METADATA }}
         run: |
-          # Executes the unified directory sync sub-module 
-          nlm sync directory --path .
+          # Calls the sync execution flag directly against your workspace directory
+          nlm sync --path .
