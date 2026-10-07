@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ydrbn-cache-v10';
+const CACHE_NAME = 'ydrbn-cache-v11';
 
 const ASSETS_TO_CACHE = [
   '/ydrbn-app/',
