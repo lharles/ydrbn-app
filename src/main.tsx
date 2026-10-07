@@ -5,7 +5,6 @@ import '@fontsource/courier-prime/400-italic.css';
 import '@fontsource/medievalsharp';
 import '@fontsource/oswald/500.css';
 import '@fontsource/oswald/700.css';
-import '@fontsource/oswald/900.css';
 import '@fontsource/permanent-marker';
 import '@fontsource/righteous';
 import '@fontsource/russo-one';
