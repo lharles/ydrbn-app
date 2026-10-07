@@ -1,0 +1,23 @@
+{
+  "name": "Y.D.R.B.N. — Your Daily Random Band Name",
+  "short_name": "Y.D.R.B.N.",
+  "description": "Procedural band name and vinyl sleeve generator.",
+  "start_url": "/ydrbn-app/",
+  "scope": "/ydrbn-app/",
+  "display": "standalone",
+  "background_color": "#0c101d",
+  "theme_color": "#0c101d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/ydrbn-app/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/ydrbn-app/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
