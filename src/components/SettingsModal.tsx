@@ -1,3 +1,4 @@
+import { ContentPackSection } from './ContentPackSection';
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Cpu, Wifi, Download, Lock } from 'lucide-react';
 
@@ -280,6 +281,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* === PASTE IT RIGHT HERE === */}
+          <ContentPackSection />
 
           {/* Aesthetic Credit */}
           <div className="text-[10px] text-slate-500 text-center pt-0.5 font-mono">

@@ -1,3 +1,4 @@
+import { getInstalledPack } from './packStorage';
 /**
  * Dynamic Procedural Generator
  * Generates infinite new original bands and visual gags matching the classic
@@ -1310,11 +1311,17 @@ function pickWeightedWord(customList: string[], stockList: string[], customWeigh
   return stockList[Math.floor(Math.random() * stockList.length)];
 }
 
-function generateCandidateBandName(pool: SemanticWordPool): string {
+function generateCandidateBandName(
+  pool: SemanticWordPool,
+  dynamicPools?: { adjectives: string[]; nouns: string[]; ensembles: string[] }
+): string {
+  const adjs = dynamicPools ? dynamicPools.adjectives : CUSTOM_ADJECTIVES;
+  const nouns = dynamicPools ? dynamicPools.nouns : CUSTOM_NOUNS;
+  const ensembles = dynamicPools ? dynamicPools.ensembles : CUSTOM_ENSEMBLES;
   const pattern = Math.floor(Math.random() * 8);
-  const randAdj = capitalizeWord(pickWeightedWord(CUSTOM_ADJECTIVES, EXPANDED_ADJECTIVES));
-  const randNoun = capitalizeWord(pickWeightedWord(CUSTOM_NOUNS, EXPANDED_NOUNS));
-  const randEnsemble = capitalizeWord(pickWeightedWord(CUSTOM_ENSEMBLES, EXPANDED_ENSEMBLES));
+  const randAdj = capitalizeWord(pickWeightedWord(adjs, EXPANDED_ADJECTIVES));
+  const randNoun = capitalizeWord(pickWeightedWord(nouns, EXPANDED_NOUNS));
+  const randEnsemble = capitalizeWord(pickWeightedWord(ensembles, EXPANDED_ENSEMBLES));
   const poolPrefix = pool.prefixes[Math.floor(Math.random() * pool.prefixes.length)];
   const poolNoun = pool.nouns[Math.floor(Math.random() * pool.nouns.length)];
 
@@ -1347,6 +1354,21 @@ function generateCandidateBandName(pool: SemanticWordPool): string {
   }
 }
 
+
+async function getEffectiveWordPools() {
+  try {
+    const pack = await getInstalledPack('ydrbn-extended-core');
+    if (pack && pack.words) {
+      return {
+        adjectives: [...CUSTOM_ADJECTIVES, ...(pack.words.adjectives || [])],
+        nouns: [...CUSTOM_NOUNS, ...(pack.words.nouns || [])],
+        ensembles: [...CUSTOM_ENSEMBLES, ...(pack.words.ensembles || [])],
+      };
+    }
+  } catch (err) {}
+  return { adjectives: CUSTOM_ADJECTIVES, nouns: CUSTOM_NOUNS, ensembles: CUSTOM_ENSEMBLES };
+}
+
 export async function generateDailyDrop(): Promise<AlbumEntry> {
   // Pick random semantic tag
   const tags: SemanticTag[] = [
@@ -1359,13 +1381,14 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
   ];
   const tag = tags[Math.floor(Math.random() * tags.length)];
   const pool = SEMANTIC_POOLS[tag];
+  const dynamicPools = await getEffectiveWordPools();
 
   // Enforce Absolute Band Name Uniqueness:
   // Must regenerate until a name is found that has NEVER appeared in this installation
-  let newBandName = generateCandidateBandName(pool);
+  let newBandName = generateCandidateBandName(pool, dynamicPools);
   let attempts = 0;
   while (historyRegistry.has(newBandName) && attempts < 1000) {
-    newBandName = generateCandidateBandName(pool);
+    newBandName = generateCandidateBandName(pool, dynamicPools);
     attempts++;
   }
   historyRegistry.add(newBandName);
