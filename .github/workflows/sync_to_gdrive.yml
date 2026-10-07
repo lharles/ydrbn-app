@@ -21,8 +21,35 @@ jobs:
         with:
           python-version: '3.10'
           
+      - name: Create Python Script
+        run: |
+          cat << 'EOF' > format_repo.py
+          import os
+          OUTPUT_FILE = "consolidated_repo.txt"
+          EXCLUDED_DIRS = {".git", ".github", "node_modules", "venv", "__pycache__"}
+          ALLOWED_EXTENSIONS = {".py", ".js", ".ts", ".md", ".json", ".html", ".css", ".yaml", ".yml"}
+
+          def main():
+              with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
+                  for root, dirs, files in os.walk("."):
+                      dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
+                      for file in files:
+                          ext = os.path.splitext(file)[1]
+                          if ext in ALLOWED_EXTENSIONS and file != OUTPUT_FILE:
+                              path = os.path.join(root, file)
+                              outfile.write(f"\n\n--- FILE: {path} ---\n\n")
+                              try:
+                                  with open(path, "r", encoding="utf-8") as infile:
+                                      outfile.write(infile.read())
+                              except Exception as e:
+                                  outfile.write(f"[Error reading file: {e}]")
+
+          if __name__ == "__main__":
+              main()
+          EOF
+          
       - name: Format Repository Content
-        run: python .github/scripts/format_repo.py
+        run: python format_repo.py
         
       - name: Setup Rclone
         # Install Rclone directly using their official installation script
