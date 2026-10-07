@@ -63,7 +63,7 @@ jobs:
           from googleapiclient.http import MediaFileUpload
 
           # Ensure the required environment variables are set
-          required_env_vars = ['GDRIVE_CLIENT_ID', 'GDRIVE_CLIENT_SECRET', 'GDRIVE_REFRESH_TOKEN', 'GDRIVE_FOLDER_ID']
+          required_env_vars = ['GDRIVE_CLIENT_ID', 'GDRIVE_CLIENT_SECRET', 'GDRIVE_REFRESH_TOKEN']
           for var in required_env_vars:
               if not os.environ.get(var):
                   print(f"Error: {var} environment variable is not set.")
@@ -72,8 +72,8 @@ jobs:
           client_id = os.environ['GDRIVE_CLIENT_ID']
           client_secret = os.environ['GDRIVE_CLIENT_SECRET']
           refresh_token = os.environ['GDRIVE_REFRESH_TOKEN']
-          folder_id = os.environ['GDRIVE_FOLDER_ID']
           file_name = 'consolidated_repo.txt'
+          folder_name = 'NotebookLM_Sync'
 
           # Reconstruct the credentials object
           creds = Credentials(
@@ -87,10 +87,28 @@ jobs:
           try:
               service = build('drive', 'v3', credentials=creds)
 
-              # 1. Check if the file already exists in the folder
-              query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
-              results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
-              items = results.get('files', [])
+              # 1. Check if our target folder exists, if not create it.
+              query_folder = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+              results_folder = service.files().list(q=query_folder, spaces='drive', fields='files(id, name)').execute()
+              folders = results_folder.get('files', [])
+              
+              if not folders:
+                  print(f"Folder '{folder_name}' not found. Creating...")
+                  folder_metadata = {
+                      'name': folder_name,
+                      'mimeType': 'application/vnd.google-apps.folder'
+                  }
+                  folder = service.files().create(body=folder_metadata, fields='id').execute()
+                  folder_id = folder.get('id')
+              else:
+                  folder_id = folders[0]['id']
+                  print(f"Folder '{folder_name}' found. ID: {folder_id}")
+
+
+              # 2. Check if the file already exists in the folder
+              query_file = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
+              results_file = service.files().list(q=query_file, spaces='drive', fields='files(id, name)').execute()
+              items = results_file.get('files', [])
 
               media = MediaFileUpload(file_name, mimetype='text/plain', resumable=True)
 
@@ -120,5 +138,4 @@ jobs:
           GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
           GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
           GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: python upload_to_drive.py
