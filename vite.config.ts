@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [
+    base: '/ydrbn-app/',
+  plugins: [
       react(),
       tailwindcss(),
     ],
