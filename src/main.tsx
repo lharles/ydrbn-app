@@ -1,3 +1,19 @@
+import '@fontsource/bangers';
+import '@fontsource/courier-prime/400.css';
+import '@fontsource/courier-prime/700.css';
+import '@fontsource/courier-prime/400-italic.css';
+import '@fontsource/medievalsharp';
+import '@fontsource/oswald/500.css';
+import '@fontsource/oswald/700.css';
+import '@fontsource/oswald/900.css';
+import '@fontsource/permanent-marker';
+import '@fontsource/righteous';
+import '@fontsource/russo-one';
+import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
+import '@fontsource/space-mono/400-italic.css';
+import '@fontsource/special-elite';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
