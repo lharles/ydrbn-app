@@ -51,11 +51,11 @@ jobs:
       - name: Format Repository Content
         run: python format_repo.py
         
-      - name: Upload a file to Google Drive
-        uses: willo32/google-drive-upload-action@v1
+      - name: Upload to Google Drive via OAuth
+        uses: Jodev19/google-drive-upload-action@v1.0.0
         with:
           target: consolidated_repo.txt
-          credentials: ${{ secrets.GDRIVE_SA_KEY_B64 }}
-          parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
-          name: consolidated_repo.txt
-          owner: ${{ secrets.GDRIVE_OWNER_EMAIL }}
+          client_id: ${{ secrets.GDRIVE_CLIENT_ID }}
+          client_secret: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          refresh_token: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
