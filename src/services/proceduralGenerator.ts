@@ -1,3 +1,25 @@
+
+async function getEffectiveWordPools() {
+  try {
+    const pack = await getInstalledPack('ydrbn-extended-core');
+    if (pack && pack.words) {
+      return {
+        adjectives: [...CUSTOM_ADJECTIVES, ...(pack.words.adjectives || [])],
+        nouns: [...CUSTOM_NOUNS, ...(pack.words.nouns || [])],
+        ensembles: [...CUSTOM_ENSEMBLES, ...(pack.words.ensembles || [])],
+      };
+    }
+  } catch (err) {
+    console.warn('[ProceduralGenerator] Falling back to default word pools:', err);
+  }
+  return {
+    adjectives: CUSTOM_ADJECTIVES,
+    nouns: CUSTOM_NOUNS,
+    ensembles: CUSTOM_ENSEMBLES,
+  };
+}
+
+import { getInstalledPack } from './packStorage';
 /**
  * Dynamic Procedural Generator
  * Generates infinite new original bands and visual gags matching the classic
@@ -1310,11 +1332,17 @@ function pickWeightedWord(customList: string[], stockList: string[], customWeigh
   return stockList[Math.floor(Math.random() * stockList.length)];
 }
 
-function generateCandidateBandName(pool: SemanticWordPool): string {
+function generateCandidateBandName(
+  pool: SemanticWordPool,
+  dynamicPools?: { adjectives: string[]; nouns: string[]; ensembles: string[] }
+): string {
+  const adjs = dynamicPools ? dynamicPools.adjectives : CUSTOM_ADJECTIVES;
+  const nouns = dynamicPools ? dynamicPools.nouns : CUSTOM_NOUNS;
+  const ensembles = dynamicPools ? dynamicPools.ensembles : CUSTOM_ENSEMBLES;
   const pattern = Math.floor(Math.random() * 8);
-  const randAdj = capitalizeWord(pickWeightedWord(CUSTOM_ADJECTIVES, EXPANDED_ADJECTIVES));
-  const randNoun = capitalizeWord(pickWeightedWord(CUSTOM_NOUNS, EXPANDED_NOUNS));
-  const randEnsemble = capitalizeWord(pickWeightedWord(CUSTOM_ENSEMBLES, EXPANDED_ENSEMBLES));
+  const randAdj = capitalizeWord(pickWeightedWord(adjs, EXPANDED_ADJECTIVES));
+  const randNoun = capitalizeWord(pickWeightedWord(nouns, EXPANDED_NOUNS));
+  const randEnsemble = capitalizeWord(pickWeightedWord(ensembles, EXPANDED_ENSEMBLES));
   const poolPrefix = pool.prefixes[Math.floor(Math.random() * pool.prefixes.length)];
   const poolNoun = pool.nouns[Math.floor(Math.random() * pool.nouns.length)];
 
