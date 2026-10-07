@@ -30,8 +30,7 @@ jobs:
           import os
           OUTPUT_FILE = "consolidated_repo.txt"
           EXCLUDED_DIRS = {".git", ".github", "node_modules", "venv", "__pycache__"}
-          ALLOWED_EXTENSIONS = {".py", ".js", ".ts", ".md", ".json", ".html", ".css", ".yaml", ".yml"}
-
+          ALLOWED_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".json", ".html", ".css", ".yaml", ".yml"}
           def main():
               with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
                   for root, dirs, files in os.walk("."):
