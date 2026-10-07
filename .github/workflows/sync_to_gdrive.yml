@@ -1,79 +1,48 @@
 name: Sync Codebase to Google Drive
 
 on:
-
   schedule:
-
     # Runs every day at midnight UTC
-
     - cron: '0 0 * * *'
-
   push:
-
     branches:
-
       - main
-
   workflow_dispatch:
 
 jobs:
-
   sync:
-
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout Code
-
         uses: actions/checkout@v4
-
+        
       - name: Set up Python
-
         uses: actions/setup-python@v5
-
         with:
-
           python-version: '3.10'
-
+          
       - name: Format Repository Content
-
         run: python .github/scripts/format_repo.py
-
+        
       - name: Setup Rclone
-
-        uses: rclone/rclone-python-action@v1
-
+        # Install Rclone directly using their official installation script
+        run: curl https://rclone.org/install.sh | sudo bash
+        
       - name: Configure and Push to Google Drive
-
         env:
-
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
-
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-
         run: |
-
           # Write Service Account key to temp file
-
           echo "$GDRIVE_SA_KEY" > sa_key.json
-
           
-
           # Configure rclone dynamically
-
           rclone config create gdrive drive \
-
             service_account_file=sa_key.json \
-
             scope=drive.file
-
+            
           # Copy/Overwrite consolidated file to Google Drive
-
           rclone copyto consolidated_repo.txt gdrive:${GDRIVE_FOLDER_ID}/consolidated_repo.txt
-
           
-
           # Cleanup key file
-
           rm sa_key.json
