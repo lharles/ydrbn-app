@@ -51,25 +51,10 @@ jobs:
       - name: Format Repository Content
         run: python format_repo.py
         
-      - name: Setup Rclone
-        # Install Rclone directly using their official installation script
-        run: curl https://rclone.org/install.sh | sudo bash
-        
-      - name: Configure and Push to Google Drive
-        env:
-          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-        run: |
-          # Write Service Account key to temp file
-          echo "$GDRIVE_SA_KEY" > sa_key.json
-          
-          # Configure rclone dynamically
-          rclone config create gdrive drive \
-            service_account_file=sa_key.json \
-            scope=drive.file
-            
-          # Copy/Overwrite consolidated file to Google Drive
-          rclone copyto consolidated_repo.txt gdrive:${GDRIVE_FOLDER_ID}/consolidated_repo.txt
-          
-          # Cleanup key file
-          rm sa_key.json
+      - name: Push to Google Drive
+        uses: adityak74/google-drive-upload-action@main
+        with:
+          credentials: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          filename: "consolidated_repo.txt"
+          folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
+          overwrite: "true" # Crucial: tells it to overwrite the existing file instead of creating copies
