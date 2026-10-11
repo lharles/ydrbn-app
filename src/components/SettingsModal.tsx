@@ -1,6 +1,32 @@
-import { ContentPackSection } from './ContentPackSection';
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Cpu, Wifi, Download, Lock } from 'lucide-react';
+import { 
+  X, 
+  Cpu, 
+  Download, 
+  Lock, 
+  RefreshCw, 
+  ChevronDown, 
+  ChevronRight, 
+  ChevronLeft, 
+  Package, 
+  Sliders, 
+  Power, 
+  BookOpen, 
+  Shapes, 
+  Image as ImageIcon, 
+  Sparkles, 
+  AlertTriangle, 
+  Radio, 
+  Send 
+} from 'lucide-react';
+import { 
+  getAutoCheckUpdatesPref, 
+  setAutoCheckUpdatesPref,
+  performFactoryReset
+} from '../services/storageService';
+import { ContentPackSection } from './ContentPackSection';
+import * as prefService from '../services/preferencesService';
+import { hydrateContentPools } from '../services/proceduralGenerator';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -10,28 +36,69 @@ interface SettingsModalProps {
   isDevMode: boolean;
   onToggleDevMode: (unlocked: boolean) => void;
   hasServerKey?: boolean;
+  onOpenDispatch?: () => void;
 }
+
+type SettingsView = 'main' | 'cargo-bay' | 'directors-chair';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   isDevMode,
   onToggleDevMode,
+  onOpenDispatch,
 }) => {
-  // Secret 4x4 matrix state: each row (0..3) has selected column (0..3)
+  const [currentView, setCurrentView] = useState<SettingsView>('main');
+
+  const [prefs, setPrefs] = useState(() => {
+    if (typeof prefService.getPreferences === 'function') {
+      return prefService.getPreferences();
+    }
+    try {
+      const raw = localStorage.getItem('ydrbn_preferences');
+      return raw ? JSON.parse(raw) : {
+        disableDefaultWords: false,
+        disableDefaultSubjects: false,
+        disableDefaultBackgrounds: false,
+        disableEmojis: false,
+        disabledPacks: [],
+      };
+    } catch {
+      return {
+        disableDefaultWords: false,
+        disableDefaultSubjects: false,
+        disableDefaultBackgrounds: false,
+        disableEmojis: true,
+        disabledPacks: [],
+      };
+    }
+  });
+
+  const [autoCheckUpdates, setAutoCheckUpdates] = useState<boolean>(() => getAutoCheckUpdatesPref());
+  const [isDevCollapsed, setIsDevCollapsed] = useState(true);
+  const [isDangerCollapsed, setIsDangerCollapsed] = useState(true);
+  const [confirmReset, setConfirmReset] = useState(false);
+
   const [matrix, setMatrix] = useState<number[]>([0, 0, 0, 0]);
-  
-  // Only reveals the trap slider after 10 silent seconds
   const [sliderRevealed, setSliderRevealed] = useState(false);
-  
-// Check if the global prompt was already intercepted before this modal mounted
+
   const [isInstallable, setIsInstallable] = useState<boolean>(() => {
     return typeof window !== 'undefined' && Boolean((window as any).deferredPrompt);
   });
 
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Listen to global PWA events dispatched from index.html
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentView('main');
+      setConfirmReset(false);
+      setIsDangerCollapsed(true);
+      if (typeof prefService.getPreferences === 'function') {
+        setPrefs(prefService.getPreferences());
+      }
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if ((window as any).deferredPrompt) {
       setIsInstallable(true);
@@ -61,26 +128,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // Matrix combination check:
-  // Expected sequence mapping: Row 1 = Col 2 (index 1), Row 2 = Col 2 (index 1), Row 3 = Col 3 (index 2), Row 4 = Col 3 (index 2)
+  const handleToggleAutoCheck = (checked: boolean) => {
+    setAutoCheckUpdates(checked);
+    setAutoCheckUpdatesPref(checked);
+  };
+
+  const handleTogglePreference = async (key: string) => {
+    const currentVal = !!(prefs as any)[key];
+    const nextVal = !currentVal;
+    const nextPrefs = { ...prefs, [key]: nextVal };
+    setPrefs(nextPrefs);
+
+    if (typeof (prefService as any).savePreferences === 'function') {
+      (prefService as any).savePreferences(nextPrefs);
+    } else {
+      try {
+        localStorage.setItem('ydrbn_preferences', JSON.stringify(nextPrefs));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    await hydrateContentPools();
+  };
+
   const isComboActive =
     matrix[0] === 1 &&
     matrix[1] === 1 &&
     matrix[2] === 2 &&
     matrix[3] === 2;
 
-  // The Silent 10-Second Timer & Slider Spawn
   useEffect(() => {
-    // If combo is broken, instantly kill the timer and hide the slider
     if (!isComboActive) {
       if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
       setSliderRevealed(false);
       return;
     }
 
-    // If combo is active, start a silent 10-second countdown
     holdTimeoutRef.current = setTimeout(() => {
-      // Spawn the decoy slider
       setSliderRevealed(true);
     }, 10000);
 
@@ -90,36 +175,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   }, [isComboActive]);
 
   const handleRadioClick = (rowIdx: number, colIdx: number) => {
-    // Final Trigger Check:
-    // If the slider has been spawned AND user clicks bottom-right button (R4, C4)
     if (sliderRevealed && rowIdx === 3 && colIdx === 3) {
       onToggleDevMode(!isDevMode);
-      setMatrix([0, 0, 0, 0]); // Reset matrix (which hides slider via useEffect)
+      setMatrix([0, 0, 0, 0]);
       return;
     }
-
 
     setMatrix((prev) => {
       const next = [...prev];
       next[rowIdx] = colIdx;
-
-      // Penalize deviation: If the user is currently building the combo but enters a wrong value,
-      // reset the entire board instantly.
       const expected = [1, 1, 2, 2];
-      
-      // We only punish if they have entered values. 0 means unselected in our system.
       if (next[rowIdx] !== expected[rowIdx] && next[rowIdx] !== 0) {
         return [0, 0, 0, 0];
       }
-
       return next;
     });
   };
 
-  // The Decoy Slider Handler
   const handleDecoySliderClick = () => {
-    // Punish curiosity: wipe the matrix. 
-    // This immediately breaks `isComboActive`, which triggers the useEffect to hide the slider.
     setMatrix([0, 0, 0, 0]);
   };
 
@@ -128,179 +201,443 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
       <div className="w-full max-w-sm bg-[#111625] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-[#0c101d]">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-orange-400" />
-            <h3 className="font-bold text-sm tracking-wide text-white">
-              Y.D.R.B.N. System Settings
-            </h3>
+        {/* Dynamic Modal Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-[#0c101d] shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {currentView !== 'main' && (
+              <button
+                type="button"
+                onClick={() => setCurrentView('main')}
+                className="p-1 -ml-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all active:scale-95 shrink-0"
+                aria-label="Back to main settings"
+              >
+                <ChevronLeft className="w-4 h-4 text-amber-400" />
+              </button>
+            )}
+
+            {currentView === 'cargo-bay' ? (
+              <div className="flex items-center gap-2 truncate">
+                <Package className="w-4 h-4 text-amber-400 shrink-0" />
+                <h3 className="font-display tracking-wider text-base text-white truncate">The Cargo Bay</h3>
+              </div>
+            ) : currentView === 'directors-chair' ? (
+              <div className="flex items-center gap-2 truncate">
+                <Sliders className="w-4 h-4 text-emerald-400 shrink-0" />
+                <h3 className="font-bold text-sm tracking-wide text-white truncate">The Director&apos;s Chair</h3>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 truncate">
+                <Cpu className="w-4 h-4 text-orange-400 shrink-0" />
+                <h3 className="font-bold text-sm tracking-wide text-white truncate">Y.D.R.B.N. System Settings</h3>
+              </div>
+            )}
           </div>
+
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all active:scale-95"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all active:scale-95 shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content body - TIGHTENED PADDING AND SPACING */}
-        <div className="p-3 space-y-2.5 overflow-y-auto text-xs text-slate-300">
-          
-          {/* Architecture Status */}
-          <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-200">Engine Status</span>
-              <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400">
-                <Wifi className="w-3 h-3" />
-                100% Client-Side
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-tight">
-              Self-contained HTML5 Canvas generator & Web Audio synthesizer. Zero cloud servers,
-              zero stock photo APIs, zero external costs. Instant offline rendering (&lt;50ms).
-            </p>
+        {/* VIEW 1: THE CARGO BAY SUBMENU */}
+        {currentView === 'cargo-bay' && (
+          <div className="p-3 overflow-y-auto text-xs text-slate-300 flex-1">
+            <ContentPackSection />
           </div>
+        )}
 
-          {/* Custom Photo Infos */}
-          <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-200">Custom Photo Covers</span>
-              <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400">
-                Selecting Photos
+        {/* VIEW 2: THE DIRECTOR'S CHAIR SUBMENU */}
+        {currentView === 'directors-chair' && (
+          <div className="p-4 space-y-3 overflow-y-auto text-xs text-slate-300 flex-1">
+            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="font-bold text-emerald-300 block text-xs">
+                Asset & Generator Overrides
               </span>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Fine-tune synthesis pools. Disable default built-in vectors, backgrounds, or stock words to generate albums exclusively from your installed expansion packs.
+              </p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-tight">
-              Note: The analog custom photos engine utilizes persistent memory buffers. Processing
-              custom photos may result in electronic bleed-through or double-exposures on sub-
-              sequent pressings until the tray is flushed.
-            </p>
-          </div>
 
-          {/* PWA Offline / Install Flow */}
-          <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-slate-200">App Installation</span>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Offline Ready
-              </span>
-            </div>
-            
-            {isInstallable ? (
-              <>
-                <p className="text-[11px] text-slate-400 leading-tight mb-2">
-                  Install Y.D.R.B.N. directly to your device for instant offline access without an App Store.
+            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/90 flex items-center justify-between gap-3">
+              <div className="space-y-0.5 min-w-0 pr-1">
+                <div className="flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="font-bold text-slate-200 text-xs">Core Word Pools</span>
+                </div>
+                <p className="text-[10.5px] text-slate-400 leading-tight">
+                  Disable default vocabulary to draw names exclusively from installed word packs.
                 </p>
-                <button
-                  onClick={handleInstallClick}
-                  className="w-full py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Install App (Android / Desktop)
-                </button>
-              </>
-            ) : (
-              <div className="bg-black/40 p-2 rounded-lg border border-slate-800 text-[10.5px] text-slate-400 leading-tight">
-                <span className="text-amber-300 font-bold block mb-1">Apple iOS / Safari Installation:</span>
-                Tap the <strong className="text-slate-200">Share</strong> icon at the bottom of your Safari menu, scroll down, and tap <strong className="text-slate-200">Add to Home Screen</strong> to install.
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => handleTogglePreference('disableDefaultWords')}
+                className={`py-1.5 px-2.5 rounded-lg font-mono font-bold text-[10px] shrink-0 transition-all flex items-center gap-1.5 ${
+                  prefs.disableDefaultWords
+                    ? 'bg-rose-950/40 text-rose-300 border border-rose-800/60'
+                    : 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/60 shadow-sm'
+                }`}
+              >
+                <Power className="w-3 h-3" />
+                <span>{prefs.disableDefaultWords ? 'DISABLED' : 'ENABLED'}</span>
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/90 flex items-center justify-between gap-3">
+              <div className="space-y-0.5 min-w-0 pr-1">
+                <div className="flex items-center gap-1.5">
+                  <Shapes className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-bold text-slate-200 text-xs">Core Subjects (3D Shapes)</span>
+                </div>
+                <p className="text-[10.5px] text-slate-400 leading-tight">
+                  Disable procedural vector drawings to pull exclusively from installed subject cutout packs.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference('disableDefaultSubjects')}
+                className={`py-1.5 px-2.5 rounded-lg font-mono font-bold text-[10px] shrink-0 transition-all flex items-center gap-1.5 ${
+                  prefs.disableDefaultSubjects
+                    ? 'bg-rose-950/40 text-rose-300 border border-rose-800/60'
+                    : 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/60 shadow-sm'
+                }`}
+              >
+                <Power className="w-3 h-3" />
+                <span>{prefs.disableDefaultSubjects ? 'DISABLED' : 'ENABLED'}</span>
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/90 flex items-center justify-between gap-3">
+              <div className="space-y-0.5 min-w-0 pr-1">
+                <div className="flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span className="font-bold text-slate-200 text-xs">Core Backdrops & Scenes</span>
+                </div>
+                <p className="text-[10.5px] text-slate-400 leading-tight">
+                  Disable default canvas scenes to use only installed background texture packs.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference('disableDefaultBackgrounds')}
+                className={`py-1.5 px-2.5 rounded-lg font-mono font-bold text-[10px] shrink-0 transition-all flex items-center gap-1.5 ${
+                  prefs.disableDefaultBackgrounds
+                    ? 'bg-rose-950/40 text-rose-300 border border-rose-800/60'
+                    : 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/60 shadow-sm'
+                }`}
+              >
+                <Power className="w-3 h-3" />
+                <span>{prefs.disableDefaultBackgrounds ? 'DISABLED' : 'ENABLED'}</span>
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/90 flex items-center justify-between gap-3">
+              <div className="space-y-0.5 min-w-0 pr-1">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                  <span className="font-bold text-slate-200 text-xs">Emoji Modifier Stamps</span>
+                </div>
+                <p className="text-[10.5px] text-slate-400 leading-tight">
+                  Exclude emoji modifier stamps and sticker layers from generated sleeve artwork.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference('disableEmojis')}
+                className={`py-1.5 px-2.5 rounded-lg font-mono font-bold text-[10px] shrink-0 transition-all flex items-center gap-1.5 ${
+                  prefs.disableEmojis
+                    ? 'bg-rose-950/40 text-rose-300 border border-rose-800/60'
+                    : 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/60 shadow-sm'
+                }`}
+              >
+                <Power className="w-3 h-3" />
+                <span>{prefs.disableEmojis ? 'DISABLED' : 'ENABLED'}</span>
+              </button>
+            </div>
           </div>
+        )}
 
-          {/* Secret Developer Mode Matrix */}
-          <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-bold text-slate-200">Dev Mode</span>
-              </div>
-              {/* Covert UI: Never shows "UNLOCKED" in settings, always appears locked */}
-              <span className="text-[10px] font-mono text-slate-500">LOCKED</span>
+        {/* VIEW 3: MAIN SETTINGS MENU */}
+        {currentView === 'main' && (
+          <div className="p-4 space-y-3 overflow-y-auto text-xs pr-2 flex-1">
+            {/* Submenu Navigation Hub: Compact Horizontal Layout */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentView('cargo-bay')}
+                className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/40 hover:border-amber-400 flex items-center justify-between transition-all group shadow-sm active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-1">
+                  <Package className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="text-left min-w-0">
+                    <span className="font-bold text-xs text-white block leading-tight truncate">The Cargo Bay</span>
+                    <span className="text-[9.5px] text-slate-400 leading-tight block truncate mt-0.5">Manage packs</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-300 transition-colors shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('directors-chair')}
+                className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-emerald-500/40 hover:border-emerald-400 flex items-center justify-between transition-all group shadow-sm active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-1">
+                  <Sliders className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="text-left min-w-0">
+                    <span className="font-bold text-xs text-white block leading-tight truncate">Director&apos;s Chair</span>
+                    <span className="text-[9.5px] text-slate-400 leading-tight block truncate mt-0.5">Pool overrides</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-300 transition-colors shrink-0" />
+              </button>
             </div>
 
-            <p className="text-[10px] text-slate-400">
-              Lock and Unlock Here.
-            </p>
-
-            {/* Matrix Radio Grid */}
-            <div className="bg-black/40 p-2 rounded-lg border border-slate-800 space-y-1.5">
-              <div className="grid grid-cols-5 gap-1 text-[10px] text-slate-500 font-mono text-center">
-                <span>1701</span>
-                <span>R2</span>
-                <span>C3</span>
-                <span>K2</span>
-                <span>BB</span>
+            {/* Archival Dispatch / Feedback */}
+            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Radio className="w-3.5 h-3.5 text-sky-400" />
+                  <span className="font-bold text-slate-200">Archival Suggestions</span>
+                </div>
+                <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                  Anonymous
+                </span>
               </div>
-              {[0, 1, 2, 3].map((rowIdx) => (
-                <div key={rowIdx} className="grid grid-cols-5 gap-1 items-center">
-                  <span className="text-[10px] font-mono text-slate-400 text-center">
-                    Q{rowIdx + 1}
-                  </span>
-                  {[0, 1, 2, 3].map((colIdx) => {
-                    const isSelected = matrix[rowIdx] === colIdx;
-                    return (
-                      <button
-                        key={colIdx}
-                        type="button"
-                        onClick={() => handleRadioClick(rowIdx, colIdx)}
-                        aria-label={`Row ${rowIdx + 1} Column ${colIdx + 1}`}
-                        className={`h-6 rounded flex items-center justify-center transition-all ${
-                          isSelected
-                            ? 'bg-amber-500 text-slate-950 font-bold border border-amber-300 shadow-sm shadow-amber-500/50'
-                            : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700'
-                        }`}
-                      >
-                        <span className="text-[10px] font-mono">{colIdx + 1}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {/* The Decoy Slider - ONLY mounts after 10 silent seconds of correct combo */}
-            {sliderRevealed && (
-              <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-amber-300 block text-xs">
-                    Dev Mode (Unlimited Drops)
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    Bypasses the 24-hour drop countdown
-                  </span>
-                </div>
+              <p className="text-[11px] text-slate-400 leading-tight">
+                Submit ideas for new expansion packs, word lists, or visual gags directly to the archive queue.
+              </p>
+              {onOpenDispatch && (
                 <button
                   type="button"
-                  onClick={handleDecoySliderClick}
-                  className="relative w-12 h-6 rounded-full transition-colors p-1 bg-slate-700 hover:bg-slate-600"
-                  aria-label="Toggle developer mode"
+                  onClick={() => {
+                    onClose();
+                    onOpenDispatch();
+                  }}
+                  className="w-full py-1.5 px-3 rounded-lg font-bold text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
                 >
-                  <div className="w-4 h-4 rounded-full bg-slate-400 transition-transform translate-x-0" />
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Open Dispatch Terminal</span>
                 </button>
+              )}
+            </div>
+
+            {/* Content Manifest Updates */}
+            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-bold text-slate-200">Content Manifest Updates</span>
               </div>
-            )}
+              <p className="text-[11px] text-slate-400 leading-tight">
+                Manual refreshes are always available inside the Cargo Bay. Enable this setting to check for new packs automatically when the app launches online.
+              </p>
+              <label className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 cursor-pointer select-none hover:bg-slate-950/90 transition-colors">
+                <span className="text-[11px] text-slate-300">Check for pack updates on launch</span>
+                <input
+                  type="checkbox"
+                  checked={autoCheckUpdates}
+                  onChange={(e) => handleToggleAutoCheck(e.target.checked)}
+                  className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {/* App Installation */}
+            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-slate-200">App Installation</span>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Offline Ready
+                </span>
+              </div>
+
+              {isInstallable ? (
+                <>
+                  <p className="text-[11px] text-slate-400 leading-tight mb-2">
+                    Install Y.D.R.B.N. directly to your device for instant offline access without an App Store.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleInstallClick}
+                    className="w-full py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Install App (Android / Desktop)
+                  </button>
+                </>
+              ) : (
+                <div className="bg-black/40 p-2 rounded-lg border border-slate-800 text-[10.5px] text-slate-400 leading-tight">
+                  <span className="text-amber-300 font-bold block mb-1">Apple iOS / Safari Installation:</span>
+                  Tap the <strong className="text-slate-200">Share</strong> icon at the bottom of Safari, scroll down, and tap <strong className="text-slate-200">Add to Home Screen</strong>.
+                </div>
+              )}
+            </div>
+
+            {/* Collapsible Danger Zone: Reset App To Default */}
+            <div className="rounded-xl bg-rose-950/20 border border-rose-900/40 overflow-hidden transition-all">
+              <div
+                onClick={() => setIsDangerCollapsed(!isDangerCollapsed)}
+                className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-rose-950/40 select-none transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  {isDangerCollapsed ? (
+                    <ChevronRight className="w-3.5 h-3.5 text-rose-400/70" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 text-rose-300" />
+                  )}
+                  <div className="flex items-center gap-1.5 text-rose-400">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span className="font-bold text-xs">Danger Zone: Reset App To Default</span>
+                  </div>
+                </div>
+              </div>
+
+              {!isDangerCollapsed && (
+                <div className="p-2.5 pt-1 space-y-2 border-t border-rose-900/40 bg-black/20 animate-in fade-in duration-150">
+                  <p className="text-[11px] text-slate-400 leading-tight">
+                    Purges all downloaded content packs, resets daily drop cooldowns, wipes archived crates, and unregisters cached offline workers.
+                  </p>
+
+                  {!confirmReset ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmReset(true)}
+                      className="w-full py-1.5 px-3 rounded-lg text-xs font-bold text-rose-300 bg-rose-950/50 hover:bg-rose-900/60 border border-rose-800/60 transition-all active:scale-95"
+                    >
+                      Reset App to Factory Defaults
+                    </button>
+                  ) : (
+                    <div className="space-y-1.5 bg-black/40 p-2 rounded-lg border border-rose-900/60">
+                      <span className="text-[10.5px] text-rose-200 font-semibold block text-center">
+                        Are you sure? This cannot be undone.
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmReset(false)}
+                          className="flex-1 py-1 px-2 rounded text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => performFactoryReset()}
+                          className="flex-1 py-1 px-2 rounded text-[11px] font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                        >
+                          Confirm Wipe
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Collapsible Developer Controls Block */}
+            <div className="rounded-xl bg-slate-900/90 border border-slate-800 overflow-hidden transition-all">
+              <div
+                onClick={() => setIsDevCollapsed(!isDevCollapsed)}
+                className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 select-none transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  {isDevCollapsed ? (
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-300" />
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-bold text-slate-200 text-xs">Developer Controls</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono text-slate-500">
+                  {isDevMode ? 'UNLOCKED' : 'LOCKED'}
+                </span>
+              </div>
+
+              {!isDevCollapsed && (
+                <div className="p-2.5 pt-1 space-y-2 border-t border-slate-800/60 bg-black/20">
+                  <p className="text-[10px] text-slate-400">
+                    Lock and unlock bypass controls here.
+                  </p>
+
+                  <div className="bg-black/40 p-2 rounded-lg border border-slate-800 space-y-1.5">
+                    <div className="grid grid-cols-5 gap-1 text-[10px] text-slate-500 font-mono text-center">
+                      <span>1701</span>
+                      <span>R2</span>
+                      <span>C3</span>
+                      <span>K2</span>
+                      <span>BB</span>
+                    </div>
+                    {[0, 1, 2, 3].map((rowIdx) => (
+                      <div key={rowIdx} className="grid grid-cols-5 gap-1 items-center">
+                        <span className="text-[10px] font-mono text-slate-400 text-center">
+                          R{rowIdx + 1}
+                        </span>
+                        {[0, 1, 2, 3].map((colIdx) => (
+                          <button
+                            key={colIdx}
+                            type="button"
+                            onClick={() => handleRadioClick(rowIdx, colIdx)}
+                            className={`h-5 rounded border text-[9px] font-mono transition-all ${
+                              matrix[rowIdx] === colIdx
+                                ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                                : 'bg-slate-900 border-slate-700 text-slate-600 hover:border-slate-500'
+                            }`}
+                          >
+                            {colIdx}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  {sliderRevealed && (
+                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-amber-300 block text-xs">
+                          Dev Mode (Unlimited Drops)
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Bypasses 24-hour drop countdown.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDecoySliderClick}
+                        className="relative w-12 h-6 rounded-full transition-colors p-1 bg-slate-700 hover:bg-slate-600"
+                        aria-label="Toggle developer mode"
+                      >
+                        <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+        )}
 
-          {/* === PASTE IT RIGHT HERE === */}
-          <ContentPackSection />
-
-          {/* Aesthetic Credit */}
-          <div className="text-[10px] text-slate-500 text-center pt-0.5 font-mono">
-            <a 
-              href="https://www.google.com/search?q=Random+Band+Names+Charles+Key" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:underline transition-colors hover:text-slate-300"
+        {/* Dynamic Modal Footer */}
+        <div className="px-4 py-2.5 border-t border-slate-800 bg-[#0c101d] flex items-center justify-between shrink-0">
+          {currentView !== 'main' ? (
+            <button
+              type="button"
+              onClick={() => setCurrentView('main')}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all active:scale-95 border border-slate-700 flex items-center gap-1.5"
             >
-              Inspired by Charles Key&apos;s &ldquo;Random Band Names, Volume One&rdquo; aesthetic
-            </a>
-          </div>
-        </div>
+              <ChevronLeft className="w-3.5 h-3.5 text-amber-400" />
+              <span>Back</span>
+            </button>
+          ) : (
+            <div />
+          )}
 
-        {/* Footer */}
-        <div className="px-4 py-2.5 border-t border-slate-800 bg-[#0c101d] flex justify-end">
           <button
+            type="button"
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all active:scale-95 border border-slate-700"
           >

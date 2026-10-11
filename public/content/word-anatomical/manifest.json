@@ -1,0 +1,7 @@
+{
+  "id": "ydrbn-word-anatomical",
+  "name": "Clinical Anomalies & Bodily Woes",
+  "version": "1.0.0",
+  "description": "20 awkward anatomy, clinical ailments, and minor physiological inconveniences.",
+  "words": "words.json"
+}

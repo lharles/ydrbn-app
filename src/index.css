@@ -1,6 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
-/* 3D Perspective and Flip Styles - Strictly prevent ghosting across browsers */
+/* =========================================================================
+   1970s HI-FI STEREO CHASSIS — TAILWIND V4 THEME & TYPOGRAPHY
+   ========================================================================= */
+@theme {
+  /* Typography Scale */
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Bebas Neue', 'Oswald', 'Impact', sans-serif;
+  --font-mono: 'Space Mono', 'Courier Prime', 'Consolas', monospace;
+
+  /* 1970s Analog Audio Gear / Smoked Walnut Palette */
+  --color-slate-50: #f9f8f6;
+  --color-slate-100: #f3ede4; /* Warm eggshell text */
+  --color-slate-200: #e2d9cc;
+  --color-slate-300: #c8bcab; /* Muted label text */
+  --color-slate-400: #a39480; /* Secondary descriptions */
+  --color-slate-500: #837462;
+  --color-slate-600: #645647;
+  --color-slate-700: #4a3d31; /* Button borders & hover */
+  --color-slate-800: #352b22; /* Division lines */
+  --color-slate-900: #231d17; /* Section cards */
+  --color-slate-950: #100e0c; /* Deep insets / wells */
+}
+
+/* Base Body & Viewport Floor */
+body, html, #root {
+  background-color: #12100e;
+  color: #f3ede4;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+/* =========================================================================
+   STAMPED METAL HARDWARE UTILITIES
+   ========================================================================= */
+
+/* Institutional Display Heading */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+
+/* Stamped Metal Chassis Button (Beveled Top Highlight + Recessed Drop Shadow) */
+.btn-chassis {
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-chassis:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* Debossed Well (For version badges, serial plates, and metadata insets) */
+.well-inset {
+  font-family: var(--font-mono);
+  background-color: #100e0c;
+  border: 1px solid #352b22;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Hardcoded Modal Headers, Footers & Root Canvas */
+.bg-\[\#0c101d\] {
+  background-color: #12100e !important;
+}
+
+/* Modal Shells & Backdrop Panels */
+.bg-\[\#111625\] {
+  background-color: #1c1814 !important;
+}
+
+/* Submenu Wells & Inset Strips */
+.bg-\[\#0e1320\] {
+  background-color: #161310 !important;
+}
+
+/* 3D Perspective and Flip Styles */
 .perspective-1000 {
   perspective: 1000px;
   -webkit-perspective: 1000px;
@@ -55,7 +134,7 @@
 
 /* Aged paper / cardboard texture for back cover */
 .back-sleeve-texture {
-  background-color: #16181f;
+  background-color: #161310;
   background-image: 
     radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0),
     radial-gradient(rgba(0, 0, 0, 0.25) 1px, transparent 0);
@@ -63,7 +142,7 @@
   background-position: 0 0, 4px 4px;
 }
 
-/* Vintage Typography Classes */
+/* Procedural Canvas Artwork Font Overrides */
 .font-medieval {
   font-family: 'MedievalSharp', cursive, serif;
 }
@@ -84,19 +163,51 @@
   font-family: 'Russo One', sans-serif;
   letter-spacing: 0.04em;
 }
-
 .font-vintage-title {
   font-family: 'Russo One', 'Cinzel', 'Oswald', Georgia, serif;
 }
-
 .font-liner-notes {
   font-family: 'Courier Prime', 'Special Elite', monospace;
 }
 
-/* Custom scrollbars hidden as mandated */
+/* Custom scrollbars hidden */
 * {
   scrollbar-width: none;
 }
 *::-webkit-scrollbar {
   display: none;
+}
+
+/* Future Pressing Holographic Elements */
+@keyframes holoShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.holographic-foil {
+  background: linear-gradient(
+    115deg,
+    rgba(255, 0, 128, 0.20) 0%,
+    rgba(255, 165, 0, 0.20) 18%,
+    rgba(255, 255, 0, 0.20) 32%,
+    rgba(0, 255, 180, 0.20) 48%,
+    rgba(0, 190, 255, 0.20) 65%,
+    rgba(170, 0, 255, 0.20) 82%,
+    rgba(255, 0, 128, 0.20) 100%
+  );
+  background-size: 250% 250%;
+  animation: holoShimmer 7s ease infinite;
+  pointer-events: none;
+}
+
+.lenticular-ridges {
+  background: repeating-linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0.12) 0px,
+    rgba(255, 255, 255, 0.12) 1.5px,
+    transparent 1.5px,
+    transparent 4px
+  );
+  pointer-events: none;
 }

@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* 3D Perspective and Flip Styles - Strictly prevent ghosting across browsers */
+.perspective-1000 {
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+}
+
+.sleeve-front {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg);
+  -webkit-transform: rotateY(0deg);
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.sleeve-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+/* Vinyl ring-wear circular distress overlay */
+.vinyl-ring-wear {
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 38%,
+    rgba(255, 255, 255, 0.05) 46%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(0, 0, 0, 0.3) 53%,
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 62%
+  );
+  pointer-events: none;
+}
+
+/* Aged paper / cardboard texture for back cover */
+.back-sleeve-texture {
+  background-color: #16181f;
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0),
+    radial-gradient(rgba(0, 0, 0, 0.25) 1px, transparent 0);
+  background-size: 8px 8px, 12px 12px;
+  background-position: 0 0, 4px 4px;
+}
+
+/* Vintage Typography Classes */
+.font-medieval {
+  font-family: 'MedievalSharp', cursive, serif;
+}
+.font-bubble {
+  font-family: 'Righteous', 'Bungee', cursive, sans-serif;
+}
+.font-comic {
+  font-family: 'Bangers', cursive, sans-serif;
+  letter-spacing: 0.05em;
+}
+.font-marker {
+  font-family: 'Permanent Marker', cursive, sans-serif;
+}
+.font-monospace {
+  font-family: 'Space Mono', 'Courier Prime', monospace;
+}
+.font-chrome {
+  font-family: 'Russo One', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.font-vintage-title {
+  font-family: 'Russo One', 'Cinzel', 'Oswald', Georgia, serif;
+}
+
+.font-liner-notes {
+  font-family: 'Courier Prime', 'Special Elite', monospace;
+}
+
+/* Custom scrollbars hidden as mandated */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}

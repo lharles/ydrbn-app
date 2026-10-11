@@ -6,6 +6,7 @@ const STORAGE_KEY_ALBUMS = 'ydrbn_albums_v6';
 const STORAGE_KEY_DEV_MODE = 'ydrbn_dev_mode_unlocked';
 const STORAGE_KEY_LAST_DROP = 'ydrbn_last_drop_time';
 const STORAGE_KEY_CUSTOM_PHOTOS_FLAG = 'ydrbn_use_custom_photos';
+const STORAGE_KEY_AUTO_CHECK_UPDATES = 'ydrbn_auto_check_updates';
 export const STORAGE_KEY_RECENT_ALBUMS = 'ydrbn_recent_albums';
 export const MAX_RECENT_ALBUMS = 28;
 
@@ -232,6 +233,22 @@ export function getUseCustomPhotosPref(): boolean {
   }
 }
 
+export function getAutoCheckUpdatesPref(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY_AUTO_CHECK_UPDATES) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setAutoCheckUpdatesPref(enabled: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_AUTO_CHECK_UPDATES, enabled ? 'true' : 'false');
+  } catch (e) {
+    console.error('Failed to save auto check updates pref:', e);
+  }
+}
+
 export function setUseCustomPhotosPref(enabled: boolean): void {
   try {
     localStorage.setItem(STORAGE_KEY_CUSTOM_PHOTOS_FLAG, enabled ? 'true' : 'false');
@@ -257,4 +274,52 @@ export function formatCooldown(ms: number): string {
   const seconds = totalSeconds % 60;
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+export async function performFactoryReset(): Promise<void> {
+  // 1. Wipe synchronous web storage
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch (e) {
+    console.error('Failed to clear web storage:', e);
+  }
+
+  // 2. Drop IndexedDB database(s)
+  try {
+    if (typeof indexedDB !== 'undefined') {
+      indexedDB.deleteDatabase('ydrbn_packs_db');
+      if (indexedDB.databases) {
+        const dbs = await indexedDB.databases();
+        for (const db of dbs) {
+          if (db.name) indexedDB.deleteDatabase(db.name);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to drop IndexedDB:', e);
+  }
+
+  // 3. Purge CacheStorage API
+  try {
+    if (typeof caches !== 'undefined') {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }
+  } catch (e) {
+    console.error('Failed to purge CacheStorage:', e);
+  }
+
+  // 4. Unregister all active Service Workers
+  try {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((r) => r.unregister()));
+    }
+  } catch (e) {
+    console.error('Failed to unregister service workers:', e);
+  }
+
+  // 5. Force a hard reload with a cache-busting timestamp
+  window.location.href = `${window.location.origin}${window.location.pathname}?reset=${Date.now()}`;
 }

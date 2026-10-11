@@ -1,0 +1,19 @@
+{
+  "id": "ydrbn-bg-cleandirty",
+  "name": "Clean/Dirty Backgrounds",
+  "version": "1.0.1",
+  "stamps": [
+    "CLEANDIRTY-Alien_metallic_surface_split.jpg",
+    "CLEANDIRTY-Blue_fibers_and_black_residue.jpg",
+    "CLEANDIRTY-Concrete_floor_split_horizontally.jpg",
+    "CLEANDIRTY-Copper_sheet_with_crack.jpg",
+    "CLEANDIRTY-Fog_rolling_across_stone_surface.jpg",
+    "CLEANDIRTY-Frosted_glass_pane_with_smoke.jpg",
+    "CLEANDIRTY-Glowing_fissure_dividing_alien.jpg",
+    "CLEANDIRTY-Obsidian_floor_split_by_chalk.jpg",
+    "CLEANDIRTY-River_dividing_planetary_surface.jpg",
+    "CLEANDIRTY-Sanded_and_rotting_wood_plank.jpg",
+    "CLEANDIRTY-Split_marble_surface_with_grime.jpg",
+    "CLEANDIRTY-Stainless_steel_sheet_with_tape.jpg"
+  ]
+}

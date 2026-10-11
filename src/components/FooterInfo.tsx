@@ -1,13 +1,21 @@
 import React from 'react';
-import { Settings, ShieldAlert, Wifi } from 'lucide-react';
+import { Settings, ShieldAlert, HelpCircle, Info } from 'lucide-react';
 
 interface FooterInfoProps {
   onOpenSettings: () => void;
+  onOpenHelp: () => void;
+  onOpenInfo: () => void;
+  hasSeenHelp: boolean;
+  hasSeenInfo: boolean;
   isDevMode: boolean;
 }
 
 export const FooterInfo: React.FC<FooterInfoProps> = ({
   onOpenSettings,
+  onOpenHelp,
+  onOpenInfo,
+  hasSeenHelp,
+  hasSeenInfo,
   isDevMode,
 }) => {
   return (
@@ -29,14 +37,54 @@ export const FooterInfo: React.FC<FooterInfoProps> = ({
         </span>
       </div>
 
-      <button
-        onClick={onOpenSettings}
-        aria-label="Settings and Developer Mode"
-        title="Settings & Dev Mode"
-        className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-all active:scale-95 shrink-0 shadow-sm"
-      >
-        <Settings className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Info Button: Left of Help, pulses until first opened */}
+        <button
+          type="button"
+          onClick={onOpenInfo}
+          aria-label="System Specifications and Credits"
+          title="System Specs & Credits"
+          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative ${
+            !hasSeenInfo
+              ? 'bg-sky-500/20 text-sky-300 border-sky-500/60 animate-pulse hover:bg-sky-500/30'
+              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-sky-400 border-slate-700/80'
+          }`}
+        >
+          <Info className="w-4 h-4" />
+          {!hasSeenInfo && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+          )}
+        </button>
+
+        {/* Help Button: Flashes until first opened */}
+        <button
+          type="button"
+          onClick={onOpenHelp}
+          aria-label="Field Guide and Instructions"
+          title="Field Guide & Instructions"
+          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative ${
+            !hasSeenHelp
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 animate-pulse hover:bg-amber-500/30'
+              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border-slate-700/80'
+          }`}
+        >
+          <HelpCircle className="w-4 h-4" />
+          {!hasSeenHelp && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          )}
+        </button>
+
+        {/* Settings Button */}
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="Settings and Developer Mode"
+          title="Settings & Dev Mode"
+          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-all active:scale-95 shadow-sm"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+      </div>
     </footer>
   );
 };

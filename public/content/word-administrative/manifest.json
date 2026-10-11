@@ -1,0 +1,7 @@
+{
+  "id": "ydrbn-word-administrative",
+  "name": "Administrative & Regulatory Words",
+  "version": "1.0.0",
+  "description": "33 procedural filings, mandates, and bureaucratic terminology.",
+  "words": "words.json"
+}

@@ -27,6 +27,9 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
   onOpenZoom,
   hideZoomButton = false,
 }) => {
+  // Detect temporal anomaly: pressed in a year later than device clock
+  const isFuturePressing = album ? parseInt(album.year, 10) > new Date().getFullYear() : false;
+
   // Split tracks if needed, otherwise render all tracks
   const tracks = album?.tracks || [
     'Echoes of the Marmalade Sun',
@@ -40,7 +43,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
   ];
 
   const getPositionClasses = (pos: HypeSticker['position'], index: number = 0) => {
-    // Pushed tight to the edges (1.5) to maximize clearance from titles
     switch (pos) {
       case 'top-right':
         return index === 1 ? 'top-10 right-1.5' : 'top-1.5 right-1.5';
@@ -52,18 +54,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
         return index === 1 ? 'top-10 left-1.5' : 'top-1.5 left-1.5';
       default:
         return 'bottom-1.5 left-1.5';
-    }
-  };
-
-  const getStickerShape = (type: HypeSticker['type']) => {
-    switch (type) {
-      case 'circle':
-        return 'rounded-full aspect-square text-center flex items-center justify-center';
-      case 'square':
-        return 'rounded-sm aspect-square text-center flex items-center justify-center';
-      case 'rect':
-      default:
-        return 'rounded-sm';
     }
   };
 
@@ -148,7 +138,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
     }
   };
 
-  // Adjust sticker position to strict peripheral safe zones to prevent colliding with title compositions
   const getAdjustedStickerPosition = (
     pos: HypeSticker['position'],
     layout?: TitleComposition,
@@ -156,27 +145,17 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
   ): HypeSticker['position'] => {
     switch (layout) {
       case 'top-arc':
-        // Top is occupied; use bottom corners
         return index === 0 ? 'bottom-left' : 'bottom-right';
-
       case 'split-corners':
-        // Top-left and bottom-right are occupied; use bottom-left exclusively
         return 'bottom-left';
-
       case 'diagonal-cross':
-        // Cuts through the middle; top-right and bottom-left are safest
         return index === 0 ? 'top-right' : 'bottom-left';
-
       case 'bottom-banner':
       default:
-        // CRITICAL FIX: Because all newly added types.ts layouts (like 'poster-grid') 
-        // fall back to rendering as a bottom-banner, we MUST force their stickers 
-        // to the top corners to prevent overlaps.
         return index === 0 ? 'top-left' : 'top-right';
     }
   };
 
-  // Render Title Overlay according to one of 4 composition archetypes
   const renderTitleComposition = () => {
     if (!album) return null;
 
@@ -186,7 +165,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
     const layout = album.titleLayout || 'top-arc';
     const skew = album.skewDeg || 0;
 
-    // Dynamically scale down font size for long band names to avoid boundary clipping
     const getBandNameSize = (name: string) => {
       if (name.length > 20) return 'text-base sm:text-lg';
       if (name.length > 14) return 'text-lg sm:text-xl';
@@ -194,9 +172,7 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
     };
 
     switch (layout) {
-      // 1. TOP-ARC: Centered along top third with clamped tilt and high-contrast subtitle pill
       case 'top-arc': {
-        // Clamp rotation to +/- 4 degrees max near the top edge so long names never clip the ceiling
         const safeSkew = Math.max(-4, Math.min(4, skew * 0.3));
         const fontSizeClass = getBandNameSize(album.bandName);
 
@@ -215,7 +191,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
               >
                 {album.bandName}
               </h1>
-              {/* High-contrast backing pill ensures readability over busy or bright backdrops */}
               <div className="inline-block bg-black/75 backdrop-blur-xs px-2.5 py-0.5 rounded border border-amber-400/50 shadow-md mt-0.5">
                 <h2 className="font-liner-notes text-[10px] sm:text-xs font-bold text-amber-200 uppercase tracking-widest italic leading-none">
                   {album.albumTitle}
@@ -226,7 +201,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
         );
       }
 
-      // 2. DIAGONAL-CROSS: Staggered across middle with bold -18° to +18° slant
       case 'diagonal-cross':
         return (
           <div className="absolute inset-0 pointer-events-none flex flex-col justify-center items-center p-4 text-center z-10">
@@ -252,11 +226,9 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
           </div>
         );
 
-      // 3. SPLIT-CORNERS: Band name tucked top-left; album title tucked bottom-right
       case 'split-corners':
         return (
           <div className="absolute inset-0 pointer-events-none p-4 z-10 flex flex-col justify-between">
-            {/* Top-left: Band Name */}
             <div
               style={{
                 transform: `rotate(${skew}deg)`,
@@ -272,7 +244,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
               </h1>
             </div>
 
-            {/* Bottom-right: Album Title */}
             <div
               style={{
                 transform: `rotate(${-skew}deg)`,
@@ -289,7 +260,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
           </div>
         );
 
-      // 4. BOTTOM-BANNER: Heavy horizontal banner locked along lower margin
       case 'bottom-banner':
       default:
         return (
@@ -337,7 +307,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
         }}
       >
         {/* ==================== FRONT SLEEVE ==================== */}
-        {/* Note: sleeve-front has backface-visibility: hidden. All typography and stickers are inside sleeve-front */}
         <div
           onClick={() => {
             if (!isLoading && album) onToggleFlip();
@@ -359,7 +328,6 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
               className="w-full h-full object-cover select-none pointer-events-none filter contrast-[1.05] brightness-95"
             />
           ) : (
-            /* Blank vintage sleeve placeholder before first drop */
             <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#181a24] to-[#0f1118] relative">
               <div className="absolute inset-0 opacity-20 pointer-events-none flex items-center justify-center">
                 <Disc className="w-72 h-72 text-orange-500 animate-[spin_40s_linear_infinite]" />
@@ -384,10 +352,36 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
           {/* Vintage Sleeve Edge Crease and Vignette */}
           <div className="absolute inset-0 shadow-[inset_0_0_24px_rgba(0,0,0,0.85)] pointer-events-none border border-white/5" />
 
-          {/* DYNAMIC MULTI-FONT & DYNAMIC COMPOSITION OVERLAY (direct child of sleeve-front) */}
+          {/* Temporal Anomaly: Holographic Foil, Lenticular Ridges & Chrono-Sash */}
+          {isFuturePressing && (
+            <>
+              <div className="absolute inset-0 holographic-foil pointer-events-none z-20" />
+              <div className="absolute inset-0 lenticular-ridges pointer-events-none z-20 opacity-80" />
+
+              <div className="absolute top-2 right-2 z-30 pointer-events-none flex items-center gap-1.5 bg-black/75 border border-cyan-400/60 rounded px-2 py-0.5 shadow-[0_0_12px_rgba(6,182,212,0.45)] backdrop-blur-xs">
+                <Sparkles className="w-3 h-3 text-cyan-300 animate-spin" />
+                <span className="font-mono text-[9px] font-black tracking-wider text-cyan-200 uppercase">
+                  {album.year} FUTURE PRESSING
+                </span>
+              </div>
+
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none z-20">
+                <div className="w-[140%] py-1.5 bg-gradient-to-r from-transparent via-cyan-950/85 to-transparent border-y border-cyan-400/40 backdrop-blur-[1px] rotate-[-22deg] flex flex-col items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.25)]">
+                  <span className="font-mono text-[10px] sm:text-xs font-black tracking-[0.35em] uppercase text-cyan-100 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)] whitespace-nowrap">
+                    ✦ TEMPORAL ANOMALY • FROM THE FUTURE ✦
+                  </span>
+                  <span className="font-mono text-[8px] tracking-[0.2em] uppercase text-cyan-300/80 font-semibold">
+                    AUTHENTIC {album.year} MASTER TAPE
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Dynamic Multi-Font Overlay */}
           {renderTitleComposition()}
 
-          {/* 1-2 Authentic Hype Stickers (direct children of sleeve-front, rotated and hidden with front face) */}
+          {/* Authentic Hype Stickers */}
           {album?.stickers?.map((st, idx) => {
             const adjustedPos = getAdjustedStickerPosition(st.position, album.titleLayout, idx);
             return (
@@ -414,15 +408,14 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
             );
           })}
 
-          {/* Subtle Zoom & Flip badges - Pushed to extreme corner & faded out until interaction */}
+          {/* Subtle Zoom & Flip Badges */}
           {album && (
             <div className="absolute bottom-1 right-1 z-30 flex items-center gap-1 opacity-25 hover:opacity-100 active:opacity-100 transition-opacity duration-300">
-
               {onOpenZoom && !hideZoomButton && (
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevents flipping when clicking zoom
+                    e.stopPropagation();
                     onOpenZoom();
                   }}
                   className="bg-black/75 hover:bg-black/90 text-amber-200/90 hover:text-amber-100 text-[9px] font-mono px-2 py-0.5 rounded border border-white/15 flex items-center gap-1 shadow-md transition-all active:scale-90 pointer-events-auto"
@@ -440,12 +433,11 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
         </div>
 
         {/* ==================== FLIP VIEW: BACK SLEEVE & TRACKS ==================== */}
-        {/* Note: sleeve-back has backface-visibility: hidden and rotateY(180deg) */}
         <div
           onClick={() => {
             if (!isLoading) onToggleFlip();
           }}
-          className="sleeve-back absolute inset-0 w-full h-full rounded-md overflow-hidden bg-stone-900 border-2 border-stone-300/40 ring-1 ring-black/90 shadow-2xl p-3 flex flex-col justify-between text-stone-200 cursor-pointer select-none backface-hidden rotate-y-180"
+          className="sleeve-back absolute inset-0 w-full h-full rounded-md overflow-hidden bg-stone-900 border-2 border-stone-300/40 ring-1 ring-black/90 shadow-2xl p-2.5 sm:p-3 flex flex-col justify-between text-stone-200 cursor-pointer select-none backface-hidden rotate-y-180"
           style={{
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
@@ -455,7 +447,7 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
             WebkitTransformStyle: 'preserve-3d',
           }}
         >
-          {/* 1. Mirrored Background Image */}
+          {/* Mirrored Background Image */}
           {album?.coverImageUrl && (
             <img
               src={album.coverImageUrl}
@@ -464,50 +456,51 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
             />
           )}
 
-          {/* 2. Heavy Blur & Light Wash (Guarantees text pops while keeping art visible) */}
+          {/* Heavy Blur & Light Wash */}
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[12px] pointer-events-none" />
           
-          {/* 3. Grunge & Ring Wear (Using blend modes so it doesn't darken the image) */}
+          {/* Grunge & Ring Wear */}
           <div className="absolute inset-0 vinyl-ring-wear pointer-events-none opacity-20 mix-blend-overlay" />
           <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.7)] pointer-events-none mix-blend-multiply" />
+
           {/* 1. Header: Band name, album title, release year, catalog number */}
-          <div className="relative z-10 border-b border-amber-500/30 pb-1 flex items-start justify-between gap-2">
+          <div className="relative z-10 shrink-0 border-b border-amber-500/30 pb-1 flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h2 className="font-vintage-title text-xs font-black uppercase tracking-wider text-amber-300 leading-tight whitespace-normal">
+              <h2 className="font-vintage-title text-[11px] sm:text-xs font-black uppercase tracking-wider text-amber-300 leading-tight truncate">
                 {album?.bandName || 'THE SURREAL APOSTLES'}
               </h2>
-              <h3 className="font-liner-notes text-[11px] font-bold text-stone-300 uppercase tracking-tight italic leading-tight whitespace-normal">
+              <h3 className="font-liner-notes text-[10px] sm:text-[11px] font-bold text-stone-300 uppercase tracking-tight italic leading-tight truncate">
                 {album?.albumTitle || 'Acoustic Aberrations'}
               </h3>
             </div>
             <div className="text-right shrink-0">
-              <span className="font-mono text-[9px] font-bold text-orange-400 bg-orange-950/60 px-1.5 py-0.5 rounded border border-orange-500/30">
+              <span className="font-mono text-[8.5px] sm:text-[9px] font-bold text-orange-400 bg-orange-950/60 px-1.5 py-0.5 rounded border border-orange-500/30">
                 {album?.catalogNumber || 'YDR-1977-STEREO'}
               </span>
-              <p className="font-mono text-[8px] text-stone-400 mt-0.5">
+              <p className="font-mono text-[7.5px] sm:text-[8px] text-stone-400 mt-0.5">
                 © {album?.year || '1977'} RECORD CORP
               </p>
             </div>
           </div>
 
-          {/* 2. Full-Width Single-Column Tracklist (Tracks 1 through 8, zero truncation, complete wrapping) */}
-          <div className="relative z-10 bg-black/40 rounded p-2 border border-stone-800/90 my-1 text-[9px] font-liner-notes">
-            <div className="font-bold text-[9px] text-amber-400/90 border-b border-stone-700/80 pb-0.5 mb-1.5 uppercase tracking-wider flex justify-between items-center">
+          {/* 2. Full-Width Single-Column Tracklist: Strict single-line wrapping */}
+          <div className="relative z-10 shrink-0 bg-black/40 rounded p-1.5 sm:p-2 border border-stone-800/90 my-1 text-[8.5px] sm:text-[9px] font-liner-notes">
+            <div className="font-bold text-[8.5px] sm:text-[9px] text-amber-400/90 border-b border-stone-700/80 pb-0.5 mb-1 uppercase tracking-wider flex justify-between items-center">
               <span>Program Tracklist</span>
-              <span className="text-stone-500 text-[8px] font-mono">33⅓ RPM • FULL STEREO</span>
+              <span className="text-stone-500 text-[7.5px] sm:text-[8px] font-mono">33⅓ RPM • FULL STEREO</span>
             </div>
-            <ul className="space-y-0.5 text-stone-300">
+            <ul className="space-y-[1px] text-stone-300">
               {tracks.map((track, i) => (
-                <li key={i} className="flex items-start justify-between gap-2 leading-tight">
-                  <div className="flex items-start gap-1.5 min-w-0">
-                    <span className="text-orange-400/90 font-mono text-[8.5px] font-bold shrink-0">
+                <li key={i} className="flex items-center justify-between gap-2 leading-none">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="text-orange-400/90 font-mono text-[8px] sm:text-[8.5px] font-bold shrink-0">
                       {String(i + 1).padStart(2, '0')}.
                     </span>
-                    <span className="whitespace-normal leading-tight text-stone-200">
+                    <span className="truncate leading-tight text-stone-200">
                       {track}
                     </span>
                   </div>
-                  <span className="text-[8px] text-stone-500 font-mono shrink-0 pt-0.5">
+                  <span className="text-[7.5px] sm:text-[8px] text-stone-500 font-mono shrink-0 pl-1">
                     {i % 2 === 0 ? `3:0${4 + (i % 5)}` : `2:5${8 - (i % 6)}`}
                   </span>
                 </li>
@@ -515,28 +508,23 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
             </ul>
           </div>
 
-          {/* 3. Faux Reviews & Band Lore: natural wrapping without truncation */}
-          <div className="relative z-10 bg-black/40 rounded p-2 border border-stone-800/80 my-0.5 space-y-1.5">
-            {album?.fauxReviews && album.fauxReviews.length > 0 ? (
-              <div className="space-y-1 text-[8.5px] font-liner-notes italic text-amber-200/90">
-                {album.fauxReviews.slice(0, 1).map((rev, idx) => (
-                  <p key={idx} className="leading-snug whitespace-normal break-words">
-                    • {rev}
-                  </p>
-                ))}
+          {/* 3. Faux Reviews & Band Lore: Elastic container that scales text to always preserve layout */}
+          <div className="relative z-10 flex-1 min-h-0 bg-black/40 rounded p-1.5 sm:p-2 border border-stone-800/80 my-0.5 flex flex-col justify-between overflow-hidden">
+            {album?.fauxReviews && album.fauxReviews.length > 0 && (
+              <div className="text-[8px] sm:text-[8.5px] font-liner-notes italic text-amber-200/90 shrink-0 line-clamp-2 leading-tight">
+                • {album.fauxReviews[0]}
               </div>
-            ) : null}
+            )}
 
             {album?.bandBio && (
-              <p className="text-[8px] text-stone-400 leading-snug whitespace-normal break-words font-liner-notes border-t border-stone-800 pt-1">
+              <p className="text-[7.5px] sm:text-[8px] text-stone-400 leading-tight font-liner-notes border-t border-stone-800/80 pt-1 overflow-hidden line-clamp-3 sm:line-clamp-4">
                 {album.bandBio}
               </p>
             )}
           </div>
 
-          {/* 4. Barcode, copyright notice, and stereo/hi-fi logo accents along bottom margin */}
-          <div className="relative z-10 pt-1 border-t border-stone-800 flex items-center justify-between text-[8px] font-mono text-stone-500">
-            {/* Hi-Fi & Stereo badges */}
+          {/* 4. Barcode, copyright notice, and stereo/hi-fi logo accents along bottom margin (always anchored) */}
+          <div className="relative z-10 shrink-0 pt-1 border-t border-stone-800 flex items-center justify-between text-[8px] font-mono text-stone-500">
             <div className="flex items-center gap-1.5">
               <span className="px-1 py-0.2 border border-stone-600 text-stone-300 font-black tracking-widest text-[7px] rounded-xs">
                 HI-FI
@@ -546,12 +534,10 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
               </span>
             </div>
 
-            {/* Micro legal copy */}
             <div className="text-[7px] text-stone-500 text-center truncate max-w-[140px]">
               Y.D.R.B.N. MASTER SOUND LABS • ALL RIGHTS RESERVED
             </div>
 
-            {/* Faux Barcode */}
             <div className="flex flex-col items-center bg-white px-1 py-0.5 rounded-xs">
               <div className="flex gap-[1px] h-3 items-end">
                 <div className="w-[1.5px] h-full bg-black" />

@@ -1,37 +1,36 @@
+import { getStamp } from './packStorage';
+import { getImageBlob } from './packStorage';
 export const imageCache: Record<string, HTMLImageElement> = {};
 const loadedKeys: string[] = [];
 const MAX_CACHED_IMAGES = 24;
 
-export function loadAsset(filename: string): Promise<HTMLImageElement | null> {
-  const cleanName = filename.trim();
-  if (!cleanName || !cleanName.match(/\.(png|jpg|jpeg|webp)$/i)) {
-    return Promise.resolve(null);
-  }
+export async function loadAsset(filename: string): Promise<HTMLImageElement | null> {
+  const cleanName = filename.split('/').pop() || filename;
+  if (imageCache[cleanName]) return imageCache[cleanName];
 
-  if (imageCache[cleanName]?.complete && imageCache[cleanName].naturalWidth > 0) {
-    return Promise.resolve(imageCache[cleanName]);
-  }
-
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = `${import.meta.env.BASE_URL}assets/${cleanName}`;
+
+    // 1. Try to fetch the Blob from IndexedDB (The Cargo Ship)
+    try {
+      const blob = await getStamp(cleanName);
+      if (blob) {
+        img.src = URL.createObjectURL(blob);
+      } else {
+        // 2. Fallback to local /assets/ folder (Core Assets)
+        img.src = `${import.meta.env.BASE_URL}assets/${cleanName}`;
+      }
+    } catch (err) {
+      img.src = `${import.meta.env.BASE_URL}assets/${cleanName}`;
+    }
 
     img.onload = () => {
-      if (loadedKeys.length >= MAX_CACHED_IMAGES) {
-        const oldest = loadedKeys.shift();
-        if (oldest && imageCache[oldest]) {
-          imageCache[oldest].src = '';
-          delete imageCache[oldest];
-        }
-      }
+      if (img.naturalWidth === 0) { resolve(null); return; }
       imageCache[cleanName] = img;
-      loadedKeys.push(cleanName);
       resolve(img);
     };
-
     img.onerror = () => {
-      console.warn(`[AssetManager] Could not load /assets/${cleanName}`);
       resolve(null);
     };
   });

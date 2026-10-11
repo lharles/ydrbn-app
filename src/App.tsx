@@ -2,9 +2,12 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-
 import React, { useState, useEffect } from 'react';
-import { loadRecipeAssets } from './services/assetManager';
+import { ApparelModal } from './components/ApparelModal';
+import { DispatchModal } from './components/DispatchModal';
+import { InfoModal } from './components/InfoModal';
+import { ShareModal } from './components/ShareModal';
+import { HelpModal } from './components/HelpModal';
 import { SleeveZoomModal } from './components/SleeveZoomModal';
 import { AlbumEntry, ToastMessage } from './types';
 import { TopBar } from './components/TopBar';
@@ -17,6 +20,7 @@ import { FooterInfo } from './components/FooterInfo';
 import { SettingsModal } from './components/SettingsModal';
 import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { Toast } from './components/Toast';
+import { loadRecipeAssets } from './services/assetManager';
 import {
   loadAlbums,
   saveAlbums,
@@ -26,75 +30,78 @@ import {
   recordDropTimestamp,
   getUseCustomPhotosPref,
   setUseCustomPhotosPref,
+  getAutoCheckUpdatesPref,
 } from './services/storageService';
-import { generateDailyDrop } from './services/proceduralGenerator';
+import { generateDailyDrop, hydrateContentPools } from './services/proceduralGenerator';
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer } from './services/audioSynthesizer';
+import { getAvailablePacks, checkPackStatus } from './services/contentPackService';
 
-// --- COMPOSITE SHARE IMAGE GENERATOR ---
-const compositeShareImage = async (album: AlbumEntry): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return reject('Canvas error');
+function triggerConfettiBurst() {
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'fixed';
+  canvas.style.inset = '0';
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '99999';
+  document.body.appendChild(canvas);
 
-    const finalizeCanvas = () => {
-      const topGrad = ctx.createLinearGradient(0, 0, 0, 300);
-      topGrad.addColorStop(0, 'rgba(0,0,0,0.85)');
-      topGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = topGrad;
-      ctx.fillRect(0, 0, 1024, 300);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-      const botGrad = ctx.createLinearGradient(0, 724, 0, 1024);
-      botGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      botGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
-      ctx.fillStyle = botGrad;
-      ctx.fillRect(0, 724, 1024, 1024);
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.font = '900 85px "Impact", "Arial Black", sans-serif';
-      ctx.shadowColor = 'rgba(0,0,0,0.9)';
-      ctx.shadowBlur = 15;
-      ctx.shadowOffsetY = 6;
-      ctx.fillText(album.bandName.toUpperCase(), 512, 60, 960);
+  const colors = ['#f59e0b', '#dc2626', '#10b981', '#38bdf8', '#f3ede4'];
+  const particles = Array.from({ length: 90 }).map(() => ({
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    vx: (Math.random() - 0.5) * 18,
+    vy: (Math.random() - 0.7) * 16,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: Math.random() * 8 + 4,
+    rot: Math.random() * 360,
+    vRot: (Math.random() - 0.5) * 12,
+  }));
 
-      ctx.fillStyle = '#facc15';
-      ctx.font = 'bold 65px "Georgia", serif';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(album.albumTitle.toUpperCase(), 512, 960, 960);
-      
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject('Blob failed')),
-        'image/jpeg',
-        0.92
-      );
-    };
+  let frame = 0;
+  function animate() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.35;
+      p.rot += p.vRot;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rot * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      ctx.restore();
+    });
 
-    const coverArt = album.coverImageUrl || (album.recipe ? gagCanvasEngine.renderCover(album.recipe) : null);
-
-    if (coverArt) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, 1024, 1024);
-        finalizeCanvas();
-      };
-      img.onerror = finalizeCanvas; 
-      img.src = coverArt;
+    frame++;
+    if (frame < 130) {
+      requestAnimationFrame(animate);
     } else {
-      finalizeCanvas();
+      canvas.remove();
     }
-  });
-};
+  }
+  animate();
+}
 
 export default function App() {
   const [albums, setAlbums] = useState<AlbumEntry[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isPlayingAtj, setIsPlayingAtj] = useState(false);
+  const [hasUnlockedAtj, setHasUnlockedAtj] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('ydrbn_atj_played') === 'true';
+  });
+
   const [useCustomPhotos, setUseCustomPhotos] = useState(false);
   const [selectedPhotoBase64, setSelectedPhotoBase64] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -115,6 +122,83 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [hasSeenHelp, setHasSeenHelp] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('ydrbn_has_seen_help') === 'true';
+  });
+
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [hasSeenInfo, setHasSeenInfo] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('ydrbn_has_seen_info') === 'true';
+  });
+
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isDispatchOpen, setIsDispatchOpen] = useState(false);
+  const [isApparelOpen, setIsApparelOpen] = useState(false);
+
+  // Launch sequence: Pop Help first if never seen; if Help is already seen but Info is not, pop Info[cite: 14]
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const seenHelp = localStorage.getItem('ydrbn_has_seen_help') === 'true';
+    const seenInfo = localStorage.getItem('ydrbn_has_seen_info') === 'true';
+
+    if (!seenHelp) {
+      setIsHelpOpen(true);
+    } else if (!seenInfo) {
+      setIsInfoOpen(true);
+    }
+  }, []);
+
+  const [isAtjVideoOpen, setIsAtjVideoOpen] = useState(false);
+
+  // Listen for the ATJ fanfare easter egg event
+  useEffect(() => {
+    const handleFanfare = () => {
+      triggerConfettiBurst();
+      setHasUnlockedAtj(true);
+      setIsPlayingAtj(true);
+      addToast('success', '✦ ATJ ARCHIVE UNLOCKED: FREQUENCY CAPTURED ✦');
+    };
+
+    window.addEventListener('ydrbn-atj-fanfare', handleFanfare);
+    return () => window.removeEventListener('ydrbn-atj-fanfare', handleFanfare);
+  }, []);
+
+  const handleOpenHelp = () => {
+    setIsHelpOpen(true);
+    if (!hasSeenHelp) {
+      localStorage.setItem('ydrbn_has_seen_help', 'true');
+      setHasSeenHelp(true);
+    }
+  };
+
+  const handleCloseHelp = () => {
+    setIsHelpOpen(false);
+    if (!hasSeenHelp) {
+      localStorage.setItem('ydrbn_has_seen_help', 'true');
+      setHasSeenHelp(true);
+    }
+    if (!hasSeenInfo && localStorage.getItem('ydrbn_has_seen_info') !== 'true') {
+      setIsInfoOpen(true);
+    }
+  };
+
+  const handleOpenInfo = () => {
+    setIsInfoOpen(true);
+    if (!hasSeenInfo) {
+      localStorage.setItem('ydrbn_has_seen_info', 'true');
+      setHasSeenInfo(true);
+    }
+  };
+
+  const handleCloseInfo = () => {
+    setIsInfoOpen(false);
+    if (!hasSeenInfo) {
+      localStorage.setItem('ydrbn_has_seen_info', 'true');
+      setHasSeenInfo(true);
+    }
+  };
+
   const addToast = (type: 'error' | 'success' | 'info', text: string) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
     setToasts((prev) => [...prev, { id, type, text }]);
@@ -127,37 +211,47 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Initial load & Silent Cache Warmer
   useEffect(() => {
     try {
+      hydrateContentPools();
+
+      if (getAutoCheckUpdatesPref() && typeof navigator !== 'undefined' && navigator.onLine) {
+        getAvailablePacks()
+          .then(async (available) => {
+            let updateCount = 0;
+            for (const pack of available) {
+              const status = await checkPackStatus(pack.id, pack.manifestUrl);
+              if (status.isInstalled && status.hasUpdate) {
+                updateCount++;
+              }
+            }
+            if (updateCount > 0) {
+              addToast('info', `Cargo Bay: ${updateCount} content pack update${updateCount > 1 ? 's' : ''} available!`);
+            }
+          })
+          .catch(() => {});
+      }
+
       const loaded = loadAlbums();
       setAlbums(loaded);
       if (loaded.length > 0) {
         setCurrentIndex(loaded.length - 1);
       }
 
-      const devUnlocked = getDevModeUnlocked();
-      setIsDevMode(devUnlocked);
-
-      const dropTime = getLastDropTimestamp();
-      setLastDropTime(dropTime);
-
+      setIsDevMode(getDevModeUnlocked());
+      setLastDropTime(getLastDropTimestamp());
       setUseCustomPhotos(getUseCustomPhotosPref());
 
-      // Silently fetch assets into memory and RE-BAKE the images for the UI
       const warmAssets = async () => {
         const promises = loaded.map(async (a) => {
           if (a.recipe) {
-            // Wait for background/subject to load into memory
             await loadRecipeAssets(a.recipe.backdrop || '', a.recipe.subject || '').catch(() => {});
-            // Re-bake the beautiful canvas cover and attach it to a fresh object
             return { ...a, coverImageUrl: gagCanvasEngine.renderCover(a.recipe) };
           }
           return a;
         });
         
         const warmedAlbums = await Promise.all(promises);
-        // Push the fully baked images directly into the UI state to replace primitives
         setAlbums(warmedAlbums);
       };
       
@@ -167,7 +261,6 @@ export default function App() {
     }
   }, []);
 
-  // Cooldown countdown timer (Bulletproof Math)
   useEffect(() => {
     const calculateRemaining = () => {
       if (isDevMode || lastDropTime === 0) return 0;
@@ -194,6 +287,7 @@ export default function App() {
       setIsFlipped(false);
       audioSynthesizer.stopAll();
       setIsPlayingAudio(false);
+      setIsPlayingAtj(false);
     }
   };
 
@@ -203,6 +297,7 @@ export default function App() {
       setIsFlipped(false);
       audioSynthesizer.stopAll();
       setIsPlayingAudio(false);
+      setIsPlayingAtj(false);
     }
   };
 
@@ -212,6 +307,7 @@ export default function App() {
       setIsFlipped(false);
       audioSynthesizer.stopAll();
       setIsPlayingAudio(false);
+      setIsPlayingAtj(false);
     }
   };
 
@@ -242,50 +338,25 @@ export default function App() {
     addToast('info', 'Record removed from vault.');
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleShare = () => {
+    if (!currentAlbum) {
+      addToast('info', 'Press ⚡ Daily Drop to generate a record first!');
+      return;
+    }
+    setIsShareModalOpen(true);
   };
 
-  const handleShare = async () => {
-    if (!currentAlbum) return;
-    
-    addToast('info', 'Compositing vinyl cover for sharing...');
-
-    const shareText = `Check out today's random band: "${currentAlbum.bandName}" - "${currentAlbum.albumTitle}" (${currentAlbum.year}).\n\nBio: ${currentAlbum.bandBio}\n\nGenerated with Y.D.R.B.N.`;
-
-    try {
-      const blob = await compositeShareImage(currentAlbum);
-      const fileName = `${currentAlbum.bandName.replace(/[^a-z0-9]/gi, '_')}_Cover.jpg`;
-      const file = new File([blob], fileName, { type: 'image/jpeg' });
-
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: `${currentAlbum.bandName} - ${currentAlbum.albumTitle}`,
-          text: shareText,
-          files: [file],
-        });
-        addToast('success', 'Shared successfully!');
-      } else {
-        copyToClipboard(shareText);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        addToast('success', 'Cover downloaded & Lore copied to clipboard!');
-      }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        copyToClipboard(shareText);
-      }
-    }
+  const handleStopAtj = () => {
+    audioSynthesizer.stopAll();
+    setIsPlayingAudio(false);
+    setIsPlayingAtj(false);
   };
 
   const handleToggleAudio = async () => {
     if (isPlayingAudio) {
       audioSynthesizer.stopAll();
       setIsPlayingAudio(false);
+      setIsPlayingAtj(false);
       return;
     }
 
@@ -296,11 +367,17 @@ export default function App() {
 
     try {
       setIsPlayingAudio(true);
-      await audioSynthesizer.playAlbumClip(currentAlbum.albumTitle, currentAlbum.year);
-      setIsPlayingAudio(false);
+      await audioSynthesizer.playAlbumClip(
+        currentAlbum.id,
+        currentAlbum.albumTitle,
+        currentAlbum.year,
+        currentAlbum.audioPreset
+      );
     } catch (err: any) {
-      setIsPlayingAudio(false);
       addToast('error', `Audio error: ${err.message || err}`);
+    } finally {
+      setIsPlayingAudio(false);
+      setIsPlayingAtj(false);
     }
   };
 
@@ -396,7 +473,6 @@ export default function App() {
       const generatedRecord = await generateDailyDrop();
       const newEntry = { ...generatedRecord };
 
-      // Wait for images to load into cache BEFORE baking
       await loadRecipeAssets(newEntry.recipe.backdrop, newEntry.recipe.subject);
       newEntry.coverImageUrl = gagCanvasEngine.renderCover(newEntry.recipe);
 
@@ -404,9 +480,7 @@ export default function App() {
         try {
           const { url } = await gagCanvasEngine.processCustomPhoto(appliedPhoto);
           newEntry.coverImageUrl = url;
-        } catch {
-          // fallback
-        }
+        } catch {}
       }
 
       setAlbums((prev) => {
@@ -452,8 +526,11 @@ export default function App() {
             onGoToToday={handleGoToToday}
             isFavorite={currentAlbum?.isFavorite || false}
             onToggleFavorite={() => handleToggleFavorite()}
+            onOpenApparel={() => setIsApparelOpen(true)}
             onShare={handleShare}
             hasEntries={albums.length > 0}
+            hasAtjBadge={hasUnlockedAtj}
+			onOpenAtjVideo={() => setIsAtjVideoOpen(true)}
           />
           <SubHeaderNav
             entries={albums}
@@ -503,6 +580,10 @@ export default function App() {
           />
           <FooterInfo
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenHelp={handleOpenHelp}
+            onOpenInfo={handleOpenInfo}
+            hasSeenHelp={hasSeenHelp}
+            hasSeenInfo={hasSeenInfo}
             isDevMode={isDevMode}
           />
         </div>
@@ -516,6 +597,24 @@ export default function App() {
         isDevMode={isDevMode}
         onToggleDevMode={handleToggleDevMode}
         hasServerKey={false}
+        onOpenDispatch={() => setIsDispatchOpen(true)}
+      />
+
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={handleCloseHelp}
+      />
+
+      <InfoModal
+        isOpen={isInfoOpen}
+        onClose={handleCloseInfo}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        album={currentAlbum}
+        onNotify={addToast}
       />
 
       <SleeveZoomModal
@@ -524,6 +623,19 @@ export default function App() {
         album={currentAlbum}
         initialFlipped={isFlipped}
       />      
+
+      <DispatchModal
+        isOpen={isDispatchOpen}
+        onClose={() => setIsDispatchOpen(false)}
+        onNotify={addToast}
+      />
+
+      <ApparelModal
+        isOpen={isApparelOpen}
+        onClose={() => setIsApparelOpen(false)}
+        album={currentAlbum}
+        onNotify={addToast}
+      />
 
       <ArchiveDrawer
         isOpen={isArchiveOpen}
@@ -540,6 +652,77 @@ export default function App() {
         onToggleFavorite={handleToggleFavorite}
         onDeleteAlbum={handleDeleteAlbum}
       />
+
+      {/* Secret ATJ Archival Video Playback Modal (Full-Screen Edge-to-Edge) */}
+      {isAtjVideoOpen && (
+        <div className="fixed inset-0 z-[80] flex flex-col bg-black animate-in fade-in select-none">
+          {/* Top Bar with discreet close button */}
+          <div className="w-full flex items-center justify-between px-4 py-3 bg-black/80 border-b border-emerald-900/40 shrink-0 z-10">
+            <span className="text-[11px] font-mono tracking-widest uppercase text-emerald-400 font-bold">
+              Archival Vault // ATJ-01
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsAtjVideoOpen(false)}
+              className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-base font-mono leading-none"
+              aria-label="Close video"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Full-bleed display area */}
+          <div className="flex-1 w-full h-full flex items-center justify-center bg-black overflow-hidden">
+            <video
+              src={`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/video/atj.mp4`}
+              controls
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ATJ Transmission Takeover Overlay */}
+      {isPlayingAtj && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none">
+          <div className="w-full max-w-sm bg-[#161310] border-2 border-rose-600/90 rounded-2xl p-5 shadow-[0_0_40px_rgba(225,29,72,0.4)] flex flex-col items-center text-center space-y-4">
+            
+            {/* Warning Beacon Header */}
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-400 font-mono text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <span>"Adjacent To Jim" Transmission Active</span>
+              </div>
+              <h3 className="font-mono font-black text-lg text-[#f3ede4] tracking-wider uppercase mt-1">
+                ATJ.MP3 IS PLAYING
+              </h3>
+              <p className="text-[11px] text-amber-300/80 font-mono leading-tight">
+                Enjoy this limited time performance of the "Adjacent To Jim" theme song.
+                This song will only be available as a clip for as long as the album drop
+                that triggered it persists in your archive.
+              </p>
+            </div>
+
+            {/* Giant Stop Button */}
+            <button
+              type="button"
+              onClick={handleStopAtj}
+              className="w-full py-4 px-4 rounded-xl bg-gradient-to-b from-rose-600 via-rose-700 to-red-800 hover:from-rose-500 hover:to-red-700 active:scale-95 text-white font-mono font-black tracking-wider uppercase border-2 border-rose-400/60 shadow-xl shadow-rose-950 transition-all flex flex-col items-center justify-center gap-1 group"
+            >
+              <div className="flex items-center gap-2 text-base group-hover:scale-105 transition-transform">
+                <span className="w-3.5 h-3.5 bg-white rounded-sm inline-block" />
+                <span>STOP PLAYBACK</span>
+              </div>
+              <span className="text-[10px] font-normal normal-case text-rose-200/90 tracking-normal">
+                (Caution: "Adjacent To Jim" will only play as
+                 long as the current drop is in your archive!)
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

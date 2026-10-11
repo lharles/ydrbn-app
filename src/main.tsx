@@ -22,12 +22,26 @@ import { preloadCustomAssets } from './services/assetManager';
 // Preload custom assets into memory
 preloadCustomAssets();
 
-// Register service worker if supported
+/* // Register service worker if supported
 if ('serviceWorker' in navigator && typeof window !== 'undefined') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('ServiceWorker registration error:', err);
     });
+  });
+} */
+
+// src/main.tsx (around line 25-35)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/ydrbn-app/sw.js')
+      .then((reg) => {
+        console.log('SW registered: ', reg.scope);
+      })
+      .catch((err) => {
+        console.warn('ServiceWorker registration error: ', err);
+      });
   });
 }
 

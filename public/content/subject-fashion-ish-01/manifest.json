@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-fashion-ish-01",
+  "name": "Fashion-ish-01",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Fashion-ish-01.",
+  "subjects": [
+    "Model_wearing_Tyvek_suit.png",
+    "Model_wearing_architectural_moss.png",
+    "Model_wearing_avant-garde_Tyvek.png",
+    "Model_wearing_fiber-optic_street.png",
+    "Model_wearing_fiber-optic_street_2.png",
+    "Model_wearing_molten_glass_outfit.png",
+    "Model_wearing_molten_glass_outfit_2.png",
+    "Model_wearing_moss_gown.png"
+  ]
+}
