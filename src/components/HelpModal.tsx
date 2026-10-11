@@ -31,8 +31,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-sm animate-in fade-in select-none">
-      <div className="w-full max-w-sm bg-[#111625] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-sm animate-in fade-in select-none">
+      <div className="w-full max-w-sm bg-[#111625] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[82dvh] sm:max-h-[88vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-[#0c101d] shrink-0">
           <div className="flex items-center gap-2">
@@ -62,8 +62,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               Your Daily Random Band Name is a novelty band name/album cover generator. It can function entirely offline, (but when online can retrieve optional/updated content, if desired). Every day a new band/album drop can be created. There are many tweaks available for you to customize your experience. Enjoy!
             </p>
 
-          {/* Direct Video Link */}
-          <div className="mt-2.5 pt-2 border-t border-amber-900/30 flex items-center justify-between">
+            {/* Direct Video Link */}
+            <div className="mt-2.5 pt-2 border-t border-amber-900/30 flex items-center justify-between">
               <a
                 href={`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/video/guide.mp4`}
                 target="_blank"
@@ -174,7 +174,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Always Visible Above iOS Chrome */}
         <div className="px-4 py-2.5 border-t border-slate-800 bg-[#0c101d] flex items-center justify-between shrink-0">
           <span className="text-[10px] font-mono text-slate-500">INFO DOC v1.0</span>
           <button
