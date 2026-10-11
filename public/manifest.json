@@ -10,14 +10,10 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/ydrbn-app/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/ydrbn-app/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/ydrbn-app/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
