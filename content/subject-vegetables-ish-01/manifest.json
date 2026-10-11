@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-vegetables-ish-01",
+  "name": "Vegetables-ish-01",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Vegetables-ish-01.",
+  "subjects": [
+    "Alien_vegetable_with_glowing_nectar.png",
+    "Alien_vegetable_with_glowing_ten.png",
+    "Alien_vegetable_with_golden_sensors.png",
+    "Alien_vegetable_with_purple_veins.png",
+    "Fennel_bulb_isolated_on_white.png",
+    "Heirloom_tomato_on_white_background.png",
+    "Japanese_eggplant_isolated_on_white.png",
+    "Romanesco_broccoli_head_isolated.png"
+  ]
+}

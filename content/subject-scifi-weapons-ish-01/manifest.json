@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-scifi-weapons-ish-01",
+  "name": "Scifi Weapons-ish-01",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Scifi Weapons-ish-01.",
+  "subjects": [
+    "EMP_grenade_with_violet_lights.png",
+    "Folding_tactical_laser_dagger.png",
+    "Futuristic_energy_pistol_isolated.png",
+    "Plasma_cannon_with_green_energy.png",
+    "Sci-fi_energy_tonfas.png",
+    "Sci-fi_pulse_rifle_isolated.png",
+    "Sci-fi_sniper_rifle_isolated.png",
+    "Shield_generator_device_with_core.png"
+  ]
+}

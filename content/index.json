@@ -1,0 +1,371 @@
+{
+  "availablePacks": [
+    {
+      "id": "ydrbn-words-goobledygoop",
+      "name": "Goobledygoop Language",
+      "description": "Bent language and absurd utterances.",
+      "manifestUrl": "goobledygoop/manifest.json"
+    },
+    {
+      "id": "ydrbn-words-toddler",
+      "name": "Toddler Logic",
+      "description": "Sticky hands and strange vocabularies.",
+      "manifestUrl": "toddler/manifest.json"
+    },
+    {
+      "id": "ydrbn-words-scatological",
+      "name": "Scatological",
+      "description": "Grossly matter-of-fact terminology.",
+      "manifestUrl": "scatological/manifest.json"
+    },
+    {
+      "id": "ydrbn-words-antisocial",
+      "name": "Antisocial Hostility",
+      "description": "Hostile, uncooperative little words.",
+      "manifestUrl": "antisocial/manifest.json"
+    },
+    {
+      "id": "ydrbn-words-unhinged",
+      "name": "Unhinged",
+      "description": "Completely off-the-rails terminology.",
+      "manifestUrl": "unhinged/manifest.json"
+    },
+    {
+      "id": "ydrbn-bg-cleandirty",
+      "name": "Clean/Dirty Backgrounds",
+      "description": "Contrasting split-surface textures.",
+      "manifestUrl": "cleandirty/manifest.json"
+    },
+    {
+      "id": "ydrbn-bg-furry",
+      "name": "Furry Textures",
+      "description": "Coarse hair and pastel pelts.",
+      "manifestUrl": "furry/manifest.json"
+    },
+    {
+      "id": "ydrbn-bg-impossible",
+      "name": "Impossible Places",
+      "description": "Surreal architectural intersections.",
+      "manifestUrl": "impossibleplaces/manifest.json"
+    },
+    {
+      "id": "ydrbn-bg-nonsensical",
+      "name": "Nonsensical",
+      "description": "Abstract figures in strange landscapes.",
+      "manifestUrl": "nonsensical/manifest.json"
+    },
+    {
+      "id": "ydrbn-bg-pristine",
+      "name": "Pristine Disaster",
+      "description": "ASCII art and flooded coastal meadows.",
+      "manifestUrl": "pristinedisaster/manifest.json"
+    },
+    {
+      "id": "ydrbn-subject-animals-ish-01",
+      "name": "Animals-ish-01",
+      "manifestUrl": "subject-animals-ish-01/manifest.json",
+      "description": "8 Animals...?",
+      "subjects": [
+        "Aggressive_sea_turtle_isolated.png",
+        "Ferocious_giant_sloth_baring_fangs.png",
+        "Koala_baring_teeth_snarl.png",
+        "Monster_turtle_lunging_forward.png",
+        "Monstrous_manatee_with_tusks.png",
+        "Predator_dolphin_with_sharp_teeth.png",
+        "Predatory_capybara_showing_battl.png",
+        "Predatory_goldfish_in_aggressive.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-fashion-ish-01",
+      "name": "Fashion-ish-01",
+      "manifestUrl": "subject-fashion-ish-01/manifest.json",
+      "description": "8 Fashion items...?",
+      "subjects": [
+        "Model_wearing_Tyvek_suit.png",
+        "Model_wearing_architectural_moss.png",
+        "Model_wearing_avant-garde_Tyvek.png",
+        "Model_wearing_fiber-optic_street.png",
+        "Model_wearing_fiber-optic_street_2.png",
+        "Model_wearing_molten_glass_outfit.png",
+        "Model_wearing_molten_glass_outfit_2.png",
+        "Model_wearing_moss_gown.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-kitchen-ish-01",
+      "name": "Kitchen-ish-01",
+      "manifestUrl": "subject-kitchen-ish-01/manifest.json",
+      "description": "8 Kitchen items...?",
+      "subjects": [
+        "Carved_wooden_spoon_isolated.png",
+        "Chef's_knife_isolated_on_white.png",
+        "Ice_cream_scoop_isolated.png",
+        "Red_silicone_spatula_on_white.png",
+        "Stainless_steel_box_grater.png",
+        "Turquoise_ceramic_mortar_and_pestle.png",
+        "Vintage_copper_whisk_isolated.png",
+        "Wooden_rolling_pin_isolated.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-machines-ish-01",
+      "name": "Machines-ish-01",
+      "manifestUrl": "subject-machines-ish-01/manifest.json",
+      "description": "8 Machines...?",
+      "subjects": [
+        "Hamster_wheel_powers_punch_card.png",
+        "Magnets_moving_iron_filings_calc.png",
+        "Rube_Goldberg_candle_calculating.png",
+        "Rube_Goldberg_computing_device_o.png",
+        "Rube_Goldberg_data_processor_typing.png",
+        "Rube_Goldberg_machine_sorting_bi.png",
+        "Rube_Goldberg_machine_triggers_k.png",
+        "Steam_engine_powering_mechanical.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-musical-ish-01",
+      "name": "Musical-ish-01",
+      "manifestUrl": "subject-musical-ish-01/manifest.json",
+      "description": "8 Musical items...?",
+      "subjects": [
+        "Bone_and_copper_flute_instrument.png",
+        "Hybrid_cello_with_emerald_strings.png",
+        "Hybrid_guitar_with_crystal_body.png",
+        "Hybrid_instrument_made_from_seas.png",
+        "Jellyfish_drum_set_glowing_violet.png",
+        "Obsidian_harp_with_laser_strings.png",
+        "Ornate_accordion_with_bat_wings.png",
+        "Wooden_saxophone_with_pearl_keys.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-office-supplies-ish-01",
+      "name": "Office Supplies-ish-01",
+      "manifestUrl": "subject-office-supplies-ish-01/manifest.json",
+      "description": "8 Office Supply items...?",
+      "subjects": [
+        "Antique_mechanical_typewriter_is.png",
+        "Manila_file_folder_with_papers.png",
+        "Red_metal_stapler_isolated.png",
+        "Silver_metal_paperclip_isolated.png",
+        "Stainless_steel_office_scissors.png",
+        "Vintage_leather_desk_blotter_iso.png",
+        "Yellow_legal_pad_with_scribbles.png",
+        "Yellow_wooden_pencil_isolated.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-primitive-ish-01",
+      "name": "Primitive-ish-01",
+      "manifestUrl": "subject-primitive-ish-01/manifest.json",
+      "description": "8 Primitive items...?",
+      "subjects": [
+        "Clay_bowl_reinforced_with_twigs.png",
+        "Earth_idol_wrapped_in_twine.png",
+        "Primitive_ceremonial_rattle_on_stick.png",
+        "Primitive_hand_tool_isolated.png",
+        "Primitive_stone_hammer_on_white.png",
+        "Recursive_knot_made_of_twine.png",
+        "Twig_sphere_coated_in_clay.png",
+        "Woven_twig_effigy_figurine.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-scifi-weapons-ish-01",
+      "name": "Scifi Weapons-ish-01",
+      "manifestUrl": "subject-scifi-weapons-ish-01/manifest.json",
+      "description": "8 Scifi Weapon items...?",
+      "subjects": [
+        "EMP_grenade_with_violet_lights.png",
+        "Folding_tactical_laser_dagger.png",
+        "Futuristic_energy_pistol_isolated.png",
+        "Plasma_cannon_with_green_energy.png",
+        "Sci-fi_energy_tonfas.png",
+        "Sci-fi_pulse_rifle_isolated.png",
+        "Sci-fi_sniper_rifle_isolated.png",
+        "Shield_generator_device_with_core.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-screens-ish-01",
+      "name": "Screens-ish-01",
+      "manifestUrl": "subject-screens-ish-01/manifest.json",
+      "description": "8 Screens...?",
+      "subjects": [
+        "Mainframe_monitor_displaying_e-c.png",
+        "Monitor_displaying_DNA_helix.png",
+        "Monitor_displaying_heart_ultrasound.png",
+        "Radar_screen_displaying_news_hea.png",
+        "Terminal_displaying_satellite_map.png",
+        "Terminal_showing_metropolis_sate.png",
+        "Vector_display_showing_social_da.png",
+        "Vintage_television_displaying_so.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-signage-ish-01",
+      "name": "Signage-ish-01",
+      "manifestUrl": "subject-signage-ish-01/manifest.json",
+      "description": "8 Signage items...?",
+      "subjects": [
+        "Hand-drawn_blue_parking_sign.png",
+        "Hand-drawn_deer_crossing_sign.png",
+        "Hand-drawn_stop_sign.png",
+        "Hand-painted_no_bicycles_sign.png",
+        "Red_sign_reading_GO.png",
+        "Road_sign_showing_both_ways.png",
+        "White_road_sign_with_smiley.png",
+        "Yellow_road_sign_reading_faster.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-stick-figure-ish-01",
+      "name": "Stick Figure-ish-01",
+      "manifestUrl": "subject-stick-figure-ish-01/manifest.json",
+      "description": "8 Stick Figure items...?",
+      "subjects": [
+        "Assembling_a_temporal_loom_diagram.png",
+        "Blueprint_for_maintenance_of_device.png",
+        "Stick_figure_assembling_device.png",
+        "Stick_figure_melting_into_puddle.png",
+        "Stick_figure_sipping_tea.png",
+        "Stick_figure_sitting_in_despair.png",
+        "Stick_figure_slipping_on_banana.png",
+        "Stick_figures_assembling_machine.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-thrift-store-ish-01",
+      "name": "Thrift Store-ish-01",
+      "manifestUrl": "subject-thrift-store-ish-01/manifest.json",
+      "description": "8 Thrift Store items...?",
+      "subjects": [
+        "Glass_jar_with_geometric_shapes.png",
+        "Hand-knit_wool_sweater_displayed.png",
+        "Porcelain_doll_head_eggbeater_sc.png",
+        "Thrift_store_boot_with_screen.png",
+        "Vintage_denim_overalls_with_patches.png",
+        "Vintage_felt_fedora_hat_isolated.png",
+        "Vintage_windbreaker_jacket_displ.png",
+        "Wooden_puzzle_box_isolated.png"
+      ]
+    },
+    {
+      "id": "ydrbn-subject-vegetables-ish-01",
+      "name": "Vegetables-ish-01",
+      "manifestUrl": "subject-vegetables-ish-01/manifest.json",
+      "description": "8 Vegetables...?",
+      "subjects": [
+        "Alien_vegetable_with_glowing_nectar.png",
+        "Alien_vegetable_with_glowing_ten.png",
+        "Alien_vegetable_with_golden_sensors.png",
+        "Alien_vegetable_with_purple_veins.png",
+        "Fennel_bulb_isolated_on_white.png",
+        "Heirloom_tomato_on_white_background.png",
+        "Japanese_eggplant_isolated_on_white.png",
+        "Romanesco_broccoli_head_isolated.png"
+      ]
+    },
+    {
+      "id": "ydrbn-word-administrative",
+      "name": "Administrative & Regulatory Words",
+      "manifestUrl": "word-administrative/manifest.json",
+      "description": "33 procedural filings, mandates, and bureaucratic terminology."
+    },
+    {
+      "id": "ydrbn-subject-vault-curiosities",
+      "name": "Vault Curiosities-ish-01",
+      "manifestUrl": "subject-vault-curiosities/manifest.json",
+      "description": "50 classic auxiliary subject cutouts extracted from the core vault.",
+      "subjects": [
+        "custom_subject_01.png",
+        "custom_subject_02.png",
+        "custom_subject_03.png",
+        "custom_subject_04.png",
+        "custom_subject_05.png",
+        "custom_subject_06.png",
+        "custom_subject_07.png",
+        "custom_subject_08.png",
+        "custom_subject_09.png",
+        "custom_subject_10.png",
+        "custom_subject_11.png",
+        "custom_subject_12.png",
+        "custom_subject_13.png",
+        "custom_subject_14.png",
+        "custom_subject_15.png",
+        "custom_subject_16.png",
+        "custom_subject_17.png",
+        "custom_subject_18.png",
+        "custom_subject_19.png",
+        "custom_subject_20.png",
+        "custom_subject_21.png",
+        "custom_subject_22.png",
+        "custom_subject_23.png",
+        "custom_subject_24.png",
+        "custom_subject_25.png",
+        "custom_subject_26.png",
+        "custom_subject_27.png",
+        "custom_subject_28.png",
+        "custom_subject_29.png",
+        "custom_subject_30.png",
+        "custom_subject_31.png",
+        "custom_subject_32.png",
+        "custom_subject_33.png",
+        "custom_subject_34.png",
+        "custom_subject_35.png",
+        "custom_subject_36.png",
+        "custom_subject_37.png",
+        "custom_subject_38.png",
+        "custom_subject_39.png",
+        "custom_subject_40.png",
+        "custom_subject_41.png",
+        "custom_subject_42.png",
+        "custom_subject_43.png",
+        "custom_subject_44.png",
+        "custom_subject_45.png",
+        "custom_subject_46.png",
+        "custom_subject_47.png",
+        "custom_subject_48.png",
+        "custom_subject_49.png",
+        "custom_subject_50.png"
+      ]
+    },
+    {
+      "id": "ydrbn-word-culinary",
+      "name": "Culinary Oddities & Kitchen Crimes",
+      "manifestUrl": "word-culinary/manifest.json",
+      "description": "35 gastronomy-adjacent nouns, cooking tools, and expired pantry staples.",
+      "words": true
+    },
+    {
+      "id": "ydrbn-word-wildlife",
+      "name": "Suspicious Wildlife & Bog Critters",
+      "manifestUrl": "word-wildlife/manifest.json",
+      "description": "38 stubborn fauna, backyard pests, and uncooperative creatures.",
+      "words": true
+    },
+    {
+      "id": "ydrbn-word-domestic-hardware",
+      "name": "Basement Hardware & Domestic Curios",
+      "manifestUrl": "word-domestic-hardware/manifest.json",
+      "description": "336 everyday fixtures, tools, furniture oddities, and household maintenance relics.",
+      "words": true
+    },
+    {
+      "id": "ydrbn-word-anatomical",
+      "name": "Clinical Anomalies & Bodily Woes",
+      "manifestUrl": "word-anatomical/manifest.json",
+      "description": "20 awkward anatomy, clinical ailments, and minor physiological inconveniences.",
+      "words": true
+    },
+    {
+      "id": "ydrbn-word-science",
+      "name": "Obsolete Science & Abstract Nonsense",
+      "manifestUrl": "word-science/manifest.json",
+      "description": "17 antiquated laboratory gear, drafting formulas, and speculative calculations.",
+      "words": true
+    }
+  ]
+}
