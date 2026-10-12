@@ -45,6 +45,20 @@ function getCanvasFontFamily(fontFamily?: TitleFontFamily): string {
   }
 }
 
+/**
+ * Normalizes any of the 15 procedural title layouts to match VinylSleeve.tsx:
+ * Only 'top-arc', 'diagonal-cross', and 'split-corners' are specialized;
+ * all others default strictly to 'bottom-banner'.
+ */
+function resolveEffectiveLayout(
+  layout?: TitleComposition
+): 'top-arc' | 'diagonal-cross' | 'split-corners' | 'bottom-banner' {
+  if (layout === 'top-arc') return 'top-arc';
+  if (layout === 'diagonal-cross') return 'diagonal-cross';
+  if (layout === 'split-corners') return 'split-corners';
+  return 'bottom-banner';
+}
+
 function applyCanvasShadow(ctx: CanvasRenderingContext2D, style?: TitleShadowStyle) {
   switch (style) {
     case 'neon-glow':
@@ -86,7 +100,8 @@ function getAdjustedStickerPosition(
   layout?: TitleComposition,
   index: number = 0
 ): HypeSticker['position'] {
-  switch (layout) {
+  const effective = resolveEffectiveLayout(layout);
+  switch (effective) {
     case 'top-arc':
       return index === 0 ? 'bottom-left' : 'bottom-right';
     case 'split-corners':
@@ -105,40 +120,15 @@ function drawHypeSticker(
   pos: HypeSticker['position'],
   index: number
 ) {
-  let cx = 150;
-  let cy = 870;
-
-  switch (pos) {
-    case 'top-left':
-      cx = 150;
-      cy = index === 0 ? 110 : 220;
-      break;
-    case 'top-right':
-      cx = 874;
-      cy = index === 0 ? 110 : 220;
-      break;
-    case 'bottom-left':
-      cx = 150;
-      cy = index === 0 ? 890 : 780;
-      break;
-    case 'bottom-right':
-      cx = 874;
-      cy = index === 0 ? 890 : 780;
-      break;
-  }
-
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate((sticker.rotation * Math.PI) / 180);
-
-  ctx.font = '900 18px monospace';
+  ctx.font = '900 17px monospace';
   const words = sticker.text.toUpperCase().split(' ');
   const lines: string[] = [];
   let cur = '';
 
   words.forEach((w) => {
     const test = cur ? `${cur} ${w}` : w;
-    if (ctx.measureText(test).width > 160) {
+    if (ctx.measureText(test).width > 150) {
       if (cur) lines.push(cur);
       cur = w;
     } else {
@@ -153,8 +143,33 @@ function drawHypeSticker(
     if (w > maxW) maxW = w;
   });
 
-  const boxW = Math.max(maxW + 28, 110);
-  const boxH = lines.length * 22 + 20;
+  const boxW = Math.max(maxW + 24, 100);
+  const boxH = lines.length * 20 + 16;
+
+  let cx = 120;
+  let cy = 880;
+
+  switch (pos) {
+    case 'top-left':
+      cx = boxW / 2 + 36;
+      cy = index === 0 ? boxH / 2 + 36 : boxH / 2 + 36 + boxH + 16;
+      break;
+    case 'top-right':
+      cx = 1024 - (boxW / 2 + 36);
+      cy = index === 0 ? boxH / 2 + 36 : boxH / 2 + 36 + boxH + 16;
+      break;
+    case 'bottom-left':
+      cx = boxW / 2 + 36;
+      cy = index === 0 ? 1024 - (boxH / 2 + 36) : 1024 - (boxH / 2 + 36 + boxH + 16);
+      break;
+    case 'bottom-right':
+      cx = 1024 - (boxW / 2 + 36);
+      cy = index === 0 ? 1024 - (boxH / 2 + 36) : 1024 - (boxH / 2 + 36 + boxH + 16);
+      break;
+  }
+
+  ctx.translate(cx, cy);
+  ctx.rotate((sticker.rotation * Math.PI) / 180);
 
   ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
   ctx.shadowBlur = 10;
@@ -165,7 +180,7 @@ function drawHypeSticker(
   ctx.fillRect(-boxW / 2, -boxH / 2, boxW, boxH);
 
   ctx.strokeStyle = sticker.border || '#000000';
-  ctx.lineWidth = 3.5;
+  ctx.lineWidth = 3;
   ctx.strokeRect(-boxW / 2, -boxH / 2, boxW, boxH);
 
   ctx.shadowColor = 'transparent';
@@ -173,9 +188,9 @@ function drawHypeSticker(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const startY = -((lines.length - 1) * 22) / 2;
+  const startY = -((lines.length - 1) * 20) / 2;
   lines.forEach((line, idx) => {
-    ctx.fillText(line, 0, startY + idx * 22);
+    ctx.fillText(line, 0, startY + idx * 20);
   });
 
   ctx.restore();
@@ -183,12 +198,11 @@ function drawHypeSticker(
 
 // 1. Composite High-Res Front Cover (1024x1024)
 export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
-  // Ensure custom web fonts are loaded into the browser font engine
   if (typeof document !== 'undefined' && document.fonts) {
     try {
       await document.fonts.ready;
     } catch {
-      // Fallback to standard system fonts if font API fails
+      // Fallback to system fonts if document.fonts fails
     }
   }
 
@@ -209,7 +223,7 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
 
   const isFuturePressing = parseInt(album.year, 10) > new Date().getFullYear();
 
-  // Layer 2: Temporal Anomaly holographic sash (if applicable)
+  // Layer 2: Temporal Anomaly holographic sash
   if (isFuturePressing) {
     ctx.save();
     ctx.translate(512, 512);
@@ -244,42 +258,15 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
     ctx.restore();
   }
 
-  // Layer 3: Title Composition Overlay
+  // Layer 3: Title Composition (Matches VinylSleeve.tsx layout logic 1:1)
   const fontFam = getCanvasFontFamily(album.fontFamily);
   const textColor = album.textColor || '#fef3c7';
-  const layout = album.titleLayout || 'top-arc';
+  const layout = resolveEffectiveLayout(album.titleLayout);
   const skew = album.skewDeg || 0;
 
   ctx.save();
 
-  if (layout === 'bottom-banner') {
-    const bannerY = 880;
-    ctx.translate(512, bannerY);
-    ctx.rotate((skew * Math.PI) / 180);
-
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.88)';
-    ctx.fillRect(-480, -70, 960, 140);
-
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(-480, -70);
-    ctx.lineTo(480, -70);
-    ctx.moveTo(-480, 70);
-    ctx.lineTo(480, 70);
-    ctx.stroke();
-
-    applyCanvasShadow(ctx, album.shadowStyle);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = textColor;
-    ctx.font = `900 50px ${fontFam}`;
-    ctx.fillText(album.bandName.toUpperCase(), 0, -8);
-
-    ctx.fillStyle = '#fcd34d';
-    ctx.font = 'italic bold 28px serif';
-    ctx.fillText(`★ ${album.albumTitle} ★`, 0, 42);
-  } else if (layout === 'top-arc') {
+  if (layout === 'top-arc') {
     const safeSkew = Math.max(-4, Math.min(4, skew * 0.3));
     ctx.translate(512, 145);
     ctx.rotate((safeSkew * Math.PI) / 180);
@@ -287,14 +274,17 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
     applyCanvasShadow(ctx, album.shadowStyle);
 
     const nameLen = album.bandName.length;
-    const bandSize = nameLen > 20 ? 46 : nameLen > 14 ? 54 : 64;
+    let bandSize = nameLen > 20 ? 46 : nameLen > 14 ? 54 : 64;
 
     ctx.textAlign = 'center';
     ctx.fillStyle = textColor;
     ctx.font = `900 ${bandSize}px ${fontFam}`;
+    while (ctx.measureText(album.bandName.toUpperCase()).width > 900 && bandSize > 24) {
+      bandSize -= 2;
+      ctx.font = `900 ${bandSize}px ${fontFam}`;
+    }
     ctx.fillText(album.bandName.toUpperCase(), 0, 0);
 
-    // Decorative underline bar
     const titleWidth = ctx.measureText(album.bandName.toUpperCase()).width;
     ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
     ctx.lineWidth = 4;
@@ -303,7 +293,6 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
     ctx.lineTo(titleWidth * 0.48, 14);
     ctx.stroke();
 
-    // Subtitle Badge
     ctx.font = 'italic bold 26px serif';
     const subWidth = ctx.measureText(album.albumTitle.toUpperCase()).width + 48;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
@@ -321,12 +310,17 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
 
     applyCanvasShadow(ctx, album.shadowStyle);
 
+    let bandSize = 64;
     ctx.textAlign = 'center';
     ctx.fillStyle = textColor;
-    ctx.font = `900 70px ${fontFam}`;
+    ctx.font = `900 ${bandSize}px ${fontFam}`;
+    while (ctx.measureText(album.bandName.toUpperCase()).width > 860 && bandSize > 28) {
+      bandSize -= 2;
+      ctx.font = `900 ${bandSize}px ${fontFam}`;
+    }
     ctx.fillText(album.bandName.toUpperCase(), 0, -25);
 
-    ctx.font = 'italic bold 32px serif';
+    ctx.font = 'italic bold 30px serif';
     const subWidth = ctx.measureText(`“${album.albumTitle}”`).width + 44;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
     ctx.fillRect(-subWidth / 2, 10, subWidth, 50);
@@ -337,8 +331,7 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
 
     ctx.fillStyle = '#fcd34d';
     ctx.fillText(`“${album.albumTitle}”`, 0, 46);
-  } else {
-    // split-corners layout
+  } else if (layout === 'split-corners') {
     ctx.translate(100, 140);
     ctx.rotate((skew * Math.PI) / 180);
 
@@ -353,7 +346,7 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
 
     ctx.textAlign = 'left';
     ctx.fillStyle = textColor;
-    ctx.font = `900 50px ${fontFam}`;
+    ctx.font = `900 48px ${fontFam}`;
     ctx.fillText(album.bandName.toUpperCase(), 24, 0);
 
     ctx.restore();
@@ -362,7 +355,7 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
     ctx.translate(924, 880);
     ctx.rotate((-skew * Math.PI) / 180);
 
-    ctx.font = 'italic bold 30px serif';
+    ctx.font = 'italic bold 28px serif';
     const subWidth = ctx.measureText(album.albumTitle).width + 44;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
     ctx.fillRect(-subWidth, -30, subWidth, 48);
@@ -374,6 +367,44 @@ export async function compositeFrontSleeve(album: AlbumEntry): Promise<Blob> {
     ctx.textAlign = 'right';
     ctx.fillStyle = '#fde68a';
     ctx.fillText(album.albumTitle, -22, 4);
+  } else {
+    // bottom-banner (Default layout for all other archetypes)
+    const bannerY = 880;
+    ctx.translate(512, bannerY);
+    ctx.rotate((skew * Math.PI) / 180);
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.88)';
+    ctx.fillRect(-470, -68, 940, 136);
+
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-470, -68);
+    ctx.lineTo(470, -68);
+    ctx.moveTo(-470, 68);
+    ctx.lineTo(470, 68);
+    ctx.stroke();
+
+    applyCanvasShadow(ctx, album.shadowStyle);
+
+    let bandSize = 52;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = textColor;
+    ctx.font = `900 ${bandSize}px ${fontFam}`;
+    while (ctx.measureText(album.bandName.toUpperCase()).width > 900 && bandSize > 24) {
+      bandSize -= 2;
+      ctx.font = `900 ${bandSize}px ${fontFam}`;
+    }
+    ctx.fillText(album.bandName.toUpperCase(), 0, -8);
+
+    let titleSize = 26;
+    ctx.fillStyle = '#fcd34d';
+    ctx.font = `italic bold ${titleSize}px serif`;
+    while (ctx.measureText(`★ ${album.albumTitle.toUpperCase()} ★`).width > 900 && titleSize > 18) {
+      titleSize -= 2;
+      ctx.font = `italic bold ${titleSize}px serif`;
+    }
+    ctx.fillText(`★ ${album.albumTitle.toUpperCase()} ★`, 0, 42);
   }
 
   ctx.restore();
@@ -416,18 +447,15 @@ export async function compositeBackSleeve(album: AlbumEntry): Promise<Blob> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get 2D canvas context');
 
-  // Matte cardboard background
   ctx.fillStyle = '#14171d';
   ctx.fillRect(0, 0, 1024, 1024);
 
-  // Faint circular record impression
   ctx.strokeStyle = 'rgba(255,255,255,0.03)';
   ctx.lineWidth = 48;
   ctx.beginPath();
   ctx.arc(512, 512, 380, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Header: Band & Album Title
   ctx.textAlign = 'center';
   ctx.fillStyle = '#f8fafc';
   ctx.font = 'bold 36px monospace';
@@ -444,7 +472,6 @@ export async function compositeBackSleeve(album: AlbumEntry): Promise<Blob> {
   ctx.lineTo(924, 170);
   ctx.stroke();
 
-  // Tracklist Columns
   const tracks = album.tracks || [];
   const mid = Math.ceil(tracks.length / 2);
   const sideA = tracks.slice(0, mid);
@@ -471,7 +498,6 @@ export async function compositeBackSleeve(album: AlbumEntry): Promise<Blob> {
     yB += 34;
   });
 
-  // Liner Notes / Dynamic Bio
   const loreY = 480;
   ctx.strokeStyle = '#334155';
   ctx.beginPath();
@@ -502,7 +528,6 @@ export async function compositeBackSleeve(album: AlbumEntry): Promise<Blob> {
   }
   ctx.fillText(bioLine, 120, bioY);
 
-  // Satirical Critic Reviews
   if (album.fauxReviews && album.fauxReviews.length > 0) {
     let revY = bioY + 45;
     ctx.font = 'italic 14px serif';
@@ -513,7 +538,6 @@ export async function compositeBackSleeve(album: AlbumEntry): Promise<Blob> {
     });
   }
 
-  // Footer: Metadata & Barcode
   const footY = 910;
   ctx.strokeStyle = '#334155';
   ctx.beginPath();
