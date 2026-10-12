@@ -21,7 +21,9 @@ export const STEM_MANIFEST: StemManifest = {
     ],
     drums: [
       '70s_Drums_01.mp3', '70s_Drums_02.mp3', '70s_Drums_03.mp3', '70s_Drums_04.mp3',
-      '70s_Drums_05.mp3', '70s_Drums_06.mp3', '70s_Drums_07.mp3',
+      '70s_Drums_05.mp3', '70s_Drums_06.mp3', '70s_Drums_07.mp3', '70s_Drums_08.mp3',
+      '70s_Drums_09.mp3', '70s_Drums_10.mp3', '70s_Drums_11.mp3', '70s_Drums_12.mp3',
+      '70s_Drums_13.mp3', '70s_Drums_14.mp3',
     ],
     harmonica: [
       '70s_Harmonica_01.mp3', '70s_Harmonica_02.mp3', '70s_Harmonica_03.mp3', '70s_Harmonica_04.mp3',
@@ -39,7 +41,12 @@ export const STEM_MANIFEST: StemManifest = {
       '70s_Woodwind.01.mp3', '70s_Woodwind_02.mp3', '70s_Woodwind_03.mp3', '70s_Woodwind_04.mp3',
       '70s_Woodwind_05.mp3',
     ],
-    vocal: [],
+    vocal: [
+      '70s_Vocal_01.mp3', '70s_Vocal_02.mp3', '70s_Vocal_03.mp3', '70s_Vocal_04.mp3',
+      '70s_Vocal_05.mp3', '70s_Vocal_06.mp3', '70s_Vocal_07.mp3', '70s_Vocal_08.mp3',
+      '70s_Vocal_09.mp3', '70s_Vocal_10.mp3', '70s_Vocal_11.mp3', '70s_Vocal_12.mp3',
+      '70s_Vocal_13.mp3', '70s_Vocal_14.mp3',
+    ],
   },
   '80s': {
     bass: [
@@ -59,16 +66,23 @@ export const STEM_MANIFEST: StemManifest = {
     ],
     vocal: [
       '80s_Vocal_01.mp3', '80s_Vocal_02.mp3', '80s_Vocal_03.mp3', '80s_Vocal_04.mp3',
-      '80s_Vocal_05.mp3',
+      '80s_Vocal_05.mp3', '80s_Vocal_06.mp3', '80s_Vocal_07.mp3', '80s_Vocal_08.mp3',
+      '80s_Vocal_09.mp3', '80s_Vocal_10.mp3', '80s_Vocal_11.mp3', '80s_Vocal_12.mp3',
+      '80s_Vocal_13.mp3', '80s_Vocal_14.mp3',
     ],
   },
   '90s': {
     drums: [
       '90s_Drums_01.mp3', '90s_Drums_02.mp3', '90s_Drums_03.mp3', '90s_Drums_04.mp3',
+      '90s_Drums_05.mp3', '90s_Drums_06.mp3', '90s_Drums_07.mp3', '90s_Drums_08.mp3',
+      '90s_Drums_09.mp3', '90s_Drums_10.mp3', '90s_Drums_11.mp3', '90s_Drums_12.mp3',
+      '90s_Drums_13.mp3', '90s_Drums_14.mp3',
     ],
     vocal: [
       '90s_Vocal_01.mp3', '90s_Vocal_02.mp3', '90s_Vocal_03.mp3', '90s_Vocal_04.mp3',
-      '90s_Vocal_05.mp3', '90s_Vocal_06.mp3',
+      '90s_Vocal_05.mp3', '90s_Vocal_06.mp3', '90s_Vocal_07.mp3', '90s_Vocal_08.mp3',
+      '90s_Vocal_09.mp3', '90s_Vocal_10.mp3', '90s_Vocal_11.mp3', '90s_Vocal_12.mp3',
+      '90s_Vocal_13.mp3', '90s_Vocal_14.mp3',
     ],
   },
 };
@@ -76,7 +90,6 @@ export const STEM_MANIFEST: StemManifest = {
 const BASE_STEM_PATH = `${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/audio/stems/`;
 const bufferCache: Map<string, AudioBuffer> = new Map();
 
-// --- Storage Keys ---
 const HARMONICA_STORAGE_KEY = 'ydrbn_played_harmonicas';
 const ATJ_PLAYED_KEY = 'ydrbn_atj_played';
 const ALBUM_PLANS_KEY = 'ydrbn_album_audio_plans';
@@ -168,7 +181,6 @@ interface WeightedStem {
 }
 
 function isVocalOrHumming(decade: string, category: string, filename: string): boolean {
-  if (decade !== '70s' && decade !== '80s') return false;
   const lowerCat = category.toLowerCase();
   const lowerFile = filename.toLowerCase();
   return (
@@ -191,6 +203,22 @@ function pickWeightedClip(clips: WeightedStem[]): WeightedStem {
   return clips[clips.length - 1];
 }
 
+function buildClipsForDecade(decade: '70s' | '80s' | '90s'): WeightedStem[] {
+  const data = STEM_MANIFEST[decade] || {};
+  const clips: WeightedStem[] = [];
+  Object.entries(data).forEach(([cat, files]) => {
+    files.forEach((file) => {
+      const isThrottled = isVocalOrHumming(decade, cat, file);
+      clips.push({
+        category: cat,
+        file,
+        weight: isThrottled ? 0.25 : 1.0,
+      });
+    });
+  });
+  return clips;
+}
+
 function generateNewStemPlan(yearStr: string): SelectedStemPlan {
   // 1. ATJ Fanfare Check
   if (isAtjEligible()) {
@@ -204,32 +232,16 @@ function generateNewStemPlan(yearStr: string): SelectedStemPlan {
   }
 
   const decade = resolveDecade(yearStr);
-  const decadeData = STEM_MANIFEST[decade];
-  if (!decadeData) {
+  const primaryPool = buildClipsForDecade(decade);
+
+  if (primaryPool.length === 0) {
     return { stems: [], isSoloHarmonica: false, isAtjFanfare: false, enableSynthBacking: true };
   }
 
-  // 2. Build weighted selection pool (70s/80s vocal/humming/whistling throttled to 0.15)
-  const allClips: WeightedStem[] = [];
-  Object.entries(decadeData).forEach(([cat, files]) => {
-    files.forEach((file) => {
-      const isThrottledVocal = isVocalOrHumming(decade, cat, file);
-      allClips.push({
-        category: cat,
-        file,
-        weight: isThrottledVocal ? 0.15 : 1.0,
-      });
-    });
-  });
+  // 2. Select primary stem
+  const primary = pickWeightedClip(primaryPool);
 
-  if (allClips.length === 0) {
-    return { stems: [], isSoloHarmonica: false, isAtjFanfare: false, enableSynthBacking: true };
-  }
-
-  // 3. Select primary stem
-  const primary = pickWeightedClip(allClips);
-
-  // Harmonica Rule: 100% Solo (No extra stems, no synth)
+  // Harmonica Rule: 100% Solo
   if (primary.category === 'harmonica') {
     recordPlayedHarmonica(primary.file);
     return {
@@ -240,24 +252,32 @@ function generateNewStemPlan(yearStr: string): SelectedStemPlan {
     };
   }
 
-  // 4. Strict 2-Layer Cap: At most 1 optional complementary stem
   const selectedStems: string[] = [primary.file];
 
-  // 65% chance to add a 2nd stem; 35% chance to stay as a single stem
-  const wantsSecondStem = Math.random() < 0.65;
-
+  // 3. Select secondary stem (70% probability)
+  const wantsSecondStem = Math.random() < 0.70;
   if (wantsSecondStem) {
-    const candidateSecondaryClips = allClips.filter(
+    // Exclude same category & harmonica
+    let secondaryPool = primaryPool.filter(
       (c) => c.category !== primary.category && c.category !== 'harmonica'
     );
 
-    if (candidateSecondaryClips.length > 0) {
-      const secondary = pickWeightedClip(candidateSecondaryClips);
+    // If 90s (or category depleted), pool bass and acoustic stems from 80s & 70s
+    if (secondaryPool.length === 0 || decade === '90s') {
+      const crossEraPool = [
+        ...buildClipsForDecade('80s'),
+        ...buildClipsForDecade('70s'),
+      ].filter((c) => c.category !== 'harmonica' && c.category !== primary.category);
+      secondaryPool = [...secondaryPool, ...crossEraPool];
+    }
+
+    if (secondaryPool.length > 0) {
+      const secondary = pickWeightedClip(secondaryPool);
       selectedStems.push(secondary.file);
     }
   }
 
-  // 5. Coin Flip (50/50) to include the 25% synth backing
+  // 4. Synth Backing Coin Flip (50/50)
   const enableSynth = Math.random() < 0.5;
 
   return {

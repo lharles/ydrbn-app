@@ -130,6 +130,14 @@ export class RetroAudioSynthesizer {
       const baseRoots = [110.0, 130.81, 146.83, 164.81, 174.61, 196.0];
       const root = baseRoots[hash % baseRoots.length];
 
+      // Rotate synth presets dynamically for modern/future releases (>=1990)
+      const modernPresets: AlbumEntry['audioPreset'][] = [
+        'analog-synth',
+        'post-punk',
+        'krautrock',
+        'ambient-drone',
+      ];
+
       const activePreset: AlbumEntry['audioPreset'] = preset || (
         parsedYear < 1974
           ? 'psych-rock'
@@ -139,7 +147,7 @@ export class RetroAudioSynthesizer {
           ? 'analog-synth'
           : parsedYear <= 1989
           ? 'post-punk'
-          : 'ambient-drone'
+          : modernPresets[hash % modernPresets.length]
       );
 
       switch (activePreset) {

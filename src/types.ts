@@ -757,6 +757,21 @@ export interface AlbumEntry extends AlbumMetadata {
   textColor?: string;
   shadowStyle?: TitleShadowStyle;
   titleLayout?: TitleComposition;
+  isCustomPressing?: boolean;    // Flag for White Label / Bootleg drops
+  customPressingTag?: string;    // 'WHITE LABEL' or 'PRIVATE PRESSING'
+}
+
+// Add to src/types.ts:
+
+export interface CustomDropInput {
+  bandName?: string;
+  albumTitle?: string;
+  year?: string;
+  tracks?: string[];
+  lore?: string;
+  review?: string;
+  coverImageBase64?: string;
+  audioPreset?: AlbumEntry['audioPreset'];
 }
 
 export interface AppSettings {

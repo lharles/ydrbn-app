@@ -3,13 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect } from 'react';
+import { Disc, ExternalLink } from 'lucide-react';
+import { CustomDropModal } from './components/CustomDropModal';
 import { ApparelModal } from './components/ApparelModal';
 import { DispatchModal } from './components/DispatchModal';
 import { InfoModal } from './components/InfoModal';
 import { ShareModal } from './components/ShareModal';
 import { HelpModal } from './components/HelpModal';
 import { SleeveZoomModal } from './components/SleeveZoomModal';
-import { AlbumEntry, ToastMessage } from './types';
+import { AlbumEntry, ToastMessage, CustomDropInput } from './types';
 import { TopBar } from './components/TopBar';
 import { SubHeaderNav } from './components/SubHeaderNav';
 import { ActionButtonsRow } from './components/ActionButtonsRow';
@@ -32,7 +34,11 @@ import {
   setUseCustomPhotosPref,
   getAutoCheckUpdatesPref,
 } from './services/storageService';
-import { generateDailyDrop, hydrateContentPools } from './services/proceduralGenerator';
+import {
+  generateDailyDrop,
+  forgeCustomDrop,
+  hydrateContentPools,
+} from './services/proceduralGenerator';
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer } from './services/audioSynthesizer';
 import { getAvailablePacks, checkPackStatus } from './services/contentPackService';
@@ -121,6 +127,7 @@ export default function App() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [isCustomDropOpen, setIsCustomDropOpen] = useState(false);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [hasSeenHelp, setHasSeenHelp] = useState<boolean>(() => {
@@ -136,7 +143,6 @@ export default function App() {
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
   const [isApparelOpen, setIsApparelOpen] = useState(false);
 
-  // Launch sequence: Pop Help first if never seen; if Help is already seen but Info is not, pop Info[cite: 14]
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const seenHelp = localStorage.getItem('ydrbn_has_seen_help') === 'true';
@@ -151,7 +157,6 @@ export default function App() {
 
   const [isAtjVideoOpen, setIsAtjVideoOpen] = useState(false);
 
-  // Listen for the ATJ fanfare easter egg event
   useEffect(() => {
     const handleFanfare = () => {
       triggerConfettiBurst();
@@ -504,6 +509,30 @@ export default function App() {
     }
   };
 
+  const handleForgeCustomDrop = async (input: CustomDropInput) => {
+    setIsGenerating(true);
+    setLoadingStepText('Forging Custom Drop - White Label Pressing...');
+
+    try {
+      const forgedRecord = await forgeCustomDrop(input);
+
+      setAlbums((prev) => {
+        const next = [...prev, forgedRecord];
+        const capped = next.length > 8 ? next.slice(next.length - 8) : next;
+        saveAlbums(capped);
+        setCurrentIndex(capped.length - 1);
+        return capped;
+      });
+
+      setIsFlipped(false);
+      setIsGenerating(false);
+      addToast('success', `✦ Custom Drop - White Label Minted: ${forgedRecord.bandName} — "${forgedRecord.albumTitle}"`);
+    } catch (err: any) {
+      addToast('error', `Failed to forge custom drop: ${err?.message || err}`);
+      setIsGenerating(false);
+    }
+  };
+
   const handleToggleDevMode = (unlocked: boolean) => {
     setDevModeUnlocked(unlocked);
     setIsDevMode(unlocked);
@@ -518,7 +547,8 @@ export default function App() {
     <div className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#0c101d] text-slate-100 select-none font-sans">
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      <div className="w-full max-w-md mx-auto min-h-full flex flex-col justify-between py-2 pb-14 relative">
+      <div className="w-full max-w-md mx-auto min-h-full flex flex-col justify-between py-1.5 pb-3 sm:pb-6 relative">
+        {/* Top Header Group */}
         <div className="w-full shrink-0 flex flex-col">
           <TopBar
             onOpenArchive={() => setIsArchiveOpen(true)}
@@ -530,7 +560,7 @@ export default function App() {
             onShare={handleShare}
             hasEntries={albums.length > 0}
             hasAtjBadge={hasUnlockedAtj}
-			onOpenAtjVideo={() => setIsAtjVideoOpen(true)}
+            onOpenAtjVideo={() => setIsAtjVideoOpen(true)}
           />
           <SubHeaderNav
             entries={albums}
@@ -540,7 +570,8 @@ export default function App() {
           />
         </div>
 
-        <div className="w-full flex-1 flex flex-col justify-center items-center px-3 py-1 gap-1.5">
+        {/* Center Interactive Vinyl Deck */}
+        <div className="w-full my-auto flex flex-col items-center px-3 py-1 gap-1.5 sm:gap-2">
           <ActionButtonsRow
             isFlipped={isFlipped}
             onToggleFlip={() => setIsFlipped(!isFlipped)}
@@ -549,7 +580,7 @@ export default function App() {
             disabled={isGenerating || !currentAlbum}
           />
 
-          <div className="w-full flex items-center justify-center py-1">
+          <div className="w-full flex items-center justify-center py-0.5">
             <VinylSleeve
               album={currentAlbum}
               isFlipped={isFlipped}
@@ -569,15 +600,33 @@ export default function App() {
             onUsePhotoAsIs={handleUsePhotoAsIs}
             isLoading={isGenerating}
           />
+
+          {/* White Label Pressing Studio Hardware Button (Centered & Themed) */}
+          <div className="w-full flex items-center justify-center pt-1.5 pb-0.5">
+            <button
+              type="button"
+              onClick={() => setIsCustomDropOpen(true)}
+              className="flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-md bg-gradient-to-b from-[#1e1914] via-[#16120e] to-[#100d0a] border border-amber-800/40 hover:border-amber-600/70 text-amber-300 hover:text-amber-200 text-[10px] leading-none font-mono font-bold tracking-wider uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_1px_3px_rgba(0,0,0,0.6)] hover:shadow-[0_0_10px_rgba(217,119,36,0.2)] transition-all active:scale-95 group"
+              title="Open Custom Drop - White Label Pressing Studio"
+            >
+              <Disc className="w-3 h-3 text-amber-400 group-hover:rotate-45 transition-transform shrink-0" />
+              <span>Custom Drop - White Label Pressing Studio</span>
+              <ExternalLink className="w-2.5 h-2.5 text-amber-500/70 group-hover:text-amber-300 transition-colors shrink-0" />
+            </button>
+          </div>
+
+          <div className="w-full pt-1">
+            <DailyDropButton
+              onDailyDrop={handleDailyDrop}
+              isLoading={isGenerating}
+              cooldownMs={cooldownMs}
+              isDevMode={isDevMode}
+            />
+          </div>
         </div>
 
-        <div className="w-full shrink-0 flex flex-col">
-          <DailyDropButton
-            onDailyDrop={handleDailyDrop}
-            isLoading={isGenerating}
-            cooldownMs={cooldownMs}
-            isDevMode={isDevMode}
-          />
+        {/* Bottom Footer Info */}
+        <div className="w-full shrink-0 flex flex-col pt-1">
           <FooterInfo
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenHelp={handleOpenHelp}
@@ -589,6 +638,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* Modals Stack */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -598,6 +648,13 @@ export default function App() {
         onToggleDevMode={handleToggleDevMode}
         hasServerKey={false}
         onOpenDispatch={() => setIsDispatchOpen(true)}
+      />
+
+      <CustomDropModal
+        isOpen={isCustomDropOpen}
+        onClose={() => setIsCustomDropOpen(false)}
+        onForge={handleForgeCustomDrop}
+        isLoading={isGenerating}
       />
 
       <HelpModal
@@ -653,10 +710,9 @@ export default function App() {
         onDeleteAlbum={handleDeleteAlbum}
       />
 
-      {/* Secret ATJ Archival Video Playback Modal (Full-Screen Edge-to-Edge) */}
+      {/* Secret ATJ Archival Video Playback Modal */}
       {isAtjVideoOpen && (
         <div className="fixed inset-0 z-[80] flex flex-col bg-black animate-in fade-in select-none">
-          {/* Top Bar with discreet close button */}
           <div className="w-full flex items-center justify-between px-4 py-3 bg-black/80 border-b border-emerald-900/40 shrink-0 z-10">
             <span className="text-[11px] font-mono tracking-widest uppercase text-emerald-400 font-bold">
               Archival Vault // ATJ-01
@@ -671,7 +727,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Full-bleed display area */}
           <div className="flex-1 w-full h-full flex items-center justify-center bg-black overflow-hidden">
             <video
               src={`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/video/atj.mp4`}
@@ -688,8 +743,6 @@ export default function App() {
       {isPlayingAtj && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none">
           <div className="w-full max-w-sm bg-[#161310] border-2 border-rose-600/90 rounded-2xl p-5 shadow-[0_0_40px_rgba(225,29,72,0.4)] flex flex-col items-center text-center space-y-4">
-            
-            {/* Warning Beacon Header */}
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-400 font-mono text-[10px] font-bold uppercase tracking-widest animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
@@ -705,7 +758,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Giant Stop Button */}
             <button
               type="button"
               onClick={handleStopAtj}

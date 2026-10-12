@@ -11,6 +11,7 @@ import {
   AlbumEntry,
   BackdropType,
   CanvasRecipe,
+  CustomDropInput,
   GagArchetype,
   GagModifierType,
   HypeSticker,
@@ -1590,3 +1591,98 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
 }
 
 export const generateProceduralBand = generateDailyDrop;
+/**
+ * Forges an independent "White Label" private pressing.
+ * Any fields provided by the user override the drop; anything left blank
+ * falls back to procedural generation.
+ */
+export async function forgeCustomDrop(input: CustomDropInput): Promise<AlbumEntry> {
+  // 1. Generate a complete procedural baseline for all unprovided fields
+  const base = await generateDailyDrop();
+
+  // 2. Resolve Band Name and Album Title
+  const bandName = input.bandName?.trim() || base.bandName;
+  const albumTitle = input.albumTitle?.trim() || base.albumTitle;
+
+  // Add custom band name to registry so it stays unique in future drops
+  if (input.bandName?.trim()) {
+    historyRegistry.add(bandName);
+  }
+
+  // 3. Resolve Pressing Year & Catalog Number
+  const year = input.year?.trim() || base.year;
+  const catalogNumber = `WL-${year}-BOOTLEG`;
+
+  // 4. Resolve Tracklist (User tracks or procedural fallback)
+  let tracks: string[] = base.tracks;
+  if (input.tracks && input.tracks.length > 0) {
+    tracks = input.tracks.map((t) => t.trim()).filter(Boolean);
+    if (tracks.length === 1) {
+      tracks.push(`${tracks[0]} (Instrumental Dub)`);
+    }
+  }
+
+  // 5. Resolve Bio / Lore & Reviews
+  const bandBio = input.lore?.trim() || base.bandBio;
+  const fauxReviews = input.review?.trim()
+    ? [`"${input.review.trim()}" — The Bootleg Ledger`, base.fauxReviews[0]]
+    : base.fauxReviews;
+
+  // 6. Resolve Audio Synth Preset
+  const audioPreset = input.audioPreset || base.audioPreset;
+
+  // 7. Re-render Cover Artwork with the final bandName & albumTitle
+  let coverImageUrl = base.coverImageUrl;
+  const recipe: CanvasRecipe = {
+    ...base.recipe,
+    focalItem: base.recipe?.focalItem,
+  };
+
+  if (input.coverImageBase64) {
+    try {
+      const { url } = await gagCanvasEngine.processCustomPhoto(input.coverImageBase64);
+      coverImageUrl = url;
+    } catch {
+      coverImageUrl = input.coverImageBase64;
+    }
+  } else {
+    await loadRecipeAssets(String(recipe.backdrop), String(recipe.subject));
+    coverImageUrl = gagCanvasEngine.renderCover(bandName, albumTitle, recipe);
+  }
+
+  // 8. Prepend a distinctive "WHITE LABEL // PRIVATE PRESSING" Hype Sticker
+  const whiteLabelSticker: HypeSticker = {
+    id: `stk-whitelabel-${Date.now()}`,
+    text: 'WHITE LABEL // PRIVATE PRESSING',
+    type: 'rect',
+    bg: '#ffffff',
+    color: '#090d16',
+    border: '#000000',
+    rotation: Math.floor(Math.random() * 8) - 4,
+    position: 'top-left',
+  };
+
+  const stickers: HypeSticker[] = [
+    whiteLabelSticker,
+    ...base.stickers.filter((s) => s.position !== 'top-left'),
+  ];
+
+  return {
+    ...base,
+    id: `white-label-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    bandName,
+    albumTitle,
+    year,
+    catalogNumber,
+    tracks,
+    fauxReviews,
+    bandBio,
+    coverImageUrl,
+    audioPreset,
+    stickers,
+    recipe,
+    timestamp: Date.now(),
+    isCustomPressing: true,
+    customPressingTag: 'WHITE LABEL',
+  };
+}
