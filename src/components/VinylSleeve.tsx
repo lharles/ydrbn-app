@@ -308,6 +308,7 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
       >
         {/* ==================== FRONT SLEEVE ==================== */}
         <div
+          id="sleeve-front"
           onClick={() => {
             if (!isLoading && album) onToggleFlip();
           }}
@@ -410,7 +411,7 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
 
           {/* Subtle Zoom & Flip Badges */}
           {album && (
-            <div className="absolute bottom-1 right-1 z-30 flex items-center gap-1 opacity-25 hover:opacity-100 active:opacity-100 transition-opacity duration-300">
+            <div className="export-exclude absolute bottom-1 right-1 z-30 flex items-center gap-1 opacity-25 hover:opacity-100 active:opacity-100 transition-opacity duration-300">
               {onOpenZoom && !hideZoomButton && (
                 <button
                   type="button"
@@ -434,6 +435,7 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
 
         {/* ==================== FLIP VIEW: BACK SLEEVE & TRACKS ==================== */}
         <div
+          id="sleeve-back"
           onClick={() => {
             if (!isLoading) onToggleFlip();
           }}
