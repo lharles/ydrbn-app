@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Share2, Copy, Download, Check, Image as ImageIcon, FileText, Disc } from 'lucide-react';
 import { AlbumEntry } from '../types';
 import { compositeFrontSleeve, compositeBackSleeve } from '../services/shareImageService';
@@ -17,40 +17,62 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
   const [includeTracks, setIncludeTracks] = useState(true);
   const [includeBio, setIncludeBio] = useState(true);
   const [includeReviews, setIncludeReviews] = useState(false);
+
+  const [isPreparing, setIsPreparing] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Cached pre-rendered blobs to guarantee instant navigator.share() gesture execution
+  // Cached pre-rendered blobs so navigator.share() can fire synchronously without gesture timeout
   const [cachedFrontBlob, setCachedFrontBlob] = useState<Blob | null>(null);
   const [cachedBackBlob, setCachedBackBlob] = useState<Blob | null>(null);
+
+  // Synchronous lock to drop duplicate tap events or touch bounces
+  const isSharingRef = useRef(false);
 
   // Pre-composite artwork in the background when the modal opens
   useEffect(() => {
     if (!isOpen || !album) {
       setCachedFrontBlob(null);
       setCachedBackBlob(null);
+      setIsPreparing(false);
+      isSharingRef.current = false;
       return;
     }
 
+    setIsPreparing(true);
     let isMounted = true;
+
     const prepareBlobs = async () => {
       try {
         const [front, back] = await Promise.all([
-          compositeFrontSleeve(album).catch(() => null),
-          compositeBackSleeve(album).catch(() => null),
+          compositeFrontSleeve(album).catch((e) => {
+            console.warn('[ShareModal] Front composite warning:', e);
+            return null;
+          }),
+          compositeBackSleeve(album).catch((e) => {
+            console.warn('[ShareModal] Back composite warning:', e);
+            return null;
+          }),
         ]);
+
         if (isMounted) {
           setCachedFrontBlob(front);
           setCachedBackBlob(back);
+          setIsPreparing(false);
         }
       } catch (err) {
         console.warn('[ShareModal] Pre-compositing error:', err);
+        if (isMounted) {
+          setIsPreparing(false);
+        }
       }
     };
 
     prepareBlobs();
+
     return () => {
       isMounted = false;
+      isSharingRef.current = false;
     };
   }, [isOpen, album]);
 
@@ -135,7 +157,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
   };
 
   const handleNativeShare = async () => {
+    // Synchronously block duplicate calls from rapid double-taps
+    if (isSharingRef.current || processing || isPreparing) return;
+    isSharingRef.current = true;
     setProcessing(true);
+
     try {
       const text = compileShareText();
       const files: File[] = [];
@@ -143,11 +169,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
       // Use pre-composited blobs immediately to preserve user activation
       if (includeFront) {
         const frontBlob = cachedFrontBlob || (await compositeFrontSleeve(album));
-        files.push(new File([frontBlob], getSafeFileSlug('front'), { type: 'image/jpeg' }));
+        if (frontBlob) {
+          files.push(new File([frontBlob], getSafeFileSlug('front'), { type: 'image/jpeg' }));
+        }
       }
       if (includeBack) {
         const backBlob = cachedBackBlob || (await compositeBackSleeve(album));
-        files.push(new File([backBlob], getSafeFileSlug('back'), { type: 'image/jpeg' }));
+        if (backBlob) {
+          files.push(new File([backBlob], getSafeFileSlug('back'), { type: 'image/jpeg' }));
+        }
       }
 
       if (navigator.share) {
@@ -166,12 +196,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
         if (text) await navigator.clipboard.writeText(text);
         if (files.length > 0) await handleDownloadImages();
         onNotify('info', 'Text copied and images saved (system share unavailable).');
+        onClose();
       }
     } catch (err: any) {
+      // AbortError is normal behavior when the user cancels the OS share dialog
       if (err.name !== 'AbortError') {
         onNotify('error', `Share failed: ${err?.message || err}`);
       }
     } finally {
+      isSharingRef.current = false;
       setProcessing(false);
     }
   };
@@ -188,6 +221,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all active:scale-95"
           >
@@ -302,27 +336,44 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
         {/* Action Controls */}
         <div className="p-3 border-t border-slate-800 bg-[#0c101d] space-y-2">
           <button
+            type="button"
             onClick={handleNativeShare}
-            disabled={processing}
-            className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-bold rounded-lg transition-all text-xs flex items-center justify-center gap-2 shadow-md disabled:opacity-50 cursor-pointer"
+            disabled={isPreparing || processing || (!includeFront && !includeBack && !includeInfo && !includeTracks && !includeBio && !includeReviews)}
+            className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-bold rounded-lg transition-all text-xs flex items-center justify-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>{processing ? 'Compositing...' : 'Share Selected Payload'}</span>
+            {isPreparing ? (
+              <>
+                <Disc className="w-3.5 h-3.5 text-slate-950 animate-spin" />
+                <span>Preparing Artwork...</span>
+              </>
+            ) : processing ? (
+              <>
+                <Share2 className="w-3.5 h-3.5 animate-pulse" />
+                <span>Launching Share...</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Share Selected Payload</span>
+              </>
+            )}
           </button>
 
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleCopyText}
               disabled={processing}
-              className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-40"
             >
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
               <span>{copied ? 'Copied' : 'Copy Text'}</span>
             </button>
 
             <button
+              type="button"
               onClick={handleDownloadImages}
-              disabled={processing || (!includeFront && !includeBack)}
+              disabled={isPreparing || processing || (!includeFront && !includeBack)}
               className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer"
             >
               <Download className="w-3 h-3 text-slate-400" />
