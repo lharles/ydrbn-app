@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Share2, Copy, Download, Check, Image as ImageIcon, FileText, Disc } from 'lucide-react';
 import { AlbumEntry } from '../types';
 import { compositeFrontSleeve, compositeBackSleeve } from '../services/shareImageService';
@@ -20,7 +20,46 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Cached pre-rendered blobs to guarantee instant navigator.share() gesture execution
+  const [cachedFrontBlob, setCachedFrontBlob] = useState<Blob | null>(null);
+  const [cachedBackBlob, setCachedBackBlob] = useState<Blob | null>(null);
+
+  // Pre-composite artwork in the background when the modal opens
+  useEffect(() => {
+    if (!isOpen || !album) {
+      setCachedFrontBlob(null);
+      setCachedBackBlob(null);
+      return;
+    }
+
+    let isMounted = true;
+    const prepareBlobs = async () => {
+      try {
+        const [front, back] = await Promise.all([
+          compositeFrontSleeve(album).catch(() => null),
+          compositeBackSleeve(album).catch(() => null),
+        ]);
+        if (isMounted) {
+          setCachedFrontBlob(front);
+          setCachedBackBlob(back);
+        }
+      } catch (err) {
+        console.warn('[ShareModal] Pre-compositing error:', err);
+      }
+    };
+
+    prepareBlobs();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, album]);
+
   if (!isOpen || !album) return null;
+
+  const getSafeFileSlug = (suffix: string): string => {
+    const cleanBand = (album.bandName || 'album').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    return `${cleanBand}_${suffix}.jpg`;
+  };
 
   const compileShareText = (): string => {
     const parts: string[] = [];
@@ -64,7 +103,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -80,12 +119,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
     setProcessing(true);
     try {
       if (includeFront) {
-        const frontBlob = await compositeFrontSleeve(album);
-        triggerDownload(frontBlob, `${album.bandName}-${album.albumTitle}-front.jpg`);
+        const frontBlob = cachedFrontBlob || (await compositeFrontSleeve(album));
+        triggerDownload(frontBlob, getSafeFileSlug('front'));
       }
       if (includeBack) {
-        const backBlob = await compositeBackSleeve(album);
-        triggerDownload(backBlob, `${album.bandName}-${album.albumTitle}-back.jpg`);
+        const backBlob = cachedBackBlob || (await compositeBackSleeve(album));
+        triggerDownload(backBlob, getSafeFileSlug('back'));
       }
       onNotify('success', 'Sleeve graphics saved.');
     } catch (err: any) {
@@ -101,13 +140,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
       const text = compileShareText();
       const files: File[] = [];
 
+      // Use pre-composited blobs immediately to preserve user activation
       if (includeFront) {
-        const frontBlob = await compositeFrontSleeve(album);
-        files.push(new File([frontBlob], `${album.bandName}_Front.jpg`, { type: 'image/jpeg' }));
+        const frontBlob = cachedFrontBlob || (await compositeFrontSleeve(album));
+        files.push(new File([frontBlob], getSafeFileSlug('front'), { type: 'image/jpeg' }));
       }
       if (includeBack) {
-        const backBlob = await compositeBackSleeve(album);
-        files.push(new File([backBlob], `${album.bandName}_Back.jpg`, { type: 'image/jpeg' }));
+        const backBlob = cachedBackBlob || (await compositeBackSleeve(album));
+        files.push(new File([backBlob], getSafeFileSlug('back'), { type: 'image/jpeg' }));
       }
 
       if (navigator.share) {
@@ -264,7 +304,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
           <button
             onClick={handleNativeShare}
             disabled={processing}
-            className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-bold rounded-lg transition-all text-xs flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+            className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-bold rounded-lg transition-all text-xs flex items-center justify-center gap-2 shadow-md disabled:opacity-50 cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>{processing ? 'Compositing...' : 'Share Selected Payload'}</span>
@@ -274,7 +314,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
             <button
               onClick={handleCopyText}
               disabled={processing}
-              className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all"
+              className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
               <span>{copied ? 'Copied' : 'Copy Text'}</span>
@@ -283,7 +323,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
             <button
               onClick={handleDownloadImages}
               disabled={processing || (!includeFront && !includeBack)}
-              className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40"
+              className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer"
             >
               <Download className="w-3 h-3 text-slate-400" />
               <span>Save Images</span>
