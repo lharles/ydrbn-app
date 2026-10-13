@@ -11,7 +11,10 @@ import {
   ChevronDown,
   ChevronRight,
   ArrowRight,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
+import { performFactoryReset } from '../services/storageService';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -21,12 +24,13 @@ interface HelpModalProps {
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const [isTroubleshootingCollapsed, setIsTroubleshootingCollapsed] = useState(true);
   const [isPlayingGuideVideo, setIsPlayingGuideVideo] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState(false);
 
-  // Reset to collapsed and stop any active video playback whenever modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setIsTroubleshootingCollapsed(true);
       setIsPlayingGuideVideo(false);
+      setConfirmPurge(false);
     } else {
       setIsPlayingGuideVideo(false);
     }
@@ -158,19 +162,57 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               {!isTroubleshootingCollapsed && (
-                <div className="p-2.5 pt-1 space-y-2 border-t border-slate-800/60 bg-black/20 animate-in fade-in duration-150">
-                  <p className="text-[10.5px] text-slate-400 leading-tight">
-                    If the app fails to load an update or remains stuck on old assets, your browser or OS may be holding a stale service worker cache. Clear it manually:
+                <div className="p-2.5 pt-1.5 space-y-2.5 border-t border-slate-800/60 bg-black/20 animate-in fade-in duration-150">
+                  {/* Actionable Reset Trigger */}
+                  <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-800/40 space-y-1.5">
+                    <span className="font-mono text-[10px] font-bold text-amber-300 block uppercase">
+                      One-Tap Cache &amp; Storage Purge:
+                    </span>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Instantly unregisters service workers, clears cache storage, and reloads fresh application assets.
+                    </p>
+                    {!confirmPurge ? (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmPurge(true)}
+                        className="w-full py-1.5 px-2.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-200 hover:text-white font-mono font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                      >
+                        <RotateCcw className="w-3 h-3 text-amber-400" />
+                        <span>Purge Cache &amp; Reset Deck</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5 pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmPurge(false)}
+                          className="flex-1 py-1 px-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[10px]"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => performFactoryReset()}
+                          className="flex-1 py-1 px-2 rounded bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-[10px] flex items-center justify-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Confirm Reset</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    Or clear browser storage manually if the app remains stuck:
                   </p>
-                  <div className="space-y-1 text-[10px] text-slate-400 font-mono leading-relaxed">
+                  <div className="space-y-1 text-[9.5px] text-slate-400 font-mono leading-relaxed bg-black/40 p-2 rounded border border-slate-800/80">
                     <div>
-                      <strong className="text-slate-200">iOS Safari:</strong> Settings → Safari → Advanced → Website Data → Search domain → Delete.
+                      <strong className="text-slate-200">iOS Safari:</strong> Settings → Safari → Advanced → Website Data → Delete.
                     </div>
                     <div>
-                      <strong className="text-slate-200">Android Chrome:</strong> Settings → Apps → Chrome (or YDRBN) → Storage → Clear Storage.
+                      <strong className="text-slate-200">Android Chrome:</strong> Settings → Apps → Chrome → Storage → Clear Storage.
                     </div>
                     <div>
-                      <strong className="text-slate-200">Desktop:</strong> Press <strong className="text-slate-200">Ctrl + Shift + R</strong> or <strong className="text-slate-200">Cmd + Shift + R</strong> to force-reload.
+                      <strong className="text-slate-200">Desktop:</strong> Press <strong className="text-slate-200">Ctrl/Cmd + Shift + R</strong>.
                     </div>
                   </div>
                 </div>
@@ -178,13 +220,13 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Footer - Always Visible Above iOS Chrome */}
+          {/* Footer */}
           <div className="px-4 py-2.5 border-t border-slate-800 bg-[#0c101d] flex items-center justify-between shrink-0">
             <span className="text-[10px] font-mono text-slate-500">INFO DOC v1.0</span>
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
             >
               <span>Understood</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -196,7 +238,6 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       {/* In-App Walkthrough Video Player Overlay */}
       {isPlayingGuideVideo && (
         <div className="fixed inset-0 z-[80] flex flex-col bg-black animate-in fade-in select-none">
-          {/* Header Bar with Safe-Area insets and explicit Abort Button */}
           <div className="w-full flex items-center justify-between px-4 py-3 bg-black/90 border-b border-amber-900/50 shrink-0 z-10 pt-[calc(0.75rem+env(safe-area-inset-top))]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -215,7 +256,6 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          {/* Video Display Container */}
           <div className="flex-1 w-full h-full flex items-center justify-center bg-black overflow-hidden p-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <video
               src={`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/video/guide.mp4`}

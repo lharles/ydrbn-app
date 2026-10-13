@@ -11,6 +11,7 @@ import { InfoModal } from './components/InfoModal';
 import { ShareModal } from './components/ShareModal';
 import { HelpModal } from './components/HelpModal';
 import { SleeveZoomModal } from './components/SleeveZoomModal';
+import { TechnicianModal } from './components/TechnicianModal';
 import { AlbumEntry, ToastMessage, CustomDropInput } from './types';
 import { TopBar } from './components/TopBar';
 import { SubHeaderNav } from './components/SubHeaderNav';
@@ -42,6 +43,15 @@ import {
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer } from './services/audioSynthesizer';
 import { getAvailablePacks, checkPackStatus } from './services/contentPackService';
+
+function getIsStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as any).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+}
 
 function triggerConfettiBurst() {
   const canvas = document.createElement('canvas');
@@ -119,7 +129,7 @@ export default function App() {
     const dropTime = getLastDropTimestamp();
     const dev = getDevModeUnlocked();
     if (dev || dropTime === 0) return 0;
-    const remaining = (24 * 60 * 60 * 1000) - (Date.now() - dropTime);
+    const remaining = 24 * 60 * 60 * 1000 - (Date.now() - dropTime);
     return remaining > 0 ? remaining : 0;
   });
 
@@ -128,6 +138,10 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [isCustomDropOpen, setIsCustomDropOpen] = useState(false);
+  const [isTechnicianOpen, setIsTechnicianOpen] = useState(false);
+
+  // Standalone detection state
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => getIsStandalone());
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [hasSeenHelp, setHasSeenHelp] = useState<boolean>(() => {
@@ -142,6 +156,7 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
   const [isApparelOpen, setIsApparelOpen] = useState(false);
+  const [isAtjVideoOpen, setIsAtjVideoOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -153,9 +168,11 @@ export default function App() {
     } else if (!seenInfo) {
       setIsInfoOpen(true);
     }
-  }, []);
 
-  const [isAtjVideoOpen, setIsAtjVideoOpen] = useState(false);
+    const handleInstalled = () => setIsStandalone(true);
+    window.addEventListener('pwa-installed', handleInstalled);
+    return () => window.removeEventListener('pwa-installed', handleInstalled);
+  }, []);
 
   useEffect(() => {
     const handleFanfare = () => {
@@ -255,14 +272,14 @@ export default function App() {
           }
           return a;
         });
-        
+
         const warmedAlbums = await Promise.all(promises);
         setAlbums(warmedAlbums);
       };
-      
+
       warmAssets();
     } catch (err) {
-      console.error("Storage load error:", err);
+      console.error('Storage load error:', err);
     }
   }, []);
 
@@ -452,12 +469,12 @@ export default function App() {
   };
 
   const handleDailyDrop = async () => {
-    if (isGenerating) return; 
+    if (isGenerating) return;
 
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    const realLastDrop = getLastDropTimestamp(); 
+    const realLastDrop = getLastDropTimestamp();
     const timePassed = Date.now() - realLastDrop;
-    
+
     if (!isDevMode && realLastDrop !== 0 && timePassed < ONE_DAY_MS) {
       addToast('error', 'You must wait 24 hours between drops!');
       return;
@@ -543,6 +560,24 @@ export default function App() {
     }
   };
 
+  // Dedicated handler for the TopBar hardware install icon
+  const handleTopBarInstall = () => {
+    const promptEvent = (window as any).deferredPrompt;
+    if (promptEvent) {
+      promptEvent.prompt();
+      promptEvent.userChoice.then(({ outcome }: any) => {
+        if (outcome === 'accepted') {
+          (window as any).deferredPrompt = null;
+          setIsStandalone(true);
+          addToast('success', 'Installation accepted.');
+        }
+      });
+    } else {
+      // If prompt is suppressed or on iOS, open settings to display the platform guide
+      setIsSettingsOpen(true);
+    }
+  };
+
   return (
     <div className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#0c101d] text-slate-100 select-none font-sans">
       <Toast toasts={toasts} onDismiss={dismissToast} />
@@ -561,6 +596,8 @@ export default function App() {
             hasEntries={albums.length > 0}
             hasAtjBadge={hasUnlockedAtj}
             onOpenAtjVideo={() => setIsAtjVideoOpen(true)}
+            isStandalone={isStandalone}
+            onInstall={handleTopBarInstall}
           />
           <SubHeaderNav
             entries={albums}
@@ -601,7 +638,7 @@ export default function App() {
             isLoading={isGenerating}
           />
 
-          {/* White Label Pressing Studio Hardware Button (Centered & Themed) */}
+          {/* White Label Pressing Studio Hardware Button */}
           <div className="w-full flex items-center justify-center pt-1.5 pb-0.5">
             <button
               type="button"
@@ -648,6 +685,20 @@ export default function App() {
         onToggleDevMode={handleToggleDevMode}
         hasServerKey={false}
         onOpenDispatch={() => setIsDispatchOpen(true)}
+        onOpenTechnician={() => setIsTechnicianOpen(true)}
+      />
+
+      <TechnicianModal
+        isOpen={isTechnicianOpen}
+        onClose={() => setIsTechnicianOpen(false)}
+        isStandalone={isStandalone}
+        onTriggerInstall={handleTopBarInstall}
+        onResetCooldown={() => {
+          recordDropTimestamp(0);
+          setLastDropTime(0);
+          setCooldownMs(0);
+        }}
+        onNotify={addToast}
       />
 
       <CustomDropModal
@@ -657,15 +708,9 @@ export default function App() {
         isLoading={isGenerating}
       />
 
-      <HelpModal
-        isOpen={isHelpOpen}
-        onClose={handleCloseHelp}
-      />
+      <HelpModal isOpen={isHelpOpen} onClose={handleCloseHelp} />
 
-      <InfoModal
-        isOpen={isInfoOpen}
-        onClose={handleCloseInfo}
-      />
+      <InfoModal isOpen={isInfoOpen} onClose={handleCloseInfo} />
 
       <ShareModal
         isOpen={isShareModalOpen}
@@ -679,7 +724,7 @@ export default function App() {
         onClose={() => setIsZoomOpen(false)}
         album={currentAlbum}
         initialFlipped={isFlipped}
-      />      
+      />
 
       <DispatchModal
         isOpen={isDispatchOpen}
@@ -746,13 +791,13 @@ export default function App() {
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-400 font-mono text-[10px] font-bold uppercase tracking-widest animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
-                <span>"Adjacent To Jim" Transmission Active</span>
+                <span>&quot;Adjacent To Jim&quot; Transmission Active</span>
               </div>
               <h3 className="font-mono font-black text-lg text-[#f3ede4] tracking-wider uppercase mt-1">
                 ATJ.MP3 IS PLAYING
               </h3>
               <p className="text-[11px] text-amber-300/80 font-mono leading-tight">
-                Enjoy this limited time performance of the "Adjacent To Jim" theme song.
+                Enjoy this limited time performance of the &quot;Adjacent To Jim&quot; theme song.
                 This song will only be available as a clip for as long as the album drop
                 that triggered it persists in your archive.
               </p>
@@ -768,8 +813,8 @@ export default function App() {
                 <span>STOP PLAYBACK</span>
               </div>
               <span className="text-[10px] font-normal normal-case text-rose-200/90 tracking-normal">
-                (Caution: "Adjacent To Jim" will only play as
-                 long as the current drop is in your archive!)
+                (Caution: &quot;Adjacent To Jim&quot; will only play as
+                long as the current drop is in your archive!)
               </span>
             </button>
           </div>

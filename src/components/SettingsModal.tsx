@@ -17,7 +17,11 @@ import {
   Sparkles, 
   AlertTriangle, 
   Radio, 
-  Send 
+  Send,
+  CheckCircle2,
+  MoreVertical,
+  Share,
+  Wrench
 } from 'lucide-react';
 import { 
   getAutoCheckUpdatesPref, 
@@ -37,9 +41,27 @@ interface SettingsModalProps {
   onToggleDevMode: (unlocked: boolean) => void;
   hasServerKey?: boolean;
   onOpenDispatch?: () => void;
+  onOpenTechnician?: () => void;
 }
 
 type SettingsView = 'main' | 'cargo-bay' | 'directors-chair';
+
+function getDevicePlatform(): 'android' | 'ios' | 'desktop' {
+  if (typeof window === 'undefined') return 'desktop';
+  const ua = navigator.userAgent || '';
+  if (/android/i.test(ua)) return 'android';
+  if (/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream) return 'ios';
+  return 'desktop';
+}
+
+function getIsStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as any).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+}
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -47,6 +69,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isDevMode,
   onToggleDevMode,
   onOpenDispatch,
+  onOpenTechnician,
 }) => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
 
@@ -85,6 +108,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [isInstallable, setIsInstallable] = useState<boolean>(() => {
     return typeof window !== 'undefined' && Boolean((window as any).deferredPrompt);
   });
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => getIsStandalone());
+  const platform = getDevicePlatform();
 
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -93,6 +118,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setCurrentView('main');
       setConfirmReset(false);
       setIsDangerCollapsed(true);
+      setIsStandalone(getIsStandalone());
       if (typeof prefService.getPreferences === 'function') {
         setPrefs(prefService.getPreferences());
       }
@@ -105,7 +131,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
 
     const handlePromptReady = () => setIsInstallable(true);
-    const handleInstalled = () => setIsInstallable(false);
+    const handleInstalled = () => {
+      setIsInstallable(false);
+      setIsStandalone(true);
+    };
 
     window.addEventListener('pwa-prompt-ready', handlePromptReady);
     window.addEventListener('pwa-installed', handleInstalled);
@@ -125,6 +154,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     if (outcome === 'accepted') {
       (window as any).deferredPrompt = null;
       setIsInstallable(false);
+      setIsStandalone(true);
     }
   };
 
@@ -363,7 +393,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* VIEW 3: MAIN SETTINGS MENU */}
         {currentView === 'main' && (
           <div className="p-4 space-y-3 overflow-y-auto text-xs pr-2 flex-1">
-            {/* Submenu Navigation Hub: Compact Horizontal Layout */}
+            {/* Submenu Navigation Hub */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -445,7 +475,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </label>
             </div>
 
-            {/* App Installation */}
+            {/* Platform-Aware App Installation Section */}
             <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
               <div className="flex items-center justify-between mb-1">
                 <span className="font-bold text-slate-200">App Installation</span>
@@ -454,7 +484,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </span>
               </div>
 
-              {isInstallable ? (
+              {isStandalone ? (
+                <div className="bg-emerald-950/30 p-2.5 rounded-lg border border-emerald-600/40 text-[11px] text-emerald-300 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Y.D.R.B.N. is installed and operating in offline standalone mode.</span>
+                </div>
+              ) : isInstallable ? (
                 <>
                   <p className="text-[11px] text-slate-400 leading-tight mb-2">
                     Install Y.D.R.B.N. directly to your device for instant offline access without an App Store.
@@ -465,13 +500,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     className="w-full py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Install App (Android / Desktop)
+                    Install App ({platform === 'android' ? 'Android' : 'Desktop'})
                   </button>
                 </>
+              ) : platform === 'android' ? (
+                <div className="bg-black/40 p-2.5 rounded-lg border border-slate-800 text-[11px] text-slate-300 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                    <MoreVertical className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Android Installation:</span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-400 leading-tight">
+                    Chrome is holding an automated install cooldown. You can still install the app directly:
+                  </p>
+                  <ol className="list-decimal list-inside text-[10.5px] text-slate-300 space-y-1 font-mono">
+                    <li>Tap Chrome&apos;s menu (<strong>⋮</strong>) in the top-right corner.</li>
+                    <li>Tap <strong>&quot;Install app&quot;</strong> (or <strong>&quot;Add to Home screen&quot;</strong>).</li>
+                  </ol>
+                </div>
+              ) : platform === 'ios' ? (
+                <div className="bg-black/40 p-2.5 rounded-lg border border-slate-800 text-[11px] text-slate-300 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                    <Share className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Apple iOS / Safari Installation:</span>
+                  </div>
+                  <ol className="list-decimal list-inside text-[10.5px] text-slate-300 space-y-1 font-mono">
+                    <li>Tap the <strong>Share</strong> button at the bottom of Safari.</li>
+                    <li>Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong>.</li>
+                  </ol>
+                </div>
               ) : (
-                <div className="bg-black/40 p-2 rounded-lg border border-slate-800 text-[10.5px] text-slate-400 leading-tight">
-                  <span className="text-amber-300 font-bold block mb-1">Apple iOS / Safari Installation:</span>
-                  Tap the <strong className="text-slate-200">Share</strong> icon at the bottom of Safari, scroll down, and tap <strong className="text-slate-200">Add to Home Screen</strong>.
+                <div className="bg-black/40 p-2.5 rounded-lg border border-slate-800 text-[10.5px] text-slate-400 leading-tight">
+                  <span className="text-amber-300 font-bold block mb-1">Desktop Installation:</span>
+                  Click the install icon on the right side of your browser&apos;s address bar, or open the browser menu and select <strong>&quot;Install Y.D.R.B.N.&quot;</strong>.
                 </div>
               )}
             </div>
@@ -612,6 +672,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         aria-label="Toggle developer mode"
                       >
                         <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Technician Service Deck Launcher (Visible when Dev Mode is Unlocked) */}
+                  {isDevMode && onOpenTechnician && (
+                    <div className="pt-2 border-t border-amber-900/40">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenTechnician();
+                        }}
+                        className="w-full py-2 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-200 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                      >
+                        <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Open Technician Service Deck</span>
                       </button>
                     </div>
                   )}
