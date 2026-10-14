@@ -1152,37 +1152,296 @@ function pickWeightedWord(
   return packList.length > 0 ? packList[0] : 'Void';
 }
 
+function pluralizeWord(word: string): string {
+  const clean = word.trim();
+  if (clean.endsWith('s') || clean.endsWith('S')) return clean;
+  return `${clean}s`;
+}
+
 function generateCandidateBandName(pool: SemanticWordPool): string {
-  const randAdj = capitalizeWord(pickWeightedWord(ACTIVE_PACK_ADJECTIVES, EXPANDED_ADJECTIVES, 0.75));
-  const randNoun = capitalizeWord(pickWeightedWord(ACTIVE_PACK_NOUNS, EXPANDED_NOUNS, 0.75));
+  // Primary selections
+  const randAdj1 = capitalizeWord(pickWeightedWord(ACTIVE_PACK_ADJECTIVES, EXPANDED_ADJECTIVES, 0.75));
+  const randNoun1 = capitalizeWord(pickWeightedWord(ACTIVE_PACK_NOUNS, EXPANDED_NOUNS, 0.75));
   const randEnsemble = capitalizeWord(pickWeightedWord(ACTIVE_PACK_ENSEMBLES, EXPANDED_ENSEMBLES, 0.75));
+
+  // Secondary selections (enforcing zero identical collisions in multi-noun bands)
+  let randNoun2 = capitalizeWord(pickWeightedWord(ACTIVE_PACK_NOUNS, EXPANDED_NOUNS, 0.75));
+  let attempts2 = 0;
+  while (randNoun2.toLowerCase() === randNoun1.toLowerCase() && attempts2 < 20) {
+    randNoun2 = capitalizeWord(pickWeightedWord(ACTIVE_PACK_NOUNS, EXPANDED_NOUNS, 0.75));
+    attempts2++;
+  }
+
+  let randNoun3 = capitalizeWord(pickWeightedWord(ACTIVE_PACK_NOUNS, EXPANDED_NOUNS, 0.75));
+  let attempts3 = 0;
+  while (
+    (randNoun3.toLowerCase() === randNoun1.toLowerCase() || randNoun3.toLowerCase() === randNoun2.toLowerCase()) &&
+    attempts3 < 20
+  ) {
+    randNoun3 = capitalizeWord(pickWeightedWord(ACTIVE_PACK_NOUNS, EXPANDED_NOUNS, 0.75));
+    attempts3++;
+  }
 
   const poolPrefix = pool.prefixes[Math.floor(Math.random() * pool.prefixes.length)];
   const poolNoun = pool.nouns[Math.floor(Math.random() * pool.nouns.length)];
+  const effectiveNoun = ACTIVE_PACK_NOUNS.length > 0 && Math.random() < 0.75 ? randNoun1 : poolNoun;
 
-  const effectiveNoun = ACTIVE_PACK_NOUNS.length > 0 && Math.random() < 0.75 ? randNoun : poolNoun;
+  const titles = [
+    'Dr.',
+    'Professor',
+    'Captain',
+    'Lord',
+    'Baron',
+    'Saint',
+    'General',
+    'Inspector',
+    'Brother',
+    'Sister',
+    'Uncle',
+    'Aunt',
+  ];
+  const title = titles[Math.floor(Math.random() * titles.length)];
 
-  const pattern = Math.floor(Math.random() * 8);
+  const bandTemplates = [
+    // --- Two-Word Standard Archetypes ---
+    () => `${randAdj1} ${randNoun1}`,
+    () => `The ${randAdj1} ${randNoun1}`,
+    () => `${randNoun1} ${randNoun2}`,
+    () => `The ${randNoun1} ${randNoun2}`,
+    () => `${poolPrefix} ${randNoun1}`,
+    () => `${randNoun1} ${randEnsemble}`,
+    () => `The ${randNoun1} ${randEnsemble}`,
+    () => `${randAdj1} ${randEnsemble}`,
+    () => `The ${randAdj1} ${randEnsemble}`,
+    () => `${randNoun1} & ${randNoun2}`,
+    () => `The ${randNoun1} & ${randNoun2}`,
 
-  switch (pattern) {
-    case 0:
-      return `${randAdj} ${randNoun}`;
-    case 1:
-      return `The ${randAdj} ${randNoun}`;
-    case 2:
-      return `The ${randNoun} ${randEnsemble}`;
-    case 3:
-      return `${randNoun} ${randEnsemble}`;
-    case 4:
-      return `${randAdj} ${randEnsemble}`;
-    case 5:
-      return `${randNoun} & The ${randAdj} ${effectiveNoun}`;
-    case 6:
-      return `The ${randEnsemble} of ${randNoun}`;
-    case 7:
-    default:
-      return `${poolPrefix} ${randNoun}`;
-  }
+    // --- Three-Word Archetypes ---
+    () => `${randNoun1} & The ${randAdj1} ${effectiveNoun}`,
+    () => `${randNoun1} & The ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Band`,
+    () => `The ${randAdj1} ${randNoun1} Experience`,
+    () => `The ${randAdj1} ${randNoun1} Project`,
+    () => `The ${randAdj1} ${randNoun1} Orchestra`,
+    () => `The ${randEnsemble} of ${randNoun1}`,
+    () => `${randAdj1} ${randNoun1} ${randEnsemble}`,
+    () => `The ${randAdj1} ${randNoun1} ${randEnsemble}`,
+    () => `${title} ${randNoun1} & ${randNoun2}`,
+    () => `${title} ${randAdj1} & The ${randNoun1}`,
+    () => `${randNoun1}, ${randNoun2} & ${randNoun3}`,
+    () => `Sons of ${randNoun1}`,
+    () => `Daughters of ${randNoun1}`,
+    () => `Children of the ${randNoun1}`,
+    () => `${randNoun1} of the ${randAdj1} ${randNoun2}`,
+
+    // --- Four-Word & Institutional / Narrative Formats ---
+    () => `${randNoun1} & The ${randAdj1} ${pluralizeWord(randNoun2)}`,
+    () => `The ${randAdj1} ${randEnsemble} of ${randNoun1}`,
+    () => `${title} ${randNoun1} & His ${randAdj1} ${randNoun2}`,
+    () => `${title} ${randNoun1} & The ${randNoun2} ${randEnsemble}`,
+    () => `The ${randEnsemble} for ${randAdj1} ${randNoun1}`,
+    () => `The Secret ${randEnsemble} of ${randNoun1}`,
+    () => `The United ${randEnsemble} of ${randNoun1}`,
+    () => `Department of ${randAdj1} ${randNoun1}`,
+    () => `Ministry of ${randNoun1} & ${randNoun2}`,
+    () => `${randNoun1} Street ${randEnsemble}`,
+    () => `${randAdj1} ${randNoun1} Sound System`,
+    () => `The ${randNoun1} & ${randNoun2} Corporation`,
+    () => `The ${randNoun1} & ${randNoun2} Society`,
+
+    // --- Character-Led & Frontperson Archetypes ---
+    () => `${title} ${randAdj1} ${randNoun1}`,
+    () => `${title} ${randNoun1} ${randEnsemble}`,
+    () => `${randNoun1} and His ${randEnsemble}`,
+    () => `${randNoun1} and Her ${randEnsemble}`,
+    () => `${title} ${randAdj1} ${randNoun1} Show`,
+    () => `${randNoun1} & The ${randNoun2} Band`,
+    () => `${randNoun1} & The ${randNoun2} Orchestra`,
+    () => `${randNoun1} & The ${randAdj1} ${randEnsemble}`,
+    () => `${title} ${randNoun1} All-Stars`,
+    () => `${title} ${randAdj1} ${randNoun1} Revue`,
+    () => `${randNoun1} and the ${randAdj1} ${randNoun2}`,
+    () => `${title} ${randNoun1} Revival`,
+    () => `${title} ${randNoun1} Collective`,
+    () => `${randAdj1} ${randNoun1} Society`,
+    () => `${randAdj1} ${randNoun1} Syndicate`,
+
+    // --- Family, Friends & Fictional Communities ---
+    () => `The ${randNoun1} Brothers`,
+    () => `The ${randNoun1} Sisters`,
+    () => `The ${randAdj1} ${randNoun1} Brothers`,
+    () => `The ${randAdj1} ${randNoun1} Sisters`,
+    () => `${randNoun1} Family ${randEnsemble}`,
+    () => `The ${randNoun1} Family Band`,
+    () => `The ${randNoun1} Cousins`,
+    () => `${title} ${randNoun1} Family`,
+    () => `The ${randAdj1} ${randNoun1} Family`,
+    () => `Friends of the ${randNoun1}`,
+    () => `The ${randNoun1} Club`,
+    () => `The ${randAdj1} ${randNoun1} Club`,
+    () => `${randNoun1} Appreciation Society`,
+    () => `The ${randNoun1} Fan Club`,
+    () => `The ${randAdj1} ${randNoun1} Fellowship`,
+
+    // --- Place Names, Streets & Local Legends ---
+    () => `${randNoun1} Avenue ${randEnsemble}`,
+    () => `${randNoun1} Boulevard Band`,
+    () => `${randAdj1} ${randNoun1} Avenue`,
+    () => `${randNoun1} Hill ${randEnsemble}`,
+    () => `The ${randNoun1} Street Band`,
+    () => `The ${randAdj1} ${randNoun1} Collective`,
+    () => `${randNoun1} County ${randEnsemble}`,
+    () => `${randAdj1} ${randNoun1} County`,
+    () => `The ${randNoun1} District Band`,
+    () => `${randNoun1} District Orchestra`,
+    () => `The ${randAdj1} ${randNoun1} Company`,
+    () => `${randNoun1} Town Social Club`,
+    () => `The ${randNoun1} Neighborhood Band`,
+    () => `${randAdj1} ${randNoun1} Union`,
+    () => `${randNoun1} City ${randEnsemble}`,
+
+    // --- Mock Institutions & Official-Sounding Groups ---
+    () => `The ${randNoun1} Research Group`,
+    () => `${randAdj1} ${randNoun1} Research Project`,
+    () => `The ${randNoun1} Institute Band`,
+    () => `${randNoun1} Institute Orchestra`,
+    () => `The ${randAdj1} ${randNoun1} Institute`,
+    () => `The ${randNoun1} Preservation Society`,
+    () => `${randAdj1} ${randNoun1} Foundation`,
+    () => `The ${randNoun1} Reform Group`,
+    () => `${randAdj1} ${randNoun1} Commission`,
+    () => `The ${randNoun1} Development Project`,
+    () => `${randAdj1} ${randNoun1} Initiative`,
+    () => `The ${randNoun1} Management Group`,
+    () => `${randNoun1} Operations Orchestra`,
+    () => `The ${randAdj1} ${randNoun1} Authority`,
+    () => `${randNoun1} & ${randNoun2} Enterprises`,
+
+    // --- Clubs, Leagues, Unions & Associations ---
+    () => `The ${randAdj1} ${randNoun1} League`,
+    () => `${randNoun1} & ${randNoun2} League`,
+    () => `The ${randNoun1} Union Band`,
+    () => `${randAdj1} ${randNoun1} Association`,
+    () => `The ${randNoun1} Athletic Club`,
+    () => `${randNoun1} Social ${randEnsemble}`,
+    () => `${randNoun1} & ${randNoun2} Association`,
+    () => `The ${randNoun1} Workers ${randEnsemble}`,
+    () => `${randAdj1} ${randNoun1} Brotherhood`,
+
+    // --- Mysteries, Secrets & Unexplained Phenomena ---
+    () => `The Mystery of ${randNoun1}`,
+    () => `The ${randNoun1} Mystery Band`,
+    () => `${randAdj1} ${randNoun1} Enigma`,
+    () => `The ${randAdj1} ${randNoun1} Secret`,
+    () => `${randNoun1} Behind the ${randNoun2}`,
+    () => `The ${randNoun1} Conspiracy`,
+    () => `${randAdj1} ${randNoun1} Prophecy`,
+    () => `The ${randNoun1} Phenomenon`,
+    () => `${randNoun1} from the ${randAdj1} ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Mystery`,
+    () => `${randNoun1} & The Missing ${randNoun2}`,
+    () => `The Curious ${randNoun1} ${randEnsemble}`,
+    () => `${randAdj1} ${randNoun1} Incident`,
+    () => `The ${randNoun1} Cover-Up`,
+    () => `${randNoun1} of Unknown ${randNoun2}`,
+
+    // --- Cosmic, Mythic & Grandiose Names ---
+    () => `The ${randAdj1} ${randNoun1} Galaxy`,
+    () => `${randNoun1} Across the ${randNoun2}`,
+    () => `The ${randNoun1} Constellation`,
+    () => `${randAdj1} ${randNoun1} Odyssey`,
+    () => `The ${randNoun1} Space ${randEnsemble}`,
+    () => `${randNoun1} from Another ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Dimension`,
+    () => `${randNoun1} Beyond the ${randNoun2}`,
+    () => `The ${randNoun1} Astral Band`,
+    () => `${randAdj1} ${randNoun1} Cosmos`,
+    () => `The ${randNoun1} Planetary Orchestra`,
+    () => `${randNoun1} & The Cosmic ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Empire`,
+    () => `${randNoun1} of the Outer ${randNoun2}`,
+    () => `The ${randNoun1} Dimension Project`,
+
+    // --- Retro, Soul, Funk & Showbiz Patterns ---
+    () => `The ${randAdj1} ${randNoun1} Revue`,
+    () => `${randNoun1} Soul ${randEnsemble}`,
+    () => `The ${randAdj1} ${randNoun1} Sound`,
+    () => `${randNoun1} Funk Orchestra`,
+    () => `The ${randNoun1} Rhythm ${randEnsemble}`,
+    () => `${randAdj1} ${randNoun1} Soul Band`,
+    () => `${randNoun1} & The Soul ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Express`,
+    () => `${randNoun1} Midnight ${randEnsemble}`,
+    () => `The ${randNoun1} Dance Orchestra`,
+    () => `${randAdj1} ${randNoun1} Review`,
+    () => `${randNoun1} Revival ${randEnsemble}`,
+    () => `The ${randNoun1} Show Band`,
+    () => `${randAdj1} ${randNoun1} Rhythm Club`,
+    () => `The ${randNoun1} Funk Society`,
+
+    // --- Indie, Alternative & Art-Rock Constructions ---
+    () => `${randAdj1} ${randNoun1} Parade`,
+    () => `The ${randNoun1} Experiment`,
+    () => `${randNoun1} & The ${randAdj1} ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Machine`,
+    () => `${randNoun1} Pattern ${randEnsemble}`,
+    () => `The ${randNoun1} Assembly`,
+    () => `${randAdj1} ${randNoun1} Laboratory`,
+    () => `The ${randNoun1} Workshop`,
+    () => `${randNoun1} & ${randAdj1} ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Method`,
+    () => `${randNoun1} Theory ${randEnsemble}`,
+    () => `The ${randNoun1} Project Group`,
+    () => `${randAdj1} ${randNoun1} Movement`,
+    () => `The ${randNoun1} Arrangement`,
+    () => `${randAdj1} ${randNoun1} Experiment`,
+
+    // --- Slightly Absurd but Plausible Band Names ---
+    () => `The ${randNoun1} Problem`,
+    () => `${randAdj1} ${randNoun1} Emergency`,
+    () => `The ${randNoun1} Situation`,
+    () => `${randNoun1} & The Wrong ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Department`,
+    () => `${randNoun1} for the ${randNoun2}`,
+    () => `The ${randNoun1} Replacement Band`,
+    () => `${randAdj1} ${randNoun1} Committee`,
+    () => `The ${randNoun1} Repair Group`,
+    () => `${randNoun1} & The Spare ${randNoun2}`,
+    () => `${randNoun1} Maintenance ${randEnsemble}`,
+    () => `The ${randNoun1} Complaint Department`,
+    () => `${randAdj1} ${randNoun1} Recall`,
+    () => `The ${randNoun1} Backup Orchestra`,
+
+    // --- Duos, Trios & Ensemble Formats ---
+    () => `${randNoun1} and ${randNoun2} Band`,
+    () => `${randAdj1} ${randNoun1} Trio`,
+    () => `The ${randAdj1} ${randNoun1} Quartet`,
+    () => `${randNoun1} & ${randNoun2} Trio`,
+    () => `The ${randNoun1} Duo ${randEnsemble}`,
+    () => `The ${randNoun1} Ensemble`,
+    () => `${randNoun1} & The ${randNoun2} Trio`,
+    () => `${randAdj1} ${randNoun1} Chamber Orchestra`,
+    () => `The ${randNoun1} Big Band`,
+
+    // --- Final Narrative & Wordplay Patterns ---
+    () => `The Last ${randNoun1} ${randEnsemble}`,
+    () => `${randAdj1} ${randNoun1} Forever`,
+    () => `The ${randNoun1} Before ${randNoun2}`,
+    () => `${randNoun1} After the ${randNoun2}`,
+    () => `The ${randAdj1} ${randNoun1} Returns`,
+    () => `${randNoun1} & Other ${pluralizeWord(randNoun2)}`,
+    () => `The ${randNoun1} of Tomorrow`,
+    () => `${randAdj1} ${randNoun1} Today`,
+    () => `The ${randNoun1} We Know`,
+    () => `${randNoun1} for Beginners`,
+    () => `The ${randNoun1} Next Door`,
+    () => `${randAdj1} ${randNoun1} in Motion`,
+    () => `The ${randNoun1} Goes Electric`,
+    () => `${randNoun1} Against the ${randNoun2}`,
+  ];
+
+  const roll = Math.floor(Math.random() * bandTemplates.length);
+  return bandTemplates[roll]();
 }
 
 function aOrAn(word: string): string {
