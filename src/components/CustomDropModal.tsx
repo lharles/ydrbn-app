@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Disc, Sparkles, Upload, X, Music } from 'lucide-react';
+import { Disc, Sparkles, Upload, Music } from 'lucide-react';
 import { CustomDropInput, AlbumEntry } from '../types';
 
 interface CustomDropModalProps {
@@ -58,23 +58,23 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-sm animate-in fade-in select-none">
-      <div 
+      <div
         className="w-full max-w-sm sm:max-w-md bg-[#12100e] border border-amber-800/40 rounded-2xl shadow-2xl flex flex-col max-h-[84dvh] sm:max-h-[88vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/40 bg-[#0c0a09] shrink-0">
           <div className="flex items-center gap-2">
-            <Disc className="w-4 h-4 text-amber-400" />
+            <Disc className="w-4 h-4 text-amber-400"/>
             <h3 className="font-mono font-bold text-xs uppercase tracking-wider text-amber-200">
-              Custom Drop - White Label Pressing Studio
+              Custom Drop
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close studio"
-            className="text-slate-400 hover:text-white p-1 text-sm font-mono leading-none"
+            aria-label="Close custom drop"
+            className="text-slate-400 hover:text-white p-1 text-sm font-mono leading-none cursor-pointer"
           >
             ✕
           </button>
@@ -83,7 +83,7 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto flex-1 text-xs text-slate-300">
           <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-800/30 text-[11px] text-amber-300/90 font-mono leading-relaxed">
-            ✦ <strong>Custom Drop - Private Pressing Mode:</strong> Enter any fields you choose. Anything left blank will be generated automatically. Custom drops do not consume your 24h Daily Drop timer.
+            ✦ <strong>Custom Drop:</strong> Enter any fields you choose. Anything left blank will be generated automatically. Custom drops do not consume your 24h Daily Drop timer.
           </div>
 
           {/* Band Name */}
@@ -95,7 +95,7 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
               type="text"
               value={bandName}
               onChange={(e) => setBandName(e.target.value)}
-              placeholder="e.g., The Velvet Transmission (or leave blank)"
+              placeholder="e.g., Unreasonable Elbow (or leave blank)"
               className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-slate-700 text-slate-200 focus:border-amber-500 outline-none font-mono"
             />
           </div>
@@ -110,7 +110,7 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
                 type="text"
                 value={albumTitle}
                 onChange={(e) => setAlbumTitle(e.target.value)}
-                placeholder="e.g., Echoes in F# minor"
+                placeholder="e.g., Plastic Spoons"
                 className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-slate-700 text-slate-200 focus:border-amber-500 outline-none font-mono"
               />
             </div>
@@ -122,7 +122,7 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
                 type="text"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                placeholder="e.g., 1984"
+                placeholder="e.g., 1978"
                 className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-slate-700 text-slate-200 focus:border-amber-500 outline-none font-mono"
               />
             </div>
@@ -131,7 +131,7 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
           {/* Audio Preset */}
           <div>
             <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1 flex items-center gap-1">
-              <Music className="w-3 h-3 text-amber-400" />
+              <Music className="w-3 h-3 text-amber-400"/>
               <span>Audio Soundscape Flavor</span>
             </label>
             <select
@@ -150,8 +150,8 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
           {/* Custom Artwork */}
           <div>
             <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1 flex items-center gap-1">
-              <Upload className="w-3 h-3 text-amber-400" />
-              <span>Cover Artwork (Optional Image Upload)</span>
+              <Upload className="w-3 h-3 text-amber-400"/>
+              <span>Custom Photo Cover (Optional Image Upload)</span>
             </label>
             <input
               type="file"
@@ -221,9 +221,9 @@ export const CustomDropModal: React.FC<CustomDropModalProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-950/40 active:scale-95"
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-950/40 active:scale-95 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5"/>
               <span>{isLoading ? 'Pressing Custom Drop...' : 'Create Custom Drop'}</span>
             </button>
           </div>

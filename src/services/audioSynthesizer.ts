@@ -12,6 +12,8 @@ export class RetroAudioSynthesizer {
   private isPlaying = false;
   private activeNodes: { stop: () => void }[] = [];
   private activeTimeouts: NodeJS.Timeout[] = [];
+  private analyser: AnalyserNode | null = null;
+  private freqData: Uint8Array<ArrayBuffer> | null = null;
 
   private getContext(): AudioContext {
     if (!this.ctx) {
@@ -89,9 +91,15 @@ export class RetroAudioSynthesizer {
     masterGain.gain.linearRampToValueAtTime(0.75, now + 0.3);
     masterGain.gain.setValueAtTime(0.75, now + duration - 0.5);
     masterGain.gain.linearRampToValueAtTime(0.001, now + duration);
-
     masterComp.connect(masterGain);
     masterGain.connect(ctx.destination);
+
+    // 2. Inside playAlbumClip(), right after masterGain.connect(ctx.destination):
+    this.analyser = ctx.createAnalyser();
+    this.analyser.fftSize = 64;
+    this.analyser.smoothingTimeConstant = 0.72;
+    this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+    masterGain.connect(this.analyser);
 
     // 4. Play Continuous needle-drop vinyl crackle
     this.playVinylCrackle(ctx, masterComp, now, duration);
@@ -603,6 +611,23 @@ export class RetroAudioSynthesizer {
 
   public getPlaybackStatus(): boolean {
     return this.isPlaying;
+  }
+
+  // 3. Add this method to RetroAudioSynthesizer class:
+  public getAudioLevels(): { left: number; right: number } {
+    if (!this.isPlaying || !this.analyser || !this.freqData) {
+      return { left: 0, right: 0 };
+    }
+    this.analyser.getByteFrequencyData(this.freqData);
+    let lowSum = 0;
+    let highSum = 0;
+    const half = Math.floor(this.freqData.length / 2);
+    for (let i = 0; i < half; i++) lowSum += this.freqData[i];
+    for (let i = half; i < this.freqData.length; i++) highSum += this.freqData[i];
+
+    const left = Math.min(1, (lowSum / (half * 200)) * 1.25);
+    const right = Math.min(1, (highSum / (half * 160)) * 1.45);
+    return { left, right };
   }
 }
 

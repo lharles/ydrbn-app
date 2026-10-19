@@ -9,10 +9,8 @@ const STORAGE_KEY_CUSTOM_PHOTOS_FLAG = 'ydrbn_use_custom_photos';
 const STORAGE_KEY_AUTO_CHECK_UPDATES = 'ydrbn_auto_check_updates';
 export const STORAGE_KEY_RECENT_ALBUMS = 'ydrbn_recent_albums';
 export const MAX_RECENT_ALBUMS = 28;
+export const MAX_ARCHIVE_LIMIT = 14;
 
-/**
- * Loads the rolling recentAlbums list from localStorage (capped at 28)
- */
 export function getRecentAlbums(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_RECENT_ALBUMS);
@@ -24,9 +22,6 @@ export function getRecentAlbums(): string[] {
   }
 }
 
-/**
- * Saves recentAlbums array to localStorage, enforcing the 28-item cap
- */
 export function saveRecentAlbums(recentAlbums: string[]): void {
   try {
     const capped = recentAlbums.slice(0, MAX_RECENT_ALBUMS);
@@ -36,9 +31,6 @@ export function saveRecentAlbums(recentAlbums: string[]): void {
   }
 }
 
-/**
- * Adds an album title to recentAlbums with rolling FIFO memory capped at 28 items
- */
 export function recordRecentAlbum(title: string): void {
   try {
     const clean = title.trim();
@@ -54,9 +46,6 @@ export function recordRecentAlbum(title: string): void {
   }
 }
 
-/**
- * Remove obsolete large localStorage keys to reclaim browser quota
- */
 function cleanupLegacyStorage(): void {
   try {
     const legacyKeys = [
@@ -80,12 +69,23 @@ function cleanupLegacyStorage(): void {
   }
 }
 
-export const MAX_ARCHIVE_LIMIT = 14;
-
 /**
- * Loads albums from localStorage and generates in-memory cover data URLs
- * dynamically from lightweight JSON recipes (<2ms execution).
+ * Evicts oldest non-favorite albums first when enforcing MAX_ARCHIVE_LIMIT
  */
+export function enforceArchiveLimit(albums: AlbumEntry[]): AlbumEntry[] {
+  if (albums.length <= MAX_ARCHIVE_LIMIT) return albums;
+  const result = [...albums];
+  while (result.length > MAX_ARCHIVE_LIMIT) {
+    const oldestNonFavIdx = result.findIndex((a) => !a.isFavorite);
+    if (oldestNonFavIdx !== -1) {
+      result.splice(oldestNonFavIdx, 1);
+    } else {
+      result.shift();
+    }
+  }
+  return result;
+}
+
 export function loadAlbums(): AlbumEntry[] {
   cleanupLegacyStorage();
   try {
@@ -103,13 +103,11 @@ export function loadAlbums(): AlbumEntry[] {
       return initial;
     }
 
-    // Enforce 14-record archive rollover limit on loaded data
     if (parsed.length > MAX_ARCHIVE_LIMIT) {
-      parsed = parsed.slice(parsed.length - MAX_ARCHIVE_LIMIT);
+      parsed = enforceArchiveLimit(parsed);
       saveAlbums(parsed);
     }
 
-    // Reconstruct in-memory cover image URLs for any album with a recipe
     const verified = parsed.map((album) => {
       if (!album.coverImageUrl && album.recipe) {
         album.coverImageUrl = gagCanvasEngine.renderCover(
@@ -124,28 +122,18 @@ export function loadAlbums(): AlbumEntry[] {
     return verified;
   } catch (e) {
     console.error('Failed to load albums from localStorage:', e);
-    const fallback = getStarterCrateAlbums().slice(0, MAX_ARCHIVE_LIMIT);
-    return fallback;
+    return getStarterCrateAlbums().slice(0, MAX_ARCHIVE_LIMIT);
   }
 }
 
-/**
- * Saves albums to localStorage without bloating quota.
- * CRITICAL: Strips heavy base64 coverImageUrl strings for all procedural albums
- * since their artwork is instantly rendered from the JSON recipe.
- * Strict 14-record FIFO queue: permanently drops oldest records when length > 14.
- */
 export function saveAlbums(albums: AlbumEntry[]): void {
   cleanupLegacyStorage();
-  try {
-    // Enforce strict 14-record archive rollover limit (FIFO queue)
-    const capped = albums.length > MAX_ARCHIVE_LIMIT 
-      ? albums.slice(albums.length - MAX_ARCHIVE_LIMIT) 
-      : albums;
+  const capped = enforceArchiveLimit(albums);
 
+  try {
     const serializable = capped.map((album) => {
-      if (album.recipe) {
-        // Keep recipe, strip multi-megabyte base64 data URL
+      // Only strip coverImageUrl if it is purely procedural (no custom photo override)
+      if (album.recipe && !album.recipe.customPhotoUrl) {
         const { coverImageUrl, ...rest } = album;
         return {
           ...rest,
@@ -159,11 +147,6 @@ export function saveAlbums(albums: AlbumEntry[]): void {
   } catch (e) {
     console.warn('Quota warning; attempting emergency minimal compression:', e);
     try {
-      cleanupLegacyStorage();
-      const capped = albums.length > MAX_ARCHIVE_LIMIT 
-        ? albums.slice(albums.length - MAX_ARCHIVE_LIMIT) 
-        : albums;
-      // Emergency stripped schema
       const minimal = capped.map((a) => ({
         id: a.id,
         bandName: a.bandName,
@@ -217,9 +200,13 @@ export function getLastDropTimestamp(): number {
   }
 }
 
-export function recordDropTimestamp(): void {
+export function recordDropTimestamp(timestamp: number = Date.now()): void {
   try {
-    localStorage.setItem(STORAGE_KEY_LAST_DROP, Date.now().toString());
+    if (timestamp <= 0) {
+      localStorage.removeItem(STORAGE_KEY_LAST_DROP);
+    } else {
+      localStorage.setItem(STORAGE_KEY_LAST_DROP, timestamp.toString());
+    }
   } catch (e) {
     console.error('Failed to record drop timestamp:', e);
   }
@@ -277,7 +264,6 @@ export function formatCooldown(ms: number): string {
 }
 
 export async function performFactoryReset(): Promise<void> {
-  // 1. Wipe synchronous web storage
   try {
     localStorage.clear();
     sessionStorage.clear();
@@ -285,7 +271,6 @@ export async function performFactoryReset(): Promise<void> {
     console.error('Failed to clear web storage:', e);
   }
 
-  // 2. Drop IndexedDB database(s)
   try {
     if (typeof indexedDB !== 'undefined') {
       indexedDB.deleteDatabase('ydrbn_packs_db');
@@ -300,7 +285,6 @@ export async function performFactoryReset(): Promise<void> {
     console.error('Failed to drop IndexedDB:', e);
   }
 
-  // 3. Purge CacheStorage API
   try {
     if (typeof caches !== 'undefined') {
       const cacheNames = await caches.keys();
@@ -310,7 +294,6 @@ export async function performFactoryReset(): Promise<void> {
     console.error('Failed to purge CacheStorage:', e);
   }
 
-  // 4. Unregister all active Service Workers
   try {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
@@ -320,6 +303,5 @@ export async function performFactoryReset(): Promise<void> {
     console.error('Failed to unregister service workers:', e);
   }
 
-  // 5. Force a hard reload with a cache-busting timestamp
   window.location.href = `${window.location.origin}${window.location.pathname}?reset=${Date.now()}`;
 }

@@ -55,16 +55,27 @@ export class GagCanvasEngine {
    * Backward-compatible signature accepting either (recipe) or (bandName, albumTitle, recipe).
    * NOTE: bandName and albumTitle are NEVER drawn onto the canvas.
    */
+
+  /**
+   * Replace renderCover() in src/services/gagCanvasEngine.ts
+   */
   public renderCover(
     arg1: string | CanvasRecipe,
-    _arg2?: string,
-    arg3?: CanvasRecipe
+    arg2?: string | { transparentBackdrop?: boolean },
+    arg3?: CanvasRecipe,
+    arg4?: { transparentBackdrop?: boolean }
   ): string {
     let recipe: CanvasRecipe;
+    let options: { transparentBackdrop?: boolean } = {};
+
     if (typeof arg1 === 'object' && arg1 !== null) {
       recipe = arg1 as CanvasRecipe;
+      if (typeof arg2 === 'object' && arg2 !== null) {
+        options = arg2;
+      }
     } else if (arg3) {
       recipe = arg3;
+      if (arg4) options = arg4;
     } else {
       recipe = { backdrop: 'radial_sunburst', subject: 'tooth', modifier: 'caution_stamp' };
     }
@@ -73,44 +84,37 @@ export class GagCanvasEngine {
     const width = canvas.width;
     const height = canvas.height;
 
-    // --- MASTER CANVAS RESET ---
-    // Force-scrubs the buffer and kills leftover blend modes before painting
     ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); 
-    ctx.globalCompositeOperation = 'source-over'; 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1.0;
     ctx.filter = 'none';
     ctx.clearRect(0, 0, width, height);
 
-    // Resolve Palette
     const palette = this.resolvePalette(recipe);
-
-    // Normalize 3-layer composition parameters
     const { backdrop, subject, modifier } = this.normalizeComposition(recipe);
 
-    // ==========================================
-    // LAYER 1: BACKDROP
-    // ==========================================
-    this.renderBackdrop(backdrop, palette, recipe);
+    // LAYER 1: BACKDROP (Skipped when rendering transparent apparel cutouts)
+    if (!options.transparentBackdrop) {
+      this.renderBackdrop(backdrop, palette, recipe);
+    }
 
-    // ==========================================
     // LAYER 2: SUBJECT VECTOR
-    // ==========================================
     this.renderSubject(subject, palette, recipe);
 
-    // ==========================================
     // LAYER 3: GAG MODIFIER
-    // ==========================================
     this.renderModifier(modifier, palette, recipe);
 
-    // ==========================================
-    // POST-PROCESSING: Analog Ring-Wear & Scuffing
-    // ==========================================
-    this.applyAnalogRingWearAndScuffing();
+    // POST-PROCESSING: Analog Ring-Wear & Scuffing (Skipped on transparent cutouts)
+    if (!options.transparentBackdrop) {
+      this.applyAnalogRingWearAndScuffing();
+    }
 
     ctx.restore();
 
-    return canvas.toDataURL('image/jpeg', 0.92);
+    return options.transparentBackdrop
+      ? canvas.toDataURL('image/png')
+      : canvas.toDataURL('image/jpeg', 0.92);
   }
 
   /**
@@ -187,7 +191,62 @@ export class GagCanvasEngine {
     const cx = 512;
     const cy = 512;
 
-    switch (type) {
+    switch (type as string) {
+      // ELBOW FAILSAFE BACKDROPS: Vintage horizon/sunburst with a colossal 🤳 or 🦾 arm centerpiece
+      case 'elbow_selfie_backdrop':
+      case 'elbow_mech_backdrop': {
+        const isMech = (type as string) === 'elbow_mech_backdrop';
+        const armEmoji = isMech ? '🦾' : '🤳';
+
+        // 1. Paint a rich vintage split-horizon or radial backdrop first
+        const horizonY = 580;
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+        skyGrad.addColorStop(0, palette.background);
+        skyGrad.addColorStop(0.65, palette.primary);
+        skyGrad.addColorStop(1, palette.secondary);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, 1024, horizonY);
+
+        const groundGrad = ctx.createLinearGradient(0, horizonY, 0, 1024);
+        groundGrad.addColorStop(0, this.adjustBrightness(palette.accent, 18));
+        groundGrad.addColorStop(1, palette.accent);
+        ctx.fillStyle = groundGrad;
+        ctx.fillRect(0, horizonY, 1024, 1024 - horizonY);
+
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(1024, horizonY);
+        ctx.stroke();
+
+        // 2. Draw an orthopedic diagram target ring behind the giant arm
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+        ctx.lineWidth = 6;
+        ctx.setLineDash([18, 12]);
+        ctx.beginPath();
+        ctx.arc(cx, cy - 10, 310, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Stamp the colossal 🤳 or 🦾 emoji right into the backdrop
+        ctx.save();
+        const tilt = ((Math.random() - 0.5) * 22 * Math.PI) / 180;
+        ctx.translate(cx, cy - 10);
+        ctx.rotate(tilt);
+        ctx.font = '460px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+        ctx.shadowBlur = 28;
+        ctx.shadowOffsetX = 12;
+        ctx.shadowOffsetY = 18;
+        ctx.fillText(armEmoji, 0, 0);
+        ctx.restore();
+        break;
+      }
+
       // 0. Clean, slick procedural 2-color gradient
       case 'minimal_gradient': {
         const angle = Math.random() * Math.PI * 2;
@@ -1210,14 +1269,15 @@ export class GagCanvasEngine {
               }
 
               // --- 2. COMPOSITION ENGINE ---
-              // Highly varied layout probabilities (No more rigid 75% centering)
+              // 94% Single Subject (65% Classic Center, 20% Dynamic Floater, 9% Giant)
+              // Only 6% Multiples (4% Twins, 2% Swarm)
               const rand = Math.random();
               let mode = 0;
-              if (rand < 0.25) mode = 1;      // 25% The Giant (Massive, skewed off-edge)
-              else if (rand < 0.50) mode = 2; // 25% The Floater (Randomly placed entirely inside safe zone)
-              else if (rand < 0.65) mode = 3; // 15% The Swarm (Scattered small copies)
-              else if (rand < 0.80) mode = 4; // 15% The Twins (Symmetrical pair)
-              // Remaining 20% is mode 0 (Classic Safe Center)
+              if (rand < 0.02) mode = 3;      // 2% The Swarm (3 to 5 scattered small copies)
+              else if (rand < 0.06) mode = 4; // 4% The Twins (Symmetrical pair)
+              else if (rand < 0.15) mode = 1; // 9% The Giant (Massive, skewed off-edge)
+              else if (rand < 0.35) mode = 2; // 20% The Floater (Single subject placed in safe zone)
+              // Remaining 65% is mode 0 (Classic Safe Center single subject)
 
               // Calculate base fit ratio based on the safe bounding box
               const ratio = Math.min(safeW / img.naturalWidth, safeH / img.naturalHeight);
@@ -2958,6 +3018,143 @@ export class GagCanvasEngine {
         ctx.beginPath();
         ctx.arc(cx, cy, 340, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
+        break;
+      }
+
+      case 'redaction_bars': {
+        ctx.save();
+        ctx.fillStyle = '#09090b';
+        ctx.translate(cx, cy - 30);
+        ctx.rotate(-0.08);
+        ctx.fillRect(-230, -36, 460, 72);
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 20px "Space Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('[REDACTED BY SUBCOMMITTEE]', 0, 7);
+        ctx.restore();
+        break;
+      }
+
+      case 'price_tag': {
+        ctx.save();
+        ctx.translate(cx + 185, 310);
+        ctx.rotate(0.18);
+        ctx.fillStyle = '#facc15';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 5;
+        ctx.fillRect(-110, -55, 220, 110);
+        ctx.strokeRect(-110, -55, 220, 110);
+        ctx.fillStyle = '#dc2626';
+        ctx.font = '900 18px "Oswald", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('BARGAIN BIN CLEARANCE', 0, -24);
+        ctx.fillStyle = '#000000';
+        ctx.font = '900 44px "Oswald", sans-serif';
+        ctx.fillText('$0.49', 0, 28);
+        ctx.restore();
+        break;
+      }
+
+      case 'target_reticle': {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+        ctx.lineWidth = 5;
+        [140, 240].forEach((r) => {
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        ctx.beginPath();
+        ctx.moveTo(-290, 0);
+        ctx.lineTo(290, 0);
+        ctx.moveTo(0, -290);
+        ctx.lineTo(0, 290);
+        ctx.stroke();
+        ctx.restore();
+        break;
+      }
+
+      case 'measurement_arrows': {
+        ctx.save();
+        ctx.strokeStyle = '#f8fafc';
+        ctx.fillStyle = '#f8fafc';
+        ctx.lineWidth = 4;
+        const yLine = 740;
+        ctx.beginPath();
+        ctx.moveTo(250, yLine);
+        ctx.lineTo(774, yLine);
+        ctx.moveTo(250, yLine - 20);
+        ctx.lineTo(250, yLine + 20);
+        ctx.moveTo(774, yLine - 20);
+        ctx.lineTo(774, yLine + 20);
+        ctx.stroke();
+        ctx.font = 'bold 22px "Space Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('FIG 1.4 — 412.8mm (APPROX)', cx, yLine - 14);
+        ctx.restore();
+        break;
+      }
+
+      case 'evidence_tag': {
+        ctx.save();
+        ctx.translate(cx - 190, 690);
+        ctx.rotate(-0.12);
+        ctx.fillStyle = '#fde047';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 6;
+        ctx.fillRect(-95, -65, 190, 130);
+        ctx.strokeRect(-95, -65, 190, 130);
+        ctx.fillStyle = '#000000';
+        ctx.font = '900 22px "Oswald", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('EXHIBIT', 0, -28);
+        ctx.font = '900 54px "Oswald", sans-serif';
+        ctx.fillText('#B', 0, 34);
+        ctx.restore();
+        break;
+      }
+
+      case 'halftone_dots': {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+        for (let x = 180; x <= 844; x += 28) {
+          for (let y = 180; y <= 844; y += 28) {
+            if (Math.hypot(x - cx, y - cy) < 330) {
+              ctx.beginPath();
+              ctx.arc(x, y, 6, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        ctx.restore();
+        break;
+      }
+
+      case 'spotlight': {
+        ctx.save();
+        const spot = ctx.createRadialGradient(cx, cy, 120, cx, cy, 480);
+        spot.addColorStop(0, 'rgba(254, 240, 138, 0.22)');
+        spot.addColorStop(0.55, 'rgba(0, 0, 0, 0.1)');
+        spot.addColorStop(1, 'rgba(0, 0, 0, 0.65)');
+        ctx.fillStyle = spot;
+        ctx.fillRect(0, 0, 1024, 1024);
+        ctx.restore();
+        break;
+      }
+
+      case 'rubber_stamp': {
+        ctx.save();
+        ctx.translate(cx - 150, 700);
+        ctx.rotate(0.2);
+        ctx.strokeStyle = '#1d4ed8';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(-165, -45, 330, 90);
+        ctx.fillStyle = '#1d4ed8';
+        ctx.font = '900 28px "Oswald", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(recipe.stampText || 'FILE UNDER MISC', 0, 8);
         ctx.restore();
         break;
       }

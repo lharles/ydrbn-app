@@ -1,48 +1,135 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 /* =========================================================================
-   1970s HI-FI STEREO CHASSIS — TAILWIND V4 THEME & TYPOGRAPHY
+   COLOR MODE VARIABLES (Default Brown/Yellow, Dark, Light, Contrast)
    ========================================================================= */
+:root,
+:root[data-theme="default"] {
+  --theme-bg: #12100e;
+  --theme-chassis: #161310;
+  --theme-modal: #1c1814;
+  --theme-well: #100e0c;
+  --theme-trim: #35261b;
+  --theme-slate-50: #f9f8f6;
+  --theme-slate-100: #f3ede4;
+  --theme-slate-200: #e2d9cc;
+  --theme-slate-300: #c8bcab;
+  --theme-slate-400: #a39480;
+  --theme-slate-500: #837462;
+  --theme-slate-600: #645647;
+  --theme-slate-700: #4a3d31;
+  --theme-slate-800: #352b22;
+  --theme-slate-900: #231d17;
+  --theme-slate-950: #100e0c;
+}
+
+/* DARK MODE — Obsidian Pitch-Black & Cool Slate */
+:root[data-theme="dark"] {
+  --theme-bg: #050608;
+  --theme-chassis: #0a0d14;
+  --theme-modal: #0f131d;
+  --theme-well: #06080c;
+  --theme-trim: #1e2433;
+  --theme-slate-50: #f8fafc;
+  --theme-slate-100: #f1f5f9;
+  --theme-slate-200: #e2e8f0;
+  --theme-slate-300: #cbd5e1;
+  --theme-slate-400: #94a3b8;
+  --theme-slate-500: #64748b;
+  --theme-slate-600: #475569;
+  --theme-slate-700: #334155;
+  --theme-slate-800: #1e293b;
+  --theme-slate-900: #0f172a;
+  --theme-slate-950: #060911;
+}
+
+/* LIGHT MODE — Studio Daylight Parchment & Espresso Ink */
+:root[data-theme="light"] {
+  --theme-bg: #dfd6c7;
+  --theme-chassis: #f4efe6;
+  --theme-modal: #faf6ef;
+  --theme-well: #e6dfd1;
+  --theme-trim: #b8a68e;
+  --theme-slate-50: #14110f;
+  --theme-slate-100: #1c1714;
+  --theme-slate-200: #2c241e;
+  --theme-slate-300: #3d322a;
+  --theme-slate-400: #57483d;
+  --theme-slate-500: #705e50;
+  --theme-slate-600: #8c7867;
+  --theme-slate-700: #b8a898;
+  --theme-slate-800: #d0c4b4;
+  --theme-slate-900: #e6dfd3;
+  --theme-slate-950: #dbd2c2;
+}
+
+/* CONTRAST MODE — Pure Black & High-Visibility White/Yellow */
+:root[data-theme="contrast"] {
+  --theme-bg: #000000;
+  --theme-chassis: #000000;
+  --theme-modal: #000000;
+  --theme-well: #000000;
+  --theme-trim: #ffffff;
+  --theme-slate-50: #ffffff;
+  --theme-slate-100: #ffffff;
+  --theme-slate-200: #ffffff;
+  --theme-slate-300: #fef08a;
+  --theme-slate-400: #f3f4f6;
+  --theme-slate-500: #e5e7eb;
+  --theme-slate-600: #d1d5db;
+  --theme-slate-700: #ffffff;
+  --theme-slate-800: #ffffff;
+  --theme-slate-900: #0a0a0a;
+  --theme-slate-950: #000000;
+}
+
 @theme {
-  /* Typography Scale */
-  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Bebas Neue', 'Oswald', 'Impact', sans-serif;
+  --font-sans: 'Space Grotesk', 'Oswald', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Oswald', 'Russo One', 'Impact', sans-serif;
   --font-mono: 'Space Mono', 'Courier Prime', 'Consolas', monospace;
 
-  /* 1970s Analog Audio Gear / Smoked Walnut Palette */
-  --color-slate-50: #f9f8f6;
-  --color-slate-100: #f3ede4; /* Warm eggshell text */
-  --color-slate-200: #e2d9cc;
-  --color-slate-300: #c8bcab; /* Muted label text */
-  --color-slate-400: #a39480; /* Secondary descriptions */
-  --color-slate-500: #837462;
-  --color-slate-600: #645647;
-  --color-slate-700: #4a3d31; /* Button borders & hover */
-  --color-slate-800: #352b22; /* Division lines */
-  --color-slate-900: #231d17; /* Section cards */
-  --color-slate-950: #100e0c; /* Deep insets / wells */
+  --color-slate-50: var(--theme-slate-50);
+  --color-slate-100: var(--theme-slate-100);
+  --color-slate-200: var(--theme-slate-200);
+  --color-slate-300: var(--theme-slate-300);
+  --color-slate-400: var(--theme-slate-400);
+  --color-slate-500: var(--theme-slate-500);
+  --color-slate-600: var(--theme-slate-600);
+  --color-slate-700: var(--theme-slate-700);
+  --color-slate-800: var(--theme-slate-800);
+  --color-slate-900: var(--theme-slate-900);
+  --color-slate-950: var(--theme-slate-950);
 }
 
 /* Base Body & Viewport Floor */
 body, html, #root {
-  background-color: #12100e;
-  color: #f3ede4;
+  background-color: var(--theme-bg);
+  color: var(--theme-slate-100);
   font-family: var(--font-sans);
   letter-spacing: -0.01em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-viewport {
+  background-color: var(--theme-bg) !important;
+  color: var(--theme-slate-100);
+}
+
+.app-chassis {
+  background-color: var(--theme-chassis) !important;
+  border-left-color: var(--theme-trim) !important;
+  border-right-color: var(--theme-trim) !important;
 }
 
 /* =========================================================================
    STAMPED METAL HARDWARE UTILITIES
    ========================================================================= */
 
-/* Institutional Display Heading */
 .font-display {
   font-family: var(--font-display);
   letter-spacing: 0.06em;
 }
 
-/* Stamped Metal Chassis Button (Beveled Top Highlight + Recessed Drop Shadow) */
 .btn-chassis {
   text-transform: uppercase;
   font-weight: 700;
@@ -56,27 +143,51 @@ body, html, #root {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-/* Debossed Well (For version badges, serial plates, and metadata insets) */
 .well-inset {
   font-family: var(--font-mono);
-  background-color: #100e0c;
-  border: 1px solid #352b22;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  background-color: var(--theme-well);
+  border: 1px solid var(--theme-slate-800);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-/* Hardcoded Modal Headers, Footers & Root Canvas */
-.bg-\[\#0c101d\] {
-  background-color: #12100e !important;
+/* Modal & Header Dynamic Surface Mapping */
+.bg-\[\#0c101d\],
+.bg-\[\#0c101d\]\/90,
+.bg-\[\#12100e\],
+.bg-\[\#0c0a09\],
+.bg-\[\#0e0c0a\] {
+  background-color: var(--theme-bg) !important;
 }
 
-/* Modal Shells & Backdrop Panels */
-.bg-\[\#111625\] {
-  background-color: #1c1814 !important;
+.bg-\[\#111625\],
+.bg-\[\#161310\],
+.bg-\[\#101422\] {
+  background-color: var(--theme-modal) !important;
 }
 
-/* Submenu Wells & Inset Strips */
-.bg-\[\#0e1320\] {
-  background-color: #161310 !important;
+.bg-\[\#0e1320\],
+.bg-\[\#100e0c\] {
+  background-color: var(--theme-well) !important;
+}
+
+/* Light Mode Readability Overrides (Preserves #sleeve-front and #sleeve-back untouched) */
+:root[data-theme="light"] header .text-amber-300,
+:root[data-theme="light"] header .text-amber-400,
+:root[data-theme="light"] nav .text-amber-200\/90,
+:root[data-theme="light"] .well-inset .text-amber-300,
+:root[data-theme="light"] .well-inset .text-amber-300\/90 {
+  color: #92400e !important;
+}
+
+:root[data-theme="light"] .btn-chassis {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Contrast Mode High-Visibility Overrides */
+:root[data-theme="contrast"] .well-inset,
+:root[data-theme="contrast"] .btn-chassis {
+  border-width: 2px !important;
+  box-shadow: none !important;
 }
 
 /* 3D Perspective and Flip Styles */

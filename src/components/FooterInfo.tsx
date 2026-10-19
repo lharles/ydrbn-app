@@ -38,31 +38,13 @@ export const FooterInfo: React.FC<FooterInfoProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
-        {/* Info Button: Left of Help, pulses until first opened */}
-        <button
-          type="button"
-          onClick={onOpenInfo}
-          aria-label="System Specifications and Credits"
-          title="System Specs & Credits"
-          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative ${
-            !hasSeenInfo
-              ? 'bg-sky-500/20 text-sky-300 border-sky-500/60 animate-pulse hover:bg-sky-500/30'
-              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-sky-400 border-slate-700/80'
-          }`}
-        >
-          <Info className="w-4 h-4" />
-          {!hasSeenInfo && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-          )}
-        </button>
-
-        {/* Help Button: Flashes until first opened */}
+        {/* 1. Help Button (Circle ?): First on the left */}
         <button
           type="button"
           onClick={onOpenHelp}
           aria-label="Field Guide and Instructions"
           title="Field Guide & Instructions"
-          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative ${
+          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative cursor-pointer ${
             !hasSeenHelp
               ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 animate-pulse hover:bg-amber-500/30'
               : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border-slate-700/80'
@@ -74,13 +56,31 @@ export const FooterInfo: React.FC<FooterInfoProps> = ({
           )}
         </button>
 
-        {/* Settings Button */}
+        {/* 2. Info Button (Circle i): Second in the middle */}
+        <button
+          type="button"
+          onClick={onOpenInfo}
+          aria-label="System Specifications and Credits"
+          title="System Specs & Credits"
+          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative cursor-pointer ${
+            !hasSeenInfo
+              ? 'bg-sky-500/20 text-sky-300 border-sky-500/60 animate-pulse hover:bg-sky-500/30'
+              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-sky-400 border-slate-700/80'
+          }`}
+        >
+          <Info className="w-4 h-4" />
+          {!hasSeenInfo && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+          )}
+        </button>
+
+        {/* 3. Settings Button (Gear): Third on the right */}
         <button
           type="button"
           onClick={onOpenSettings}
           aria-label="Settings and Developer Mode"
           title="Settings & Dev Mode"
-          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-all active:scale-95 shadow-sm"
+          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-all active:scale-95 shadow-sm cursor-pointer"
         >
           <Settings className="w-4 h-4" />
         </button>

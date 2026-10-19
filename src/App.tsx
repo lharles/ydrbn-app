@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect } from 'react';
-import { Disc, ExternalLink } from 'lucide-react';
+import { Disc, ExternalLink, Sliders, ChevronDown, ChevronUp, Camera } from 'lucide-react';
 import { CustomDropModal } from './components/CustomDropModal';
 import { ApparelModal } from './components/ApparelModal';
 import { DispatchModal } from './components/DispatchModal';
@@ -27,6 +27,7 @@ import { loadRecipeAssets } from './services/assetManager';
 import {
   loadAlbums,
   saveAlbums,
+  enforceArchiveLimit,
   getDevModeUnlocked,
   setDevModeUnlocked,
   getLastDropTimestamp,
@@ -43,6 +44,7 @@ import {
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer } from './services/audioSynthesizer';
 import { getAvailablePacks, checkPackStatus } from './services/contentPackService';
+import { getPreferences, applyColorMode } from './services/preferencesService';
 
 function getIsStandalone(): boolean {
   if (typeof window === 'undefined') return false;
@@ -120,6 +122,7 @@ export default function App() {
 
   const [useCustomPhotos, setUseCustomPhotos] = useState(false);
   const [selectedPhotoBase64, setSelectedPhotoBase64] = useState<string | null>(null);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStepText, setLoadingStepText] = useState('Forging Vinyl Artwork...');
 
@@ -140,7 +143,6 @@ export default function App() {
   const [isCustomDropOpen, setIsCustomDropOpen] = useState(false);
   const [isTechnicianOpen, setIsTechnicianOpen] = useState(false);
 
-  // Standalone detection state
   const [isStandalone, setIsStandalone] = useState<boolean>(() => getIsStandalone());
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -160,6 +162,10 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // Apply saved color mode immediately on mount
+    const prefs = getPreferences();
+    applyColorMode(prefs.colorMode || 'default');
+
     const seenHelp = localStorage.getItem('ydrbn_has_seen_help') === 'true';
     const seenInfo = localStorage.getItem('ydrbn_has_seen_info') === 'true';
 
@@ -266,7 +272,7 @@ export default function App() {
 
       const warmAssets = async () => {
         const promises = loaded.map(async (a) => {
-          if (a.recipe) {
+          if (a.recipe && !a.recipe.customPhotoUrl) {
             await loadRecipeAssets(a.recipe.backdrop || '', a.recipe.subject || '').catch(() => {});
             return { ...a, coverImageUrl: gagCanvasEngine.renderCover(a.recipe) };
           }
@@ -411,6 +417,7 @@ export default function App() {
   const handleSelectPhoto = (base64: string | null) => {
     setSelectedPhotoBase64(base64);
     if (base64) {
+      setIsCustomizeOpen(true);
       addToast('success', 'Photo loaded. Choose [Modify Your Photos] or [Use Your Photos (as is)].');
     }
   };
@@ -425,6 +432,9 @@ export default function App() {
     const updatedAlbum: AlbumEntry = {
       ...currentAlbum,
       coverImageUrl: selectedPhotoBase64,
+      recipe: currentAlbum.recipe
+        ? { ...currentAlbum.recipe, customPhotoUrl: 'custom' }
+        : undefined,
     };
 
     setAlbums((prev) => {
@@ -451,6 +461,9 @@ export default function App() {
       const updatedAlbum: AlbumEntry = {
         ...currentAlbum,
         coverImageUrl: url,
+        recipe: currentAlbum.recipe
+          ? { ...currentAlbum.recipe, customPhotoUrl: 'custom' }
+          : undefined,
       };
 
       setAlbums((prev) => {
@@ -495,19 +508,21 @@ export default function App() {
       const generatedRecord = await generateDailyDrop();
       const newEntry = { ...generatedRecord };
 
-      await loadRecipeAssets(newEntry.recipe.backdrop, newEntry.recipe.subject);
-      newEntry.coverImageUrl = gagCanvasEngine.renderCover(newEntry.recipe);
+      if (newEntry.recipe) {
+        await loadRecipeAssets(newEntry.recipe.backdrop, newEntry.recipe.subject);
+        newEntry.coverImageUrl = gagCanvasEngine.renderCover(newEntry.recipe);
+      }
 
       if (applyCustom && appliedPhoto) {
         try {
           const { url } = await gagCanvasEngine.processCustomPhoto(appliedPhoto);
           newEntry.coverImageUrl = url;
+          if (newEntry.recipe) newEntry.recipe.customPhotoUrl = 'custom';
         } catch {}
       }
 
       setAlbums((prev) => {
-        const next = [...prev, newEntry];
-        const capped = next.length > 8 ? next.slice(next.length - 8) : next;
+        const capped = enforceArchiveLimit([...prev, newEntry]);
         saveAlbums(capped);
         setCurrentIndex(capped.length - 1);
         return capped;
@@ -528,14 +543,16 @@ export default function App() {
 
   const handleForgeCustomDrop = async (input: CustomDropInput) => {
     setIsGenerating(true);
-    setLoadingStepText('Forging Custom Drop - White Label Pressing...');
+    setLoadingStepText('Pressing Custom Drop...');
 
     try {
       const forgedRecord = await forgeCustomDrop(input);
+      if (input.coverImageBase64 && forgedRecord.recipe) {
+        forgedRecord.recipe.customPhotoUrl = 'custom';
+      }
 
       setAlbums((prev) => {
-        const next = [...prev, forgedRecord];
-        const capped = next.length > 8 ? next.slice(next.length - 8) : next;
+        const capped = enforceArchiveLimit([...prev, forgedRecord]);
         saveAlbums(capped);
         setCurrentIndex(capped.length - 1);
         return capped;
@@ -543,9 +560,9 @@ export default function App() {
 
       setIsFlipped(false);
       setIsGenerating(false);
-      addToast('success', `✦ Custom Drop - White Label Minted: ${forgedRecord.bandName} — "${forgedRecord.albumTitle}"`);
+      addToast('success', `✦ Custom Drop Minted: ${forgedRecord.bandName} — "${forgedRecord.albumTitle}"`);
     } catch (err: any) {
-      addToast('error', `Failed to forge custom drop: ${err?.message || err}`);
+      addToast('error', `Failed to create custom drop: ${err?.message || err}`);
       setIsGenerating(false);
     }
   };
@@ -560,7 +577,6 @@ export default function App() {
     }
   };
 
-  // Dedicated handler for the TopBar hardware install icon
   const handleTopBarInstall = () => {
     const promptEvent = (window as any).deferredPrompt;
     if (promptEvent) {
@@ -573,16 +589,16 @@ export default function App() {
         }
       });
     } else {
-      // If prompt is suppressed or on iOS, open settings to display the platform guide
       setIsSettingsOpen(true);
     }
   };
 
   return (
-    <div className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#0c101d] text-slate-100 select-none font-sans">
+    <div className="app-viewport fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#12100e] text-slate-100 select-none font-sans">
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      <div className="w-full max-w-md mx-auto min-h-full flex flex-col justify-between py-1.5 pb-3 sm:pb-6 relative">
+      {/* 1970s Stereo Receiver Chassis Frame */}
+      <div className="app-chassis w-full max-w-md mx-auto min-h-full flex flex-col justify-between py-1.5 pb-3 sm:pb-5 sm:my-2 sm:rounded-2xl sm:border-x-8 sm:border-y-2 sm:border-x-[#35261b] sm:border-y-amber-900/40 sm:bg-[#161310] sm:shadow-[0_24px_60px_rgba(0,0,0,0.95)] relative">
         {/* Top Header Group */}
         <div className="w-full shrink-0 flex flex-col">
           <TopBar
@@ -617,42 +633,91 @@ export default function App() {
             disabled={isGenerating || !currentAlbum}
           />
 
-          <div className="w-full flex items-center justify-center py-0.5">
+          <div className="w-full flex items-center justify-center py-1">
             <VinylSleeve
               album={currentAlbum}
               isFlipped={isFlipped}
               isLoading={isGenerating}
+              isPlayingAudio={isPlayingAudio}
               loadingStepText={loadingStepText}
               onToggleFlip={() => setIsFlipped(!isFlipped)}
               onOpenZoom={() => setIsZoomOpen(true)}
             />
           </div>
 
-          <CustomPhotoControls
-            useCustomPhotos={useCustomPhotos}
-            onToggleUseCustomPhotos={handleToggleUseCustomPhotos}
-            selectedPhoto={selectedPhotoBase64}
-            onSelectPhoto={handleSelectPhoto}
-            onModifyPhoto={handleModifyPhoto}
-            onUsePhotoAsIs={handleUsePhotoAsIs}
-            isLoading={isGenerating}
-          />
+          {/* Unified "CUSTOMIZE A DROP" Hardware Drawer */}
+          <div className="w-full px-3 pt-1">
+            <div className="well-inset rounded-xl p-1.5 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
+                className={`btn-chassis w-full py-1.5 px-3 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider flex items-center justify-between border transition-all cursor-pointer ${
+                  isCustomizeOpen || useCustomPhotos || selectedPhotoBase64
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                    : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-amber-200'
+                }`}
+              >
+                <span className="flex items-center gap-2 truncate">
+                  <Sliders className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="truncate">Customize A Drop</span>
+                  {(useCustomPhotos || selectedPhotoBase64) && (
+                    <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/30 text-amber-200 border border-amber-400/40">
+                      PHOTO READY
+                    </span>
+                  )}
+                </span>
+                {isCustomizeOpen ? (
+                  <ChevronUp className="w-4 h-4 text-amber-400 shrink-0" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                )}
+              </button>
 
-          {/* White Label Pressing Studio Hardware Button */}
-          <div className="w-full flex items-center justify-center pt-1.5 pb-0.5">
-            <button
-              type="button"
-              onClick={() => setIsCustomDropOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-md bg-gradient-to-b from-[#1e1914] via-[#16120e] to-[#100d0a] border border-amber-800/40 hover:border-amber-600/70 text-amber-300 hover:text-amber-200 text-[10px] leading-none font-mono font-bold tracking-wider uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_1px_3px_rgba(0,0,0,0.6)] hover:shadow-[0_0_10px_rgba(217,119,36,0.2)] transition-all active:scale-95 group"
-              title="Open Custom Drop - White Label Pressing Studio"
-            >
-              <Disc className="w-3 h-3 text-amber-400 group-hover:rotate-45 transition-transform shrink-0" />
-              <span>Custom Drop - White Label Pressing Studio</span>
-              <ExternalLink className="w-2.5 h-2.5 text-amber-500/70 group-hover:text-amber-300 transition-colors shrink-0" />
-            </button>
+              {isCustomizeOpen && (
+                <div className="pt-2 border-t border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  {/* Option 1: Custom Photo Cover */}
+                  <div className="rounded-lg bg-slate-900/50 border border-slate-800/90 p-1.5 space-y-1">
+                    <div className="flex items-center gap-1.5 px-2 pt-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400">
+                      <Camera className="w-3 h-3 shrink-0" />
+                      <span>1. Custom Photo Cover</span>
+                    </div>
+                    <CustomPhotoControls
+                      useCustomPhotos={useCustomPhotos}
+                      onToggleUseCustomPhotos={handleToggleUseCustomPhotos}
+                      selectedPhoto={selectedPhotoBase64}
+                      onSelectPhoto={handleSelectPhoto}
+                      onModifyPhoto={handleModifyPhoto}
+                      onUsePhotoAsIs={handleUsePhotoAsIs}
+                      isLoading={isGenerating}
+                    />
+                  </div>
+
+                  {/* Option 2: Custom Drop (Band, Title, Tracks, Lore & Audio) */}
+                  <div className="rounded-lg bg-slate-900/50 border border-slate-800/90 p-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <Disc className="w-3 h-3 shrink-0" />
+                        <span>2. Custom Drop</span>
+                      </span>
+                      <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                        Enter custom band name, title, tracks, lore, or photo.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomDropOpen(true)}
+                      className="btn-chassis py-1.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <span>Open Custom Drop</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="w-full pt-1">
+          <div className="w-full pt-0.5">
             <DailyDropButton
               onDailyDrop={handleDailyDrop}
               isLoading={isGenerating}
@@ -755,7 +820,6 @@ export default function App() {
         onDeleteAlbum={handleDeleteAlbum}
       />
 
-      {/* Secret ATJ Archival Video Playback Modal */}
       {isAtjVideoOpen && (
         <div className="fixed inset-0 z-[80] flex flex-col bg-black animate-in fade-in select-none">
           <div className="w-full flex items-center justify-between px-4 py-3 bg-black/80 border-b border-emerald-900/40 shrink-0 z-10">
@@ -784,7 +848,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ATJ Transmission Takeover Overlay */}
       {isPlayingAtj && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none">
           <div className="w-full max-w-sm bg-[#161310] border-2 border-rose-600/90 rounded-2xl p-5 shadow-[0_0_40px_rgba(225,29,72,0.4)] flex flex-col items-center text-center space-y-4">

@@ -1,35 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  X, 
-  Cpu, 
-  Download, 
-  Lock, 
-  RefreshCw, 
-  ChevronDown, 
-  ChevronRight, 
-  ChevronLeft, 
-  Package, 
-  Sliders, 
-  Power, 
-  BookOpen, 
-  Shapes, 
-  Image as ImageIcon, 
-  Sparkles, 
-  AlertTriangle, 
-  Radio, 
+import {
+  X,
+  Cpu,
+  Download,
+  Lock,
+  RefreshCw,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Package,
+  Sliders,
+  Power,
+  BookOpen,
+  Shapes,
+  Image as ImageIcon,
+  Sparkles,
+  AlertTriangle,
+  Radio,
   Send,
   CheckCircle2,
   MoreVertical,
   Share,
-  Wrench
+  Wrench,
+  Palette,
 } from 'lucide-react';
-import { 
-  getAutoCheckUpdatesPref, 
+import {
+  getAutoCheckUpdatesPref,
   setAutoCheckUpdatesPref,
-  performFactoryReset
+  performFactoryReset,
 } from '../services/storageService';
 import { ContentPackSection } from './ContentPackSection';
 import * as prefService from '../services/preferencesService';
+import type { ColorMode } from '../services/preferencesService';
 import { hydrateContentPools } from '../services/proceduralGenerator';
 
 interface SettingsModalProps {
@@ -45,6 +47,13 @@ interface SettingsModalProps {
 }
 
 type SettingsView = 'main' | 'cargo-bay' | 'directors-chair';
+
+const COLOR_MODE_OPTIONS: { id: ColorMode; label: string; desc: string; swatch: string }[] = [
+  { id: 'default', label: 'Walnut', desc: '70s Brown/Gold', swatch: '#35261b' },
+  { id: 'dark', label: 'Dark', desc: 'Obsidian Slate', swatch: '#0a0d14' },
+  { id: 'light', label: 'Light', desc: 'Daylight Paper', swatch: '#f4efe6' },
+  { id: 'contrast', label: 'Contrast', desc: 'Hi-Vis Black', swatch: '#000000' },
+];
 
 function getDevicePlatform(): 'android' | 'ios' | 'desktop' {
   if (typeof window === 'undefined') return 'desktop';
@@ -73,29 +82,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
 
-  const [prefs, setPrefs] = useState(() => {
-    if (typeof prefService.getPreferences === 'function') {
-      return prefService.getPreferences();
-    }
-    try {
-      const raw = localStorage.getItem('ydrbn_preferences');
-      return raw ? JSON.parse(raw) : {
-        disableDefaultWords: false,
-        disableDefaultSubjects: false,
-        disableDefaultBackgrounds: false,
-        disableEmojis: false,
-        disabledPacks: [],
-      };
-    } catch {
-      return {
-        disableDefaultWords: false,
-        disableDefaultSubjects: false,
-        disableDefaultBackgrounds: false,
-        disableEmojis: true,
-        disabledPacks: [],
-      };
-    }
-  });
+  const [prefs, setPrefs] = useState(() => prefService.getPreferences());
 
   const [autoCheckUpdates, setAutoCheckUpdates] = useState<boolean>(() => getAutoCheckUpdatesPref());
   const [isDevCollapsed, setIsDevCollapsed] = useState(true);
@@ -119,9 +106,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setConfirmReset(false);
       setIsDangerCollapsed(true);
       setIsStandalone(getIsStandalone());
-      if (typeof prefService.getPreferences === 'function') {
-        setPrefs(prefService.getPreferences());
-      }
+      setPrefs(prefService.getPreferences());
     }
   }, [isOpen]);
 
@@ -163,22 +148,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setAutoCheckUpdatesPref(checked);
   };
 
+  const handleSelectColorMode = (mode: ColorMode) => {
+    const updated = prefService.setColorModePref(mode);
+    setPrefs({ ...updated });
+  };
+
   const handleTogglePreference = async (key: string) => {
     const currentVal = !!(prefs as any)[key];
     const nextVal = !currentVal;
     const nextPrefs = { ...prefs, [key]: nextVal };
     setPrefs(nextPrefs);
-
-    if (typeof (prefService as any).savePreferences === 'function') {
-      (prefService as any).savePreferences(nextPrefs);
-    } else {
-      try {
-        localStorage.setItem('ydrbn_preferences', JSON.stringify(nextPrefs));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
+    prefService.savePreferences(nextPrefs);
     await hydrateContentPools();
   };
 
@@ -248,17 +228,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {currentView === 'cargo-bay' ? (
               <div className="flex items-center gap-2 truncate">
                 <Package className="w-4 h-4 text-amber-400 shrink-0" />
-                <h3 className="font-display tracking-wider text-base text-white truncate">The Cargo Bay</h3>
+                <h3 className="font-display tracking-wider text-base text-slate-100 truncate">The Cargo Bay</h3>
               </div>
             ) : currentView === 'directors-chair' ? (
               <div className="flex items-center gap-2 truncate">
                 <Sliders className="w-4 h-4 text-emerald-400 shrink-0" />
-                <h3 className="font-bold text-sm tracking-wide text-white truncate">The Director&apos;s Chair</h3>
+                <h3 className="font-bold text-sm tracking-wide text-slate-100 truncate">The Director&apos;s Chair</h3>
               </div>
             ) : (
               <div className="flex items-center gap-2 truncate">
                 <Cpu className="w-4 h-4 text-orange-400 shrink-0" />
-                <h3 className="font-bold text-sm tracking-wide text-white truncate">Y.D.R.B.N. System Settings</h3>
+                <h3 className="font-bold text-sm tracking-wide text-slate-100 truncate">Y.D.R.B.N. System Settings</h3>
               </div>
             )}
           </div>
@@ -284,7 +264,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {currentView === 'directors-chair' && (
           <div className="p-4 space-y-3 overflow-y-auto text-xs text-slate-300 flex-1">
             <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-              <span className="font-bold text-emerald-300 block text-xs">
+              <span className="font-bold text-emerald-400 block text-xs">
                 Asset & Generator Overrides
               </span>
               <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -403,7 +383,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center gap-2 min-w-0 pr-1">
                   <Package className="w-4 h-4 text-amber-400 shrink-0" />
                   <div className="text-left min-w-0">
-                    <span className="font-bold text-xs text-white block leading-tight truncate">The Cargo Bay</span>
+                    <span className="font-bold text-xs text-slate-100 block leading-tight truncate">The Cargo Bay</span>
                     <span className="text-[9.5px] text-slate-400 leading-tight block truncate mt-0.5">Manage packs</span>
                   </div>
                 </div>
@@ -418,12 +398,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center gap-2 min-w-0 pr-1">
                   <Sliders className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div className="text-left min-w-0">
-                    <span className="font-bold text-xs text-white block leading-tight truncate">Director&apos;s Chair</span>
+                    <span className="font-bold text-xs text-slate-100 block leading-tight truncate">Director&apos;s Chair</span>
                     <span className="text-[9.5px] text-slate-400 leading-tight block truncate mt-0.5">Pool overrides</span>
                   </div>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-300 transition-colors shrink-0" />
               </button>
+            </div>
+
+            {/* Interface Color Mode Selector */}
+            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-bold text-slate-200">Interface Color Mode</span>
+                </div>
+                <span className="text-[9px] font-mono uppercase text-amber-400/90">
+                  {prefs.colorMode || 'default'}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {COLOR_MODE_OPTIONS.map((mode) => {
+                  const isActive = (prefs.colorMode || 'default') === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => handleSelectColorMode(mode.id)}
+                      className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        isActive
+                          ? 'bg-amber-500/20 border-amber-400 text-slate-100 shadow-sm'
+                          : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <span
+                        className="w-4 h-4 rounded-full border border-white/30 shadow-inner"
+                        style={{ backgroundColor: mode.swatch }}
+                      />
+                      <span className="font-mono font-bold text-[10px] leading-none">
+                        {mode.label}
+                      </span>
+                      <span className="text-[8px] text-slate-400 leading-none truncate max-w-full">
+                        {mode.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Archival Dispatch / Feedback */}
@@ -676,7 +697,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   )}
 
-                  {/* Technician Service Deck Launcher (Visible when Dev Mode is Unlocked) */}
                   {isDevMode && onOpenTechnician && (
                     <div className="pt-2 border-t border-amber-900/40">
                       <button
