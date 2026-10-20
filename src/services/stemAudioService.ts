@@ -1,3 +1,8 @@
+import { IS_ELBOW_FAILSAFE_MODE } from './proceduralGenerator';
+
+// Probability (0.0 to 1.0) that spinning an album in Elbow Failsafe Mode immediately triggers ATJ.mp3
+const ELBOW_ATJ_DIRECT_CHANCE = 0.20; // 20% direct chance per Elbow album
+
 export interface StemManifest {
   [decade: string]: {
     [category: string]: string[];
@@ -158,7 +163,7 @@ export async function loadStemBuffer(filename: string, ctx: AudioContext): Promi
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
     bufferCache.set(filename, audioBuffer);
     return audioBuffer;
-  } catch (err) {
+    } catch (err) {
     console.warn(`[StemService] Failed loading ${filename}:`, err);
     return null;
   }
@@ -220,7 +225,7 @@ function buildClipsForDecade(decade: '70s' | '80s' | '90s'): WeightedStem[] {
 }
 
 function generateNewStemPlan(yearStr: string): SelectedStemPlan {
-  // 1. ATJ Fanfare Check
+  // 1. Standard ATJ Fanfare Check (10/10 harmonicas collected)
   if (isAtjEligible()) {
     markAtjPlayed();
     return {
@@ -229,6 +234,39 @@ function generateNewStemPlan(yearStr: string): SelectedStemPlan {
       isAtjFanfare: true,
       enableSynthBacking: false,
     };
+  }
+
+  // 1B. EMERGENCY ELBOW PROTOCOL OVERDRIVE:
+  // If all content pools are disabled (Elbow Mode) and ATJ hasn't played yet:
+  // - 35% chance to fire ATJ.mp3 immediately
+  // - Otherwise, force an unplayed 70s_Harmonica solo (ignoring album decade) to rapidly complete the 10/10 list
+  const atjAlreadyPlayed = localStorage.getItem(ATJ_PLAYED_KEY) === 'true';
+  if (IS_ELBOW_FAILSAFE_MODE && !atjAlreadyPlayed) {
+    if (Math.random() < ELBOW_ATJ_DIRECT_CHANCE) {
+      markAtjPlayed();
+      return {
+        stems: ['ATJ.mp3'],
+        isSoloHarmonica: false,
+        isAtjFanfare: true,
+        enableSynthBacking: false,
+      };
+    }
+
+    const allHarmonicas = STEM_MANIFEST['70s']?.harmonica || [];
+    const playedHarmonicas = getPlayedHarmonicas();
+    const unplayedHarmonicas = allHarmonicas.filter((h) => !playedHarmonicas.includes(h));
+    const targetPool = unplayedHarmonicas.length > 0 ? unplayedHarmonicas : allHarmonicas;
+
+    if (targetPool.length > 0) {
+      const chosenHarmonica = targetPool[Math.floor(Math.random() * targetPool.length)];
+      recordPlayedHarmonica(chosenHarmonica);
+      return {
+        stems: [chosenHarmonica],
+        isSoloHarmonica: true,
+        isAtjFanfare: false,
+        enableSynthBacking: false,
+      };
+    }
   }
 
   const decade = resolveDecade(yearStr);
