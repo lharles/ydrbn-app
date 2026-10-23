@@ -1872,6 +1872,7 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
     speechText,
     stampText,
     focalItem: combo.subject,
+    seed: Math.floor(Math.random() * 2147483647),
   };
 
   // Grammatically aware 8-track generator

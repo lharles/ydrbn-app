@@ -1,6 +1,7 @@
 import { AlbumEntry } from '../types';
 import { getStarterCrateAlbums } from '../data/starterCrate';
 import { gagCanvasEngine } from './gagCanvasEngine';
+import { saveImageBlob, getImageBlob } from './packStorage';
 
 const STORAGE_KEY_ALBUMS = 'ydrbn_albums_v6';
 const STORAGE_KEY_DEV_MODE = 'ydrbn_dev_mode_unlocked';
@@ -86,6 +87,21 @@ export function enforceArchiveLimit(albums: AlbumEntry[]): AlbumEntry[] {
   return result;
 }
 
+/**
+ * Restores a custom photo DataURL from IndexedDB if stripped from localStorage
+ */
+export async function restoreCustomPhotoFromIdb(albumId: string): Promise<string | null> {
+  try {
+    const blob = await getImageBlob(`custom_cover_${albumId}`);
+    if (blob) {
+      return await blob.text();
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function loadAlbums(): AlbumEntry[] {
   cleanupLegacyStorage();
   try {
@@ -109,7 +125,7 @@ export function loadAlbums(): AlbumEntry[] {
     }
 
     const verified = parsed.map((album) => {
-      if (!album.coverImageUrl && album.recipe) {
+      if (!album.coverImageUrl && album.recipe && !album.recipe.customPhotoUrl) {
         album.coverImageUrl = gagCanvasEngine.renderCover(
           album.bandName,
           album.albumTitle,
@@ -132,7 +148,18 @@ export function saveAlbums(albums: AlbumEntry[]): void {
 
   try {
     const serializable = capped.map((album) => {
-      // Only strip coverImageUrl if it is purely procedural (no custom photo override)
+      // Offload custom photo base64 strings into IndexedDB so localStorage stays tiny
+      if (album.recipe?.customPhotoUrl && album.coverImageUrl?.startsWith('data:')) {
+        const blob = new Blob([album.coverImageUrl], { type: 'text/plain' });
+        saveImageBlob(`custom_cover_${album.id}`, blob).catch(() => {});
+        const { coverImageUrl, ...rest } = album;
+        return {
+          ...rest,
+          coverImageUrl: '',
+        };
+      }
+
+      // Strip procedural coverImageUrl (re-rendered deterministically from recipe)
       if (album.recipe && !album.recipe.customPhotoUrl) {
         const { coverImageUrl, ...rest } = album;
         return {

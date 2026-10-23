@@ -35,6 +35,7 @@ import {
   getUseCustomPhotosPref,
   setUseCustomPhotosPref,
   getAutoCheckUpdatesPref,
+  restoreCustomPhotoFromIdb,
 } from './services/storageService';
 import {
   generateDailyDrop,
@@ -42,7 +43,7 @@ import {
   hydrateContentPools,
 } from './services/proceduralGenerator';
 import { gagCanvasEngine } from './services/gagCanvasEngine';
-import { audioSynthesizer } from './services/audioSynthesizer';
+import { audioSynthesizer, TurntableRpm } from './services/audioSynthesizer';
 import { getAvailablePacks, checkPackStatus } from './services/contentPackService';
 import { getPreferences, applyColorMode } from './services/preferencesService';
 
@@ -115,6 +116,8 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [turntableRpm, setTurntableRpm] = useState<TurntableRpm>(33);
+  const [activeTrackIndex, setActiveTrackIndex] = useState<number | null>(null);
   const [isPlayingAtj, setIsPlayingAtj] = useState(false);
   const [hasUnlockedAtj, setHasUnlockedAtj] = useState<boolean>(() => {
     return typeof window !== 'undefined' && localStorage.getItem('ydrbn_atj_played') === 'true';
@@ -162,7 +165,6 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // Apply saved color mode immediately on mount
     const prefs = getPreferences();
     applyColorMode(prefs.colorMode || 'default');
 
@@ -254,7 +256,10 @@ export default function App() {
               }
             }
             if (updateCount > 0) {
-              addToast('info', `Cargo Bay: ${updateCount} content pack update${updateCount > 1 ? 's' : ''} available!`);
+              addToast(
+                'info',
+                `Cargo Bay: ${updateCount} content pack update${updateCount > 1 ? 's' : ''} available!`
+              );
             }
           })
           .catch(() => {});
@@ -272,6 +277,16 @@ export default function App() {
 
       const warmAssets = async () => {
         const promises = loaded.map(async (a) => {
+          if (a.recipe?.customPhotoUrl) {
+            if (a.coverImageUrl) {
+              saveAlbums(loaded);
+              return a;
+            }
+            const restored = await restoreCustomPhotoFromIdb(a.id);
+            if (restored) {
+              return { ...a, coverImageUrl: restored };
+            }
+          }
           if (a.recipe && !a.recipe.customPhotoUrl) {
             await loadRecipeAssets(a.recipe.backdrop || '', a.recipe.subject || '').catch(() => {});
             return { ...a, coverImageUrl: gagCanvasEngine.renderCover(a.recipe) };
@@ -309,13 +324,18 @@ export default function App() {
 
   const currentAlbum = albums[currentIndex] || null;
 
+  const stopPlaybackState = () => {
+    audioSynthesizer.stopAll();
+    setIsPlayingAudio(false);
+    setActiveTrackIndex(null);
+    setIsPlayingAtj(false);
+  };
+
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setIsFlipped(false);
-      audioSynthesizer.stopAll();
-      setIsPlayingAudio(false);
-      setIsPlayingAtj(false);
+      stopPlaybackState();
     }
   };
 
@@ -323,9 +343,7 @@ export default function App() {
     if (currentIndex < albums.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setIsFlipped(false);
-      audioSynthesizer.stopAll();
-      setIsPlayingAudio(false);
-      setIsPlayingAtj(false);
+      stopPlaybackState();
     }
   };
 
@@ -333,9 +351,7 @@ export default function App() {
     if (albums.length > 0) {
       setCurrentIndex(albums.length - 1);
       setIsFlipped(false);
-      audioSynthesizer.stopAll();
-      setIsPlayingAudio(false);
-      setIsPlayingAtj(false);
+      stopPlaybackState();
     }
   };
 
@@ -375,16 +391,18 @@ export default function App() {
   };
 
   const handleStopAtj = () => {
-    audioSynthesizer.stopAll();
-    setIsPlayingAudio(false);
-    setIsPlayingAtj(false);
+    stopPlaybackState();
+  };
+
+  const handleCycleRpm = () => {
+    const nextRpm: TurntableRpm = turntableRpm === 33 ? 45 : turntableRpm === 45 ? 16 : 33;
+    setTurntableRpm(nextRpm);
+    audioSynthesizer.setRpm(nextRpm);
   };
 
   const handleToggleAudio = async () => {
     if (isPlayingAudio) {
-      audioSynthesizer.stopAll();
-      setIsPlayingAudio(false);
-      setIsPlayingAtj(false);
+      stopPlaybackState();
       return;
     }
 
@@ -395,6 +413,7 @@ export default function App() {
 
     try {
       setIsPlayingAudio(true);
+      setActiveTrackIndex(null);
       await audioSynthesizer.playAlbumClip(
         currentAlbum.id,
         currentAlbum.albumTitle,
@@ -405,6 +424,33 @@ export default function App() {
       addToast('error', `Audio error: ${err.message || err}`);
     } finally {
       setIsPlayingAudio(false);
+      setActiveTrackIndex(null);
+      setIsPlayingAtj(false);
+    }
+  };
+
+  const handlePlaySpecificTrack = async (trackTitle: string, index: number) => {
+    if (!currentAlbum) return;
+
+    if (isPlayingAudio && activeTrackIndex === index) {
+      stopPlaybackState();
+      return;
+    }
+
+    try {
+      setIsPlayingAudio(true);
+      setActiveTrackIndex(index);
+      await audioSynthesizer.playAlbumClip(
+        currentAlbum.id,
+        `${currentAlbum.albumTitle} - ${trackTitle}`,
+        currentAlbum.year,
+        currentAlbum.audioPreset
+      );
+    } catch (err: any) {
+      addToast('error', `Audio error: ${err.message || err}`);
+    } finally {
+      setIsPlayingAudio(false);
+      setActiveTrackIndex(null);
       setIsPlayingAtj(false);
     }
   };
@@ -560,7 +606,10 @@ export default function App() {
 
       setIsFlipped(false);
       setIsGenerating(false);
-      addToast('success', `✦ Custom Drop Minted: ${forgedRecord.bandName} — "${forgedRecord.albumTitle}"`);
+      addToast(
+        'success',
+        `✦ Custom Drop Minted: ${forgedRecord.bandName} — "${forgedRecord.albumTitle}"`
+      );
     } catch (err: any) {
       addToast('error', `Failed to create custom drop: ${err?.message || err}`);
       setIsGenerating(false);
@@ -592,6 +641,11 @@ export default function App() {
       setIsSettingsOpen(true);
     }
   };
+
+  const activeTrackLabel =
+    activeTrackIndex !== null && currentAlbum?.tracks?.[activeTrackIndex]
+      ? `TRK ${String(activeTrackIndex + 1).padStart(2, '0')}: ${currentAlbum.tracks[activeTrackIndex]}`
+      : null;
 
   return (
     <div className="app-viewport fixed inset-0 overflow-y-auto overflow-x-hidden bg-[#12100e] text-slate-100 select-none font-sans">
@@ -630,6 +684,9 @@ export default function App() {
             onToggleFlip={() => setIsFlipped(!isFlipped)}
             isPlayingAudio={isPlayingAudio}
             onPlayAudio={handleToggleAudio}
+            rpm={turntableRpm}
+            onCycleRpm={handleCycleRpm}
+            activeTrackLabel={activeTrackLabel}
             disabled={isGenerating || !currentAlbum}
           />
 
@@ -639,6 +696,9 @@ export default function App() {
               isFlipped={isFlipped}
               isLoading={isGenerating}
               isPlayingAudio={isPlayingAudio}
+              rpm={turntableRpm}
+              activeTrackIndex={activeTrackIndex}
+              onPlayTrack={handlePlaySpecificTrack}
               loadingStepText={loadingStepText}
               onToggleFlip={() => setIsFlipped(!isFlipped)}
               onOpenZoom={() => setIsZoomOpen(true)}
@@ -675,7 +735,6 @@ export default function App() {
 
               {isCustomizeOpen && (
                 <div className="pt-2 border-t border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  {/* Option 1: Custom Photo Cover */}
                   <div className="rounded-lg bg-slate-900/50 border border-slate-800/90 p-1.5 space-y-1">
                     <div className="flex items-center gap-1.5 px-2 pt-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400">
                       <Camera className="w-3 h-3 shrink-0" />
@@ -692,7 +751,6 @@ export default function App() {
                     />
                   </div>
 
-                  {/* Option 2: Custom Drop (Band, Title, Tracks, Lore & Audio) */}
                   <div className="rounded-lg bg-slate-900/50 border border-slate-800/90 p-2 flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
@@ -814,6 +872,7 @@ export default function App() {
           if (idx !== -1) {
             setCurrentIndex(idx);
             setIsFlipped(false);
+            stopPlaybackState();
           }
         }}
         onToggleFavorite={handleToggleFavorite}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Radio, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { transmitDispatch, getAnonymousDeviceId } from '../services/feedbackService';
+import { getPreferences } from '../services/preferencesService';
 
 interface DispatchModalProps {
   isOpen: boolean;
@@ -15,6 +16,13 @@ const CATEGORIES = [
   'System Anomaly / Bug',
 ] as const;
 
+const CATEGORY_PLACEHOLDERS: Record<string, string> = {
+  'Expansion Pack Theme': "e.g. '1970s Municipal Pool', 'Disgruntled Botanists', 'Mid-Century Dental Equipment'...",
+  'Vocabulary / Word Submissions': "e.g. Nouns: 'Spork', 'Microfiche'. Adjectives: 'Uncalibrated', 'Pre-Shrunk'...",
+  'Visual Gag / Cutout Idea': "e.g. A rotary telephone wearing a mustache, or a rubber stamp reading 'DENIED BY TODDLER'...",
+  'System Anomaly / Bug': 'Describe the unexpected glitch, visual overlap, or audio behavior...',
+};
+
 export const DispatchModal: React.FC<DispatchModalProps> = ({ isOpen, onClose, onNotify }) => {
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [content, setContent] = useState('');
@@ -24,13 +32,22 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ isOpen, onClose, o
 
   const deviceId = getAnonymousDeviceId();
   const shortId = deviceId.substring(0, 8);
+  const isBugReport = category === 'System Anomaly / Bug';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setIsSubmitting(true);
 
-    const result = await transmitDispatch(category, content);
+    let payload = content.trim();
+    if (isBugReport && typeof window !== 'undefined') {
+      const prefs = getPreferences();
+      const mode = window.matchMedia('(display-mode: standalone)').matches ? 'PWA' : 'Tab';
+      const diag = ` [${mode} | Theme:${prefs.colorMode} | ${window.innerWidth}x${window.innerHeight}]`;
+      payload = `${payload.slice(0, 500 - diag.length)}${diag}`;
+    }
+
+    const result = await transmitDispatch(category, payload);
     setIsSubmitting(false);
 
     if (result.success) {
@@ -84,7 +101,7 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ isOpen, onClose, o
             <>
               <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
                 <span className="font-bold text-sky-300 block text-xs">
-                  Anonymous Feedback & Content
+                  Anonymous Feedback &amp; Content
                 </span>
                 <p className="text-[10.5px] text-slate-400 leading-tight">
                   Propose new vocabulary pools, suggest visual cutouts, or report generator quirks. Zero personal identity or emails are collected.
@@ -113,16 +130,16 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ isOpen, onClose, o
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-[10.5px] font-semibold text-slate-300 uppercase tracking-wide">
-                    Suggestion / Content
+                    {isBugReport ? 'Anomaly Description' : 'Suggestion / Content'}
                   </label>
-                  <span className={`text-[10px] font-mono ${content.length > 450 ? 'text-amber-400' : 'text-slate-500'}`}>
-                    {content.length}/500
+                  <span className={`text-[10px] font-mono ${content.length > 420 ? 'text-amber-400' : 'text-slate-500'}`}>
+                    {content.length}/460
                   </span>
                 </div>
                 <textarea
                   value={content}
-                  onChange={(e) => setContent(e.target.value.slice(0, 500))}
-                  placeholder="e.g. Word suggestions: 'Recursive', 'Bureaucracy', 'Spork'. Or a pack idea..."
+                  onChange={(e) => setContent(e.target.value.slice(0, 460))}
+                  placeholder={CATEGORY_PLACEHOLDERS[category] || CATEGORY_PLACEHOLDERS[CATEGORIES[0]]}
                   rows={4}
                   required
                   className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-sky-500 resize-none leading-relaxed placeholder:text-slate-600"
@@ -139,7 +156,7 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ isOpen, onClose, o
 
               {/* Device ID / Privacy Indicator */}
               <div className="pt-1 flex items-center justify-between text-[10px] font-mono text-slate-500">
-                <span>IDENTITY: ANONYMOUS</span>
+                <span>{isBugReport ? 'INCLUDES BASIC DISPLAY METRICS' : 'IDENTITY: ANONYMOUS'}</span>
                 <span>INSTALL #{shortId}</span>
               </div>
 

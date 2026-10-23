@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { RotateCw, Music2, Square } from 'lucide-react';
-import { audioSynthesizer } from '../services/audioSynthesizer';
+import { RotateCw, Music2, Square, Disc } from 'lucide-react';
+import { audioSynthesizer, TurntableRpm } from '../services/audioSynthesizer';
 
 interface ActionButtonsRowProps {
   isFlipped: boolean;
   onToggleFlip: () => void;
   isPlayingAudio: boolean;
   onPlayAudio: () => void;
+  rpm?: TurntableRpm;
+  onCycleRpm?: () => void;
+  activeTrackLabel?: string | null;
   disabled?: boolean;
 }
 
@@ -15,6 +18,9 @@ export const ActionButtonsRow: React.FC<ActionButtonsRowProps> = ({
   onToggleFlip,
   isPlayingAudio,
   onPlayAudio,
+  rpm = 33,
+  onCycleRpm,
+  activeTrackLabel,
   disabled = false,
 }) => {
   const [levels, setLevels] = useState<{ left: number; right: number }>({ left: 0, right: 0 });
@@ -34,6 +40,12 @@ export const ActionButtonsRow: React.FC<ActionButtonsRowProps> = ({
 
     return () => cancelAnimationFrame(rafId);
   }, [isPlayingAudio]);
+
+  const getRpmLabel = (r: TurntableRpm) => {
+    if (r === 45) return '45 RPM (HI-SPEED)';
+    if (r === 16) return '16⅔ RPM (SLUDGE)';
+    return '33⅓ RPM';
+  };
 
   const renderLedChannel = (label: string, level: number) => {
     const activeCount = Math.round(level * 10);
@@ -55,7 +67,12 @@ export const ActionButtonsRow: React.FC<ActionButtonsRowProps> = ({
                 : isLit
                 ? 'bg-emerald-400 shadow-[0_0_5px_#10b981]'
                 : 'bg-emerald-950/30';
-            return <span key={i} className={`w-1.5 h-2 rounded-[1px] transition-colors duration-75 ${colorClass}`} />;
+            return (
+              <span
+                key={i}
+                className={`w-1.5 h-2 rounded-[1px] transition-colors duration-75 ${colorClass}`}
+              />
+            );
           })}
         </div>
       </div>
@@ -107,16 +124,27 @@ export const ActionButtonsRow: React.FC<ActionButtonsRowProps> = ({
         </button>
       </div>
 
-      {/* Live Recessed Stereo VU Peak Meter Bar (Reveals smoothly when audio plays) */}
+      {/* Live Recessed Stereo VU Peak Meter Bar with Interactive RPM Toggle */}
       {isPlayingAudio && (
-        <div className="well-inset w-full px-2.5 py-1 rounded-md flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-            <span className="text-[9px] font-mono uppercase tracking-widest text-amber-300/90 font-bold">
-              33⅓ RPM // OUTPUT LEVEL
-            </span>
+        <div className="well-inset w-full px-2 py-1 rounded-md flex items-center justify-between gap-2 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping shrink-0" />
+            <button
+              type="button"
+              onClick={onCycleRpm}
+              title="Click to switch turntable RPM speed (33⅓ / 45 / 16⅔)"
+              className="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-[9px] font-mono uppercase tracking-wider text-amber-300 font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shrink-0"
+            >
+              <Disc className="w-2.5 h-2.5 text-amber-400 animate-spin" />
+              <span>{getRpmLabel(rpm)}</span>
+            </button>
+            {activeTrackLabel && (
+              <span className="text-[8.5px] font-mono text-slate-400 truncate hidden sm:inline">
+                • {activeTrackLabel}
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
             {renderLedChannel('L', levels.left)}
             {renderLedChannel('R', levels.right)}
           </div>

@@ -1,3 +1,5 @@
+import { AlbumEntry } from '../types';
+
 export interface TourStop {
   date: string;
   city: string;
@@ -45,6 +47,108 @@ export const CANONICAL_TOUR_ROSTER: TourStop[] = [
   { date: '8/27', city: 'Bedrock, IE' },
 ];
 
+const MUNICIPAL_LORE_VENUES = [
+  'Flumptown Annex, OH',
+  'Zoning Board Rm B, NJ',
+  'Abandoned Vicarage, UK',
+  'Sub-Basement #4, AK',
+  'Bursar Waiting Rm, VT',
+  'Rotating Restaurant, WA',
+  'Cul-De-Sac #7, IN',
+  'Unfinished Bridge, OR',
+  'Municipal Sump Pit, PA',
+  'Appliance Depot, IL',
+  'Patent Annex C, MA',
+  'Bowling Rec Hall, WI',
+  'Decommissioned Silo, KS',
+  'Boiler Room 2B, MI',
+  'Drainage District, TX',
+  'Surplus Warehouse, NV',
+  'Civic Boiler Annex, NY',
+  'Orthopedic Ward, NC',
+  'Records Vault #9, VA',
+  'Parking Lot 14-B, MN',
+  'Thermostat Lobby, CO',
+  'Laminated Lounge, FL',
+  'Clerical Elks #8, IA',
+  'Tupperware Hall, MO',
+  'Scone Conservatory, UK',
+  'Cabbage Pavilion, ME',
+];
+
+const TEMPORAL_FUTURE_VENUES = [
+  'Sea of Tranquility, LUNA',
+  'Olympus Mons Annex, MARS',
+  'Orbital Cistern #4, LEO',
+  'Neo-Flumptown Dome, OH',
+  'Io Sulfur Refinery, JUP',
+  'Titan Methane Bowl, SAT',
+  'Lagrange Point L2, ORB',
+  'Crater Tycho Civic, LUNA',
+  'Sub-Level 99, CERES',
+  'Ganymede Ice Rink, JUP',
+  'Centauri Tollbooth, SEC-4',
+  'Europa Hydro-Deck, JUP',
+  'Phobos Parking Lot, MARS',
+  'Deimos Youth Hostel, MARS',
+  'Oort Cloud VFW #12, DEEP',
+  'Venus Cloud Annex, VEN',
+  'Mercury Sun-Shield, MER',
+  'Callisto Bowling, JUP',
+  'Asteroid 433 Rec, BELT',
+  'Pluto Kiosk #2, KUI',
+];
+
+export function generateProceduralTourRoster(album: AlbumEntry): TourStop[] {
+  const seedStr = `${album.id}|${album.bandName}|${album.year}`;
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 16777619);
+  }
+  const nextRand = () => {
+    let t = (h += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  const isFuture = parseInt(album.year, 10) > new Date().getFullYear();
+  const pool = isFuture ? [...TEMPORAL_FUTURE_VENUES] : [...MUNICIPAL_LORE_VENUES];
+
+  // Shuffle deterministically
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(nextRand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // Generate 18 two-night stands (36 dates total, matching the 2-column geometry)
+  const stops: TourStop[] = [];
+  let month = 6;
+  let day = 4 + Math.floor(nextRand() * 5);
+
+  for (let s = 0; s < 18; s++) {
+    const venue = pool[s % pool.length];
+    for (let night = 0; night < 2; night++) {
+      stops.push({
+        date: `${month}/${String(day).padStart(2, '0')}`,
+        city: venue,
+      });
+      day += 1;
+      if (day > 28) {
+        day = 2;
+        month += 1;
+      }
+    }
+    day += 3 + Math.floor(nextRand() * 3);
+    if (day > 28) {
+      day -= 27;
+      month += 1;
+    }
+  }
+
+  return stops;
+}
+
 export interface TourRenderOptions {
   stops?: TourStop[];
   accentColor?: string;
@@ -91,7 +195,7 @@ export function renderTourBackGraphic(options: TourRenderOptions = {}): string {
     const y = startY + i * lineHeight;
     ctx.textAlign = 'left';
     ctx.fillText(item.date, 150, y);
-    ctx.fillText(item.city, 550, y, 1150); // Hard boundary at 1700
+    ctx.fillText(item.city, 550, y, 1150);
   });
 
   // Right Column (Max width stops before 3600)
@@ -99,7 +203,7 @@ export function renderTourBackGraphic(options: TourRenderOptions = {}): string {
     const y = startY + i * lineHeight;
     ctx.textAlign = 'left';
     ctx.fillText(item.date, 1950, y);
-    ctx.fillText(item.city, 2350, y, 1150); // Hard boundary at 3500
+    ctx.fillText(item.city, 2350, y, 1150);
   });
 
   // 3. Tiny Manufacturer Mark at the Bottom

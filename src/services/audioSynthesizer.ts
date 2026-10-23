@@ -7,13 +7,17 @@
 import { AlbumEntry } from '../types';
 import { getOrSelectStemsForAlbum, loadStemBuffer } from './stemAudioService';
 
+export type TurntableRpm = 33 | 45 | 16;
+
 export class RetroAudioSynthesizer {
   private ctx: AudioContext | null = null;
   private isPlaying = false;
   private activeNodes: { stop: () => void }[] = [];
+  private activeBufferSources: AudioBufferSourceNode[] = [];
   private activeTimeouts: NodeJS.Timeout[] = [];
   private analyser: AnalyserNode | null = null;
   private freqData: Uint8Array<ArrayBuffer> | null = null;
+  private currentRpm: TurntableRpm = 33;
 
   private getContext(): AudioContext {
     if (!this.ctx) {
@@ -24,6 +28,31 @@ export class RetroAudioSynthesizer {
       this.ctx.resume();
     }
     return this.ctx;
+  }
+
+  public getRpm(): TurntableRpm {
+    return this.currentRpm;
+  }
+
+  public getRateMultiplier(rpm: TurntableRpm = this.currentRpm): number {
+    if (rpm === 45) return 1.35;
+    if (rpm === 16) return 0.55;
+    return 1.0;
+  }
+
+  public setRpm(rpm: TurntableRpm): void {
+    this.currentRpm = rpm;
+    const rate = this.getRateMultiplier(rpm);
+    if (this.ctx && this.isPlaying) {
+      const now = this.ctx.currentTime;
+      this.activeBufferSources.forEach((src) => {
+        try {
+          src.playbackRate.setTargetAtTime(rate, now, 0.04);
+        } catch {
+          // ignore stopped source
+        }
+      });
+    }
   }
 
   public stopAll(): void {
@@ -38,12 +67,13 @@ export class RetroAudioSynthesizer {
       }
     });
     this.activeNodes = [];
+    this.activeBufferSources = [];
     this.isPlaying = false;
   }
 
   public async playAlbumClip(
     albumId: string,
-    albumTitle: string,
+    seedTitle: string,
     yearStr: string = '1975',
     preset?: AlbumEntry['audioPreset']
   ): Promise<boolean> {
@@ -51,6 +81,7 @@ export class RetroAudioSynthesizer {
     const ctx = this.getContext();
     this.isPlaying = true;
 
+    const rate = this.getRateMultiplier(this.currentRpm);
     const parsedYear = parseInt(yearStr.replace(/\D/g, ''), 10) || 1977;
 
     // 1. Resolve or retrieve the permanent stem plan for this specific album drop
@@ -65,17 +96,16 @@ export class RetroAudioSynthesizer {
       plan.stems.map((filename) => loadStemBuffer(filename, ctx))
     );
 
-    // Cancel if stopAll() was called while buffers were loading
     if (!this.isPlaying) return false;
 
     const validBuffers = loadedBuffers.filter((b): b is AudioBuffer => b !== null);
 
     let maxDuration = 6.2;
     if (validBuffers.length > 0) {
-      const stemMax = Math.max(...validBuffers.map((b) => b.duration));
+      const stemMax = Math.max(...validBuffers.map((b) => b.duration / rate));
       maxDuration = Math.max(stemMax, 5.0);
     }
-    const duration = maxDuration;
+    const duration = Math.min(maxDuration, 14.0);
     const now = ctx.currentTime;
 
     // 3. Master Output Bus with analog compressor
@@ -94,7 +124,6 @@ export class RetroAudioSynthesizer {
     masterComp.connect(masterGain);
     masterGain.connect(ctx.destination);
 
-    // 2. Inside playAlbumClip(), right after masterGain.connect(ctx.destination):
     this.analyser = ctx.createAnalyser();
     this.analyser.fftSize = 64;
     this.analyser.smoothingTimeConstant = 0.72;
@@ -106,10 +135,12 @@ export class RetroAudioSynthesizer {
 
     // 5. Trigger Sample Stems through master compression
     if (validBuffers.length > 0) {
-      const stemVol = plan.isSoloHarmonica || plan.isAtjFanfare ? 0.95 : 0.8 / Math.sqrt(validBuffers.length);
+      const stemVol =
+        plan.isSoloHarmonica || plan.isAtjFanfare ? 0.95 : 0.8 / Math.sqrt(validBuffers.length);
       validBuffers.forEach((buffer) => {
         const source = ctx.createBufferSource();
         source.buffer = buffer;
+        source.playbackRate.setValueAtTime(rate, now);
 
         const stemGain = ctx.createGain();
         stemGain.gain.setValueAtTime(stemVol, now);
@@ -119,6 +150,7 @@ export class RetroAudioSynthesizer {
 
         source.start(now);
         this.activeNodes.push(source);
+        this.activeBufferSources.push(source);
       });
     }
 
@@ -126,19 +158,17 @@ export class RetroAudioSynthesizer {
     const shouldPlaySynth = plan.enableSynthBacking || validBuffers.length === 0;
 
     if (shouldPlaySynth && !plan.isSoloHarmonica && !plan.isAtjFanfare) {
-      // Sub-bus for 25% synth level
       const synthSubGain = ctx.createGain();
       synthSubGain.gain.setValueAtTime(0.25, now);
       synthSubGain.connect(masterComp);
 
       let hash = 0;
-      for (let i = 0; i < albumTitle.length; i++) {
-        hash = (hash * 31 + albumTitle.charCodeAt(i)) % 100000;
+      for (let i = 0; i < seedTitle.length; i++) {
+        hash = (hash * 31 + seedTitle.charCodeAt(i)) % 100000;
       }
       const baseRoots = [110.0, 130.81, 146.83, 164.81, 174.61, 196.0];
-      const root = baseRoots[hash % baseRoots.length];
+      const root = baseRoots[hash % baseRoots.length] * rate;
 
-      // Rotate synth presets dynamically for modern/future releases (>=1990)
       const modernPresets: AlbumEntry['audioPreset'][] = [
         'analog-synth',
         'post-punk',
@@ -146,8 +176,9 @@ export class RetroAudioSynthesizer {
         'ambient-drone',
       ];
 
-      const activePreset: AlbumEntry['audioPreset'] = preset || (
-        parsedYear < 1974
+      const activePreset: AlbumEntry['audioPreset'] =
+        preset ||
+        (parsedYear < 1974
           ? 'psych-rock'
           : parsedYear <= 1978
           ? 'krautrock'
@@ -155,21 +186,20 @@ export class RetroAudioSynthesizer {
           ? 'analog-synth'
           : parsedYear <= 1989
           ? 'post-punk'
-          : modernPresets[hash % modernPresets.length]
-      );
+          : modernPresets[hash % modernPresets.length]);
 
       switch (activePreset) {
         case 'analog-synth':
-          this.playAnalogSynthRoutine(ctx, synthSubGain, now, duration, root, hash);
+          this.playAnalogSynthRoutine(ctx, synthSubGain, now, duration, root, hash, rate);
           break;
         case 'krautrock':
-          this.playKrautrockRoutine(ctx, synthSubGain, now, duration, root, hash);
+          this.playKrautrockRoutine(ctx, synthSubGain, now, duration, root, hash, rate);
           break;
         case 'post-punk':
-          this.playPostPunkRoutine(ctx, synthSubGain, now, duration, root, hash);
+          this.playPostPunkRoutine(ctx, synthSubGain, now, duration, root, hash, rate);
           break;
         case 'psych-rock':
-          this.playPsychRockRoutine(ctx, synthSubGain, now, duration, root, hash);
+          this.playPsychRockRoutine(ctx, synthSubGain, now, duration, root, hash, rate);
           break;
         case 'ambient-drone':
         default:
@@ -187,19 +217,17 @@ export class RetroAudioSynthesizer {
     });
   }
 
-  // =========================================================================
-  // SYNTHESIS ROUTINES
-  // =========================================================================
   private playAnalogSynthRoutine(
     ctx: AudioContext,
     out: AudioNode,
     start: number,
     duration: number,
     root: number,
-    hash: number
+    hash: number,
+    rate: number
   ) {
     const semitones = [0, 3, 5, 7, 10, 12, 15, 12, 7, 10, 5, 3];
-    const stepTime = 0.16;
+    const stepTime = 0.16 / rate;
     const totalSteps = Math.floor((duration - 0.4) / stepTime);
 
     for (let i = 0; i < totalSteps; i++) {
@@ -245,9 +273,10 @@ export class RetroAudioSynthesizer {
     start: number,
     duration: number,
     root: number,
-    hash: number
+    hash: number,
+    rate: number
   ) {
-    const stepTime = 0.24;
+    const stepTime = 0.24 / rate;
     const totalSteps = Math.floor((duration - 0.4) / stepTime);
     const bassScale = [0, 0, 7, 0, 5, 0, 3, 5];
 
@@ -294,15 +323,16 @@ export class RetroAudioSynthesizer {
     start: number,
     duration: number,
     root: number,
-    hash: number
+    hash: number,
+    rate: number
   ) {
-    const stepTime = 0.22;
+    const stepTime = 0.22 / rate;
     const totalSteps = Math.floor((duration - 0.4) / stepTime);
     const riff = [0, 1, 3, 5, 7, 5, 3, 1, 0, 7, 5, 3];
 
     for (let i = 0; i < totalSteps; i++) {
       const stepStart = start + i * stepTime;
-      const semi = riff[i % riff.length];
+      const semi = riff[(i + (hash % 3)) % riff.length];
       const freq = root * Math.pow(2, semi / 12);
 
       [-8, 0, 8].forEach((detune, idx) => {
@@ -345,13 +375,12 @@ export class RetroAudioSynthesizer {
     start: number,
     duration: number,
     root: number,
-    hash: number
+    hash: number,
+    rate: number
   ) {
     const chordNotes = [root, root * 1.2, root * 1.5, root * 2.0];
     const lfo = ctx.createOscillator();
-    lfo.frequency.setValueAtTime(4.8, start);
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.setValueAtTime(9.0, start);
+    lfo.frequency.setValueAtTime(4.8 * rate, start);
 
     chordNotes.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
@@ -378,7 +407,7 @@ export class RetroAudioSynthesizer {
     this.activeNodes.push(lfo);
 
     const leadSteps = [12, 15, 17, 19, 17, 15, 12, 7];
-    const stepTime = 0.36;
+    const stepTime = 0.36 / rate;
     const totalSteps = Math.floor((duration - 1.2) / stepTime);
 
     for (let s = 0; s < totalSteps; s++) {
@@ -449,11 +478,10 @@ export class RetroAudioSynthesizer {
       });
     });
 
-    // High crystal bell harmonics scattered throughout
     const bellIntervals = [19, 24, 26, 31];
     bellIntervals.forEach((semi, i) => {
       const bellTime = start + 0.8 + i * 1.1;
-      const freq = root * Math.pow(2, semi / 12);
+      const freq = root * Math.pow(2, semi / 12) * (1 + (hash % 3) * 0.05);
 
       const bell = ctx.createOscillator();
       bell.type = 'sine';
@@ -471,11 +499,8 @@ export class RetroAudioSynthesizer {
       bell.stop(bellTime + 1.9);
       this.activeNodes.push(bell);
     });
-  } // <-- Closing brace for playAmbientDroneRoutine restored!
+  }
 
-  // =========================================================================
-  // ANALOG PERCUSSION & VINYL CRACKLE
-  // =========================================================================
   private triggerKick(ctx: AudioContext, out: AudioNode, time: number, vol: number) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -572,7 +597,9 @@ export class RetroAudioSynthesizer {
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
-    let b0 = 0, b1 = 0, b2 = 0;
+    let b0 = 0,
+      b1 = 0,
+      b2 = 0;
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
       b0 = 0.99886 * b0 + white * 0.0555179;
@@ -613,7 +640,6 @@ export class RetroAudioSynthesizer {
     return this.isPlaying;
   }
 
-  // 3. Add this method to RetroAudioSynthesizer class:
   public getAudioLevels(): { left: number; right: number } {
     if (!this.isPlaying || !this.analyser || !this.freqData) {
       return { left: 0, right: 0 };

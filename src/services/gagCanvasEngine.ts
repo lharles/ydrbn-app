@@ -59,7 +59,8 @@ export class GagCanvasEngine {
   /**
    * Replace renderCover() in src/services/gagCanvasEngine.ts
    */
-  public renderCover(
+
+public renderCover(
     arg1: string | CanvasRecipe,
     arg2?: string | { transparentBackdrop?: boolean },
     arg3?: CanvasRecipe,
@@ -84,33 +85,57 @@ export class GagCanvasEngine {
     const width = canvas.width;
     const height = canvas.height;
 
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1.0;
-    ctx.filter = 'none';
-    ctx.clearRect(0, 0, width, height);
+    // Seeded deterministic PRNG: locks layout across reloads & 300 DPI exports
+    const seedString =
+      recipe.seed !== undefined
+        ? String(recipe.seed)
+        : `${recipe.backdrop || ''}|${recipe.subject || ''}|${recipe.modifier || ''}|${recipe.palette || ''}|${recipe.speechText || ''}|${recipe.stampText || ''}|${recipe.focalItem || ''}|${recipe.titleLayout || ''}`;
 
-    const palette = this.resolvePalette(recipe);
-    const { backdrop, subject, modifier } = this.normalizeComposition(recipe);
-
-    // LAYER 1: BACKDROP (Skipped when rendering transparent apparel cutouts)
-    if (!options.transparentBackdrop) {
-      this.renderBackdrop(backdrop, palette, recipe);
+    let hash = 2166136261 >>> 0;
+    for (let i = 0; i < seedString.length; i++) {
+      hash = Math.imul(hash ^ seedString.charCodeAt(i), 16777619);
     }
+    let seedState = hash >>> 0;
+    const originalRandom = Math.random;
 
-    // LAYER 2: SUBJECT VECTOR
-    this.renderSubject(subject, palette, recipe);
+    Math.random = () => {
+      let t = (seedState += 0x6d2b79f5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
 
-    // LAYER 3: GAG MODIFIER
-    this.renderModifier(modifier, palette, recipe);
+    try {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1.0;
+      ctx.filter = 'none';
+      ctx.clearRect(0, 0, width, height);
 
-    // POST-PROCESSING: Analog Ring-Wear & Scuffing (Skipped on transparent cutouts)
-    if (!options.transparentBackdrop) {
-      this.applyAnalogRingWearAndScuffing();
+      const palette = this.resolvePalette(recipe);
+      const { backdrop, subject, modifier } = this.normalizeComposition(recipe);
+
+      // LAYER 1: BACKDROP (Skipped when rendering transparent apparel cutouts)
+      if (!options.transparentBackdrop) {
+        this.renderBackdrop(backdrop, palette, recipe);
+      }
+
+      // LAYER 2: SUBJECT VECTOR
+      this.renderSubject(subject, palette, recipe);
+
+      // LAYER 3: GAG MODIFIER
+      this.renderModifier(modifier, palette, recipe);
+
+      // POST-PROCESSING: Analog Ring-Wear & Scuffing (Skipped on transparent cutouts)
+      if (!options.transparentBackdrop) {
+        this.applyAnalogRingWearAndScuffing();
+      }
+
+      ctx.restore();
+    } finally {
+      Math.random = originalRandom;
     }
-
-    ctx.restore();
 
     return options.transparentBackdrop
       ? canvas.toDataURL('image/png')

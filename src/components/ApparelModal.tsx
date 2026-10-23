@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Shirt, Download, ExternalLink, ShieldAlert, Sparkles } from 'lucide-react';
 import { AlbumEntry } from '../types';
-import { renderTourBackGraphic } from '../services/tourCanvasEngine';
+import {
+  renderTourBackGraphic,
+  CANONICAL_TOUR_ROSTER,
+  generateProceduralTourRoster,
+} from '../services/tourCanvasEngine';
 import { renderHighResFrontGraphic } from '../services/apparelCanvasEngine';
 
 interface ApparelModalProps {
@@ -31,6 +35,7 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
 }) => {
   const [frontMode, setFrontMode] = useState<'cutout' | 'plaque'>('cutout');
   const [includeBack, setIncludeBack] = useState(true);
+  const [tourMode, setTourMode] = useState<'canonical' | 'procedural'>('canonical');
   const [inkColor, setInkColor] = useState('#8b1410');
   const [frontDataUrl, setFrontDataUrl] = useState<string>('');
   const [backDataUrl, setBackDataUrl] = useState<string>('');
@@ -43,13 +48,17 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
 
     renderHighResFrontGraphic(album, frontMode).then((fUrl) => {
       setFrontDataUrl(fUrl);
-      const bUrl = renderTourBackGraphic({ accentColor: inkColor });
+      const stops =
+        tourMode === 'procedural' ? generateProceduralTourRoster(album) : CANONICAL_TOUR_ROSTER;
+      const bUrl = renderTourBackGraphic({ accentColor: inkColor, stops });
       setBackDataUrl(bUrl);
       setIsRendering(false);
     });
-  }, [isOpen, album, frontMode, inkColor]);
+  }, [isOpen, album, frontMode, inkColor, tourMode]);
 
   if (!isOpen || !album) return null;
+
+  const isFuturePressing = parseInt(album.year, 10) > new Date().getFullYear();
 
   const triggerDownload = (url: string, filename: string) => {
     const a = document.createElement('a');
@@ -63,10 +72,8 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
   const handleExport = (destinationUrl?: string) => {
     const slug = album.bandName.toLowerCase().replace(/[^a-z0-9]/gi, '_');
 
-    // 1. Download front chest print
     triggerDownload(frontDataUrl, `${slug}_front_300dpi.png`);
 
-    // 2. Download tour back print if enabled
     if (includeBack) {
       setTimeout(() => {
         triggerDownload(backDataUrl, `${slug}_back_tour_300dpi.png`);
@@ -77,7 +84,6 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
       onNotify('success', 'Master 300 DPI production files dispatched to downloads.');
     }
 
-    // 3. Launch third-party vendor portal if selected
     if (destinationUrl) {
       window.open(destinationUrl, '_blank', 'noopener,noreferrer');
     }
@@ -112,32 +118,46 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
         <div className="p-4 space-y-4 overflow-y-auto text-xs text-slate-300 flex-1">
           {/* Side-by-Side Dual Previews */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Front Panel Preview */}
             <div className="space-y-1.5 text-center">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
                 Front: Chest Plate
               </span>
               <div className="aspect-square rounded-xl border border-slate-800 bg-black/70 p-2 flex items-center justify-center overflow-hidden">
                 {isRendering || !frontDataUrl ? (
-                  <span className="font-mono text-[10px] text-amber-500 animate-pulse">Rendering...</span>
+                  <span className="font-mono text-[10px] text-amber-500 animate-pulse">
+                    Rendering...
+                  </span>
                 ) : (
-                  <img src={frontDataUrl} alt="Front print" className="max-h-full max-w-full object-contain" />
+                  <img
+                    src={frontDataUrl}
+                    alt="Front print"
+                    className="max-h-full max-w-full object-contain"
+                  />
                 )}
               </div>
             </div>
 
-            {/* Back Panel Preview */}
             <div className="space-y-1.5 text-center">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
                 Back: Tour Roster
               </span>
-              <div className={`aspect-square rounded-xl border border-slate-800 bg-black/70 p-2 flex items-center justify-center overflow-hidden ${!includeBack ? 'opacity-30' : ''}`}>
+              <div
+                className={`aspect-square rounded-xl border border-slate-800 bg-black/70 p-2 flex items-center justify-center overflow-hidden ${
+                  !includeBack ? 'opacity-30' : ''
+                }`}
+              >
                 {!includeBack ? (
                   <span className="font-mono text-[10px] text-slate-500">Back Disabled</span>
                 ) : isRendering || !backDataUrl ? (
-                  <span className="font-mono text-[10px] text-amber-500 animate-pulse">Rendering...</span>
+                  <span className="font-mono text-[10px] text-amber-500 animate-pulse">
+                    Rendering...
+                  </span>
                 ) : (
-                  <img src={backDataUrl} alt="Back tour print" className="max-h-full max-w-full object-contain" />
+                  <img
+                    src={backDataUrl}
+                    alt="Back tour print"
+                    className="max-h-full max-w-full object-contain"
+                  />
                 )}
               </div>
             </div>
@@ -181,8 +201,8 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
             </div>
           </div>
 
-          {/* Back Tour Dates & Color Toggles */}
-          <div className="space-y-2 bg-[#100e0c] p-3 rounded-xl border border-slate-800">
+          {/* Back Tour Dates, Roster Mode & Color Toggles */}
+          <div className="space-y-2.5 bg-[#100e0c] p-3 rounded-xl border border-slate-800">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
@@ -202,26 +222,67 @@ export const ApparelModal: React.FC<ApparelModalProps> = ({
             </div>
 
             {includeBack && (
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-[10px] text-slate-400 font-mono">Back Ink Pigment:</span>
-                <div className="flex gap-2">
-                  {INK_PALETTES.map((pal) => (
-                    <button
-                      key={pal.hex}
-                      type="button"
-                      onClick={() => setInkColor(pal.hex)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono border transition-all ${
-                        inkColor === pal.hex
-                          ? 'border-amber-400 bg-slate-800 text-white'
-                          : 'border-slate-800 bg-slate-950 text-slate-400'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.hex }} />
-                      <span>{pal.label}</span>
-                    </button>
-                  ))}
+              <>
+                <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTourMode('canonical')}
+                    className={`p-1.5 rounded-lg border text-left transition-all font-mono ${
+                      tourMode === 'canonical'
+                        ? 'border-amber-500/60 bg-amber-500/10 text-white'
+                        : 'border-slate-800 bg-slate-900/60 text-slate-400'
+                    }`}
+                  >
+                    <span className="font-bold text-[10.5px] block">Canonical &apos;77 Circuit</span>
+                    <span className="text-[9px] text-slate-400 block">
+                      Twin Peaks, Bikini Bottom, Mordor...
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTourMode('procedural')}
+                    className={`p-1.5 rounded-lg border text-left transition-all font-mono ${
+                      tourMode === 'procedural'
+                        ? 'border-amber-500/60 bg-amber-500/10 text-white'
+                        : 'border-slate-800 bg-slate-900/60 text-slate-400'
+                    }`}
+                  >
+                    <span className="font-bold text-[10.5px] block">
+                      {isFuturePressing ? 'Chrono-Orbital Circuit' : 'Municipal Lore Circuit'}
+                    </span>
+                    <span className="text-[9px] text-slate-400 block">
+                      {isFuturePressing
+                        ? 'Luna, Mars, Orbital Cistern #4...'
+                        : 'Flumptown Annex, Zoning Board...'}
+                    </span>
+                  </button>
                 </div>
-              </div>
+
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-mono">Back Ink Pigment:</span>
+                  <div className="flex gap-2">
+                    {INK_PALETTES.map((pal) => (
+                      <button
+                        key={pal.hex}
+                        type="button"
+                        onClick={() => setInkColor(pal.hex)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono border transition-all ${
+                          inkColor === pal.hex
+                            ? 'border-amber-400 bg-slate-800 text-white'
+                            : 'border-slate-800 bg-slate-950 text-slate-400'
+                        }`}
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: pal.hex }}
+                        />
+                        <span>{pal.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
 
