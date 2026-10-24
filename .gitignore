@@ -1,3 +1,5 @@
 node_modules
 dist
 .env
+video_build/
+repomix-dump.txt
