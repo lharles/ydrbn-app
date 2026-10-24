@@ -47,7 +47,6 @@ export class RetroAudioSynthesizer {
 
   public setRpm(rpm: TurntableRpm): void {
     this.currentRpm = rpm;
-    // Never pitch-warp ATJ.mp3 while it is playing
     if (this.isAtjPlayingNow) return;
 
     const rate = this.getRateMultiplier(rpm);
@@ -79,6 +78,8 @@ export class RetroAudioSynthesizer {
 
     if (this.activeHtmlAudio) {
       try {
+        this.activeHtmlAudio.onended = null;
+        this.activeHtmlAudio.onerror = null;
         this.activeHtmlAudio.pause();
         this.activeHtmlAudio.currentTime = 0;
       } catch {
@@ -97,6 +98,48 @@ export class RetroAudioSynthesizer {
     }
   }
 
+  /**
+   * Dedicated full-length streaming player for ATJ.mp3.
+   * Uses native HTMLAudioElement instead of Web Audio decodeAudioData
+   * so the full song plays 100% to completion without buffer truncation.
+   */
+  private playAtjFullTrack(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.pendingResolve = resolve;
+      const audio = new Audio(`${BASE_STEM_URL}ATJ.mp3`);
+      audio.preload = 'auto';
+      audio.loop = false;
+      audio.volume = 1.0;
+      this.activeHtmlAudio = audio;
+
+      audio.onended = () => {
+        this.activeHtmlAudio = null;
+        this.isPlaying = false;
+        this.isAtjPlayingNow = false;
+        this.pendingResolve = null;
+        resolve(true);
+      };
+
+      audio.onerror = (err) => {
+        console.warn('[AudioSynthesizer] ATJ playback error:', err);
+        this.activeHtmlAudio = null;
+        this.isPlaying = false;
+        this.isAtjPlayingNow = false;
+        this.pendingResolve = null;
+        resolve(false);
+      };
+
+      audio.play().catch((err) => {
+        console.warn('[AudioSynthesizer] ATJ play() rejected:', err);
+        this.activeHtmlAudio = null;
+        this.isPlaying = false;
+        this.isAtjPlayingNow = false;
+        this.pendingResolve = null;
+        resolve(false);
+      });
+    });
+  }
+
   public async playAlbumClip(
     albumId: string,
     seedTitle: string,
@@ -104,23 +147,28 @@ export class RetroAudioSynthesizer {
     preset?: AlbumEntry['audioPreset']
   ): Promise<boolean> {
     this.stopAll();
-    const ctx = this.getContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume().catch(() => {});
-    }
     this.isPlaying = true;
-
-    const parsedYear = parseInt(yearStr.replace(/\D/g, ''), 10) || 1977;
 
     // 1. Resolve or retrieve the permanent stem plan for this specific album drop
     const plan = getOrSelectStemsForAlbum(albumId, yearStr);
     const isAtj = plan.isAtjFanfare || plan.stems.includes('ATJ.mp3');
     this.isAtjPlayingNow = isAtj;
 
-    // Lock ATJ.mp3 to 1.0x speed so the full song plays naturally
-    const rate = isAtj ? 1.0 : this.getRateMultiplier(this.currentRpm);
+    // 2. If ATJ.mp3 is triggered, fire fanfare and stream full song via native HTMLAudioElement
+    if (isAtj) {
+      window.dispatchEvent(new CustomEvent('ydrbn-atj-fanfare'));
+      return this.playAtjFullTrack();
+    }
 
-    // 2. Pre-load audio buffers
+    const ctx = this.getContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {});
+    }
+
+    const rate = this.getRateMultiplier(this.currentRpm);
+    const parsedYear = parseInt(yearStr.replace(/\D/g, ''), 10) || 1977;
+
+    // 3. Pre-load stem audio buffers
     const loadedBuffers = await Promise.all(
       plan.stems.map((filename) => loadStemBuffer(filename, ctx))
     );
@@ -129,50 +177,12 @@ export class RetroAudioSynthesizer {
 
     const validBuffers = loadedBuffers.filter((b): b is AudioBuffer => b !== null);
 
-    // Fire the ATJ fanfare event right as playback starts
-    if (isAtj) {
-      window.dispatchEvent(new CustomEvent('ydrbn-atj-fanfare'));
-    }
-
-    // Fallback: If ATJ.mp3 was triggered but Web Audio decodeAudioData failed on a large file,
-    // stream it directly via native HTMLAudioElement so it STILL plays through 100%.
-    if (isAtj && validBuffers.length === 0) {
-      return new Promise((resolve) => {
-        this.pendingResolve = resolve;
-        const audio = new Audio(`${BASE_STEM_URL}ATJ.mp3`);
-        this.activeHtmlAudio = audio;
-        audio.onended = () => {
-          this.activeHtmlAudio = null;
-          this.isPlaying = false;
-          this.isAtjPlayingNow = false;
-          this.pendingResolve = null;
-          resolve(true);
-        };
-        audio.onerror = () => {
-          this.activeHtmlAudio = null;
-          this.isPlaying = false;
-          this.isAtjPlayingNow = false;
-          this.pendingResolve = null;
-          resolve(false);
-        };
-        audio.play().catch(() => {
-          this.activeHtmlAudio = null;
-          this.isPlaying = false;
-          this.isAtjPlayingNow = false;
-          this.pendingResolve = null;
-          resolve(false);
-        });
-      });
-    }
-
-    // 3. Determine exact playback duration
-    // ATJ.mp3 NEVER gets capped; it plays its full buffer duration until source.onended or manual stop.
-    let duration = 6.2;
+    let maxDuration = 6.2;
     if (validBuffers.length > 0) {
       const stemMax = Math.max(...validBuffers.map((b) => b.duration / rate));
-      duration = isAtj ? stemMax : Math.min(Math.max(stemMax, 5.0), 18.0);
+      maxDuration = Math.max(stemMax, 5.0);
     }
-
+    const duration = Math.min(maxDuration, 18.0);
     const now = ctx.currentTime;
 
     // 4. Master Output Bus with analog compressor
@@ -185,13 +195,9 @@ export class RetroAudioSynthesizer {
 
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0.001, now);
-    masterGain.gain.linearRampToValueAtTime(isAtj ? 0.9 : 0.75, now + 0.25);
-
-    // Only schedule an automatic fade-out envelope for standard short clips, NEVER for ATJ.mp3
-    if (!isAtj) {
-      masterGain.gain.setValueAtTime(0.75, now + Math.max(0.3, duration - 0.5));
-      masterGain.gain.linearRampToValueAtTime(0.001, now + duration);
-    }
+    masterGain.gain.linearRampToValueAtTime(0.75, now + 0.3);
+    masterGain.gain.setValueAtTime(0.75, now + Math.max(0.35, duration - 0.5));
+    masterGain.gain.linearRampToValueAtTime(0.001, now + duration);
 
     masterComp.connect(masterGain);
     masterGain.connect(ctx.destination);
@@ -202,16 +208,13 @@ export class RetroAudioSynthesizer {
     this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
     masterGain.connect(this.analyser);
 
-    // 5. Play Continuous needle-drop vinyl crackle (lightweight looping buffer)
-    this.playVinylCrackle(ctx, masterComp, now, duration, isAtj);
+    // 5. Play Continuous needle-drop vinyl crackle
+    this.playVinylCrackle(ctx, masterComp, now, duration);
 
     // 6. Trigger Sample Stems through master compression
-    let primaryAtjSource: AudioBufferSourceNode | null = null;
-
     if (validBuffers.length > 0) {
-      const stemVol =
-        plan.isSoloHarmonica || isAtj ? 0.95 : 0.8 / Math.sqrt(validBuffers.length);
-      validBuffers.forEach((buffer, idx) => {
+      const stemVol = plan.isSoloHarmonica ? 0.95 : 0.8 / Math.sqrt(validBuffers.length);
+      validBuffers.forEach((buffer) => {
         const source = ctx.createBufferSource();
         source.buffer = buffer;
         source.playbackRate.setValueAtTime(rate, now);
@@ -225,17 +228,13 @@ export class RetroAudioSynthesizer {
         source.start(now);
         this.activeNodes.push(source);
         this.activeBufferSources.push(source);
-
-        if (isAtj && idx === 0) {
-          primaryAtjSource = source;
-        }
       });
     }
 
-    // 7. Play Procedural Synth attenuated to 25% volume (skipped for solo harmonica & ATJ)
+    // 7. Play Procedural Synth attenuated to 25% volume
     const shouldPlaySynth = plan.enableSynthBacking || validBuffers.length === 0;
 
-    if (shouldPlaySynth && !plan.isSoloHarmonica && !isAtj) {
+    if (shouldPlaySynth && !plan.isSoloHarmonica) {
       const synthSubGain = ctx.createGain();
       synthSubGain.gain.setValueAtTime(0.25, now);
       synthSubGain.connect(masterComp);
@@ -284,21 +283,6 @@ export class RetroAudioSynthesizer {
           this.playAmbientDroneRoutine(ctx, synthSubGain, now, duration, root, hash);
           break;
       }
-    }
-
-    // 8. Completion Lifecycle:
-    // If ATJ.mp3 is playing, bind completion strictly to the audio buffer's native onended event
-    // so it NEVER stops early unless the user manually presses STOP PLAYBACK.
-    if (isAtj && primaryAtjSource) {
-      return new Promise((resolve) => {
-        this.pendingResolve = resolve;
-        (primaryAtjSource as AudioBufferSourceNode).onended = () => {
-          if (!this.isPlaying) return;
-          this.pendingResolve = null;
-          this.stopAll();
-          resolve(true);
-        };
-      });
     }
 
     return new Promise((resolve) => {
@@ -694,14 +678,7 @@ export class RetroAudioSynthesizer {
     this.activeNodes.push(noise);
   }
 
-  private playVinylCrackle(
-    ctx: AudioContext,
-    out: AudioNode,
-    start: number,
-    duration: number,
-    isAtj: boolean = false
-  ) {
-    // Use a compact 4-second looping buffer so long songs like ATJ.mp3 never allocate huge RAM
+  private playVinylCrackle(ctx: AudioContext, out: AudioNode, start: number, duration: number) {
     const loopSeconds = 4.0;
     const bufferSize = Math.floor(ctx.sampleRate * loopSeconds);
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -734,19 +711,17 @@ export class RetroAudioSynthesizer {
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.001, start);
-    gain.gain.linearRampToValueAtTime(isAtj ? 0.035 : 0.06, start + 0.4);
-
-    if (!isAtj) {
-      gain.gain.setValueAtTime(0.06, start + Math.max(0.5, duration - 0.6));
-      gain.gain.linearRampToValueAtTime(0.001, start + duration);
-      noise.stop(start + duration);
-    }
+    gain.gain.linearRampToValueAtTime(0.06, start + 0.4);
+    gain.gain.setValueAtTime(0.06, start + Math.max(0.5, duration - 0.6));
+    gain.gain.linearRampToValueAtTime(0.001, start + duration);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(out);
 
+    // Must call start() BEFORE scheduling stop()
     noise.start(start);
+    noise.stop(start + duration);
     this.activeNodes.push(noise);
   }
 
@@ -755,7 +730,17 @@ export class RetroAudioSynthesizer {
   }
 
   public getAudioLevels(): { left: number; right: number } {
-    if (!this.isPlaying || !this.analyser || !this.freqData) {
+    if (!this.isPlaying) {
+      return { left: 0, right: 0 };
+    }
+    if (this.isAtjPlayingNow && this.activeHtmlAudio && !this.activeHtmlAudio.paused) {
+      const t = performance.now() * 0.012;
+      return {
+        left: Math.min(1, 0.55 + Math.abs(Math.sin(t)) * 0.4),
+        right: Math.min(1, 0.5 + Math.abs(Math.cos(t * 1.17)) * 0.45),
+      };
+    }
+    if (!this.analyser || !this.freqData) {
       return { left: 0, right: 0 };
     }
     this.analyser.getByteFrequencyData(this.freqData);
