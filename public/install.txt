@@ -1,0 +1,53 @@
+========================================================
+Y.D.R.B.N. - QUICK INSTALLATION GUIDE (iOS & ANDROID)
+Live App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+Y.D.R.B.N. is a 100% offline-capable Progressive Web App (PWA).
+You can install it directly to your phone's home screen without
+needing the Apple App Store or Google Play Store.
+
+
+--------------------------------------------------------
+PART 1: APPLE / iPHONE & iPAD (SAFARI)
+--------------------------------------------------------
+
+STEP 1: OPEN IN SAFARI
+- Open the Safari browser app on your iPhone or iPad.
+  (Note: Use Safari, not Chrome, as Apple requires Safari
+  to add apps to your home screen).
+- Go to: https://lharles.github.io/ydrbn-app/
+
+STEP 2: OPEN THE SHARE MENU
+- Tap the "Share" button at the bottom of Safari
+  (the square icon with an arrow pointing straight up).
+
+STEP 3: ADD TO HOME SCREEN
+- Scroll down the Share menu and tap "Add to Home Screen".
+- Tap "Add" in the top-right corner.
+- Y.D.R.B.N. is now installed on your home screen!
+
+
+--------------------------------------------------------
+PART 2: ANDROID (CHROME)
+--------------------------------------------------------
+
+STEP 1: OPEN IN CHROME
+- Open the Chrome browser app on your Android phone.
+- Go to: https://lharles.github.io/ydrbn-app/
+
+STEP 2: INSTALL THE APP (CHOOSE EITHER OPTION)
+- OPTION A (In-App Button):
+  Tap the pulsing "INSTALL" button in the top bar of the app
+  (or tap the Gear icon in the bottom-right corner and tap
+  "Install App"), then confirm.
+
+- OPTION B (Chrome Menu - Always Available):
+  Tap Chrome's three-dot menu (top-right corner) and tap
+  "Install app" (or "Add to Home screen").
+
+
+--------------------------------------------------------
+NEED TO UPDATE OR RESET AN OLDER VERSION?
+--------------------------------------------------------
+Visit: https://lharles.github.io/ydrbn-app/reset.html
