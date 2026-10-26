@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Y.D.R.B.N. — Installation Guide</title>
+  <link rel="manifest" href="/ydrbn-app/manifest.json" />
+  <meta name="theme-color" content="#12100e" />
+  <link rel="apple-touch-icon" href="/ydrbn-app/icon-192.png" />
+  <style>
+    :root {
+      --bg: #12100e;
+      --card: #1c1814;
+      --border: #4a3d31;
+      --amber: #f59e0b;
+      --amber-light: #fde047;
+      --emerald: #10b981;
+      --text: #f3ede4;
+      --muted: #a39480;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.25rem;
+      letter-spacing: 0.08em;
+      color: var(--amber-light);
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0;
+    }
+    .jump-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid var(--amber);
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber-light);
+    }
+    .btn-launch {
+      display: block;
+      width: 100%;
+      background: var(--amber);
+      color: #12100e;
+      border: none;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+    .btn-native-install {
+      display: none;
+      width: 100%;
+      background: var(--emerald);
+      color: #06281e;
+      border: none;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.05rem;
+      color: var(--amber-light);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .step {
+      margin-bottom: 14px;
+    }
+    .step-title {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 0.9rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #d6cbbd;
+      font-size: 0.85rem;
+    }
+    li { margin-bottom: 4px; }
+    .note-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>INSTALL Y.D.R.B.N.</h1>
+      <p class="subtitle">100% Offline App &bull; No App Store Required</p>
+      <button id="direct-install-btn" class="btn btn-native-install" onclick="triggerInstall()">
+        📲 1-Tap Install App Now
+      </button>
+      <a href="/ydrbn-app/" class="btn btn-launch">
+        Open Y.D.R.B.N. App &rarr;
+      </a>
+    </header>
+
+    <div class="jump-bar">
+      <a href="#ios" class="btn">🍎 iPhone / iOS</a>
+      <a href="#android" class="btn">🤖 Android</a>
+    </div>
+
+    <section id="ios" class="card">
+      <h2>🍎 Apple / iPhone &amp; iPad (Safari)</h2>
+      <div class="step">
+        <span class="step-title">STEP 1: Open in Safari</span>
+        <ul>
+          <li>Open the <strong>Safari</strong> app (use Safari, not Chrome) and visit:<br/>
+              <a href="/ydrbn-app/" style="color:#fde047; font-weight:700;">lharles.github.io/ydrbn-app/</a></li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 2: Tap the Share Button</span>
+        <ul>
+          <li>Tap the <strong>Share</strong> icon at the bottom center of Safari (the square with an upward arrow).</li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 3: Add to Home Screen</span>
+        <ul>
+          <li>Scroll down the menu and tap <strong>Add to Home Screen</strong>.</li>
+          <li>Tap <strong>Add</strong> in the top-right corner. The app icon will appear right on your home screen!</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="android" class="card">
+      <h2>🤖 Android (Chrome)</h2>
+      <div class="step">
+        <span class="step-title">STEP 1: Open in Chrome</span>
+        <ul>
+          <li>Open <strong>Chrome</strong> and visit:<br/>
+              <a href="/ydrbn-app/" style="color:#fde047; font-weight:700;">lharles.github.io/ydrbn-app/</a></li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 2: Install to Home Screen (Two Easy Ways)</span>
+        <ul>
+          <li><strong>Option A (In-App Button):</strong> Tap the pulsing <strong>INSTALL</strong> button in the top bar of the app (or open the bottom-right <strong>Gear</strong> settings menu and tap <strong>Install App</strong>).</li>
+          <li><strong>Option B (Chrome Menu &mdash; Always Works):</strong> Tap Chrome's three-dot menu (<strong>&#8942;</strong>) in the top-right corner and select <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="desktop" class="card">
+      <h2>💻 Desktop (Chrome / Edge)</h2>
+      <ul>
+        <li>Open <a href="/ydrbn-app/" style="color:#fde047;">lharles.github.io/ydrbn-app/</a> and click the <strong>Install</strong> icon inside the right side of your browser's address bar.</li>
+      </ul>
+      <div class="note-box">
+        Updating from an older test version? Visit the <a href="/ydrbn-app/reset.html" style="color:#fde047;">Full Reset &amp; Clean Reinstall Guide</a>.
+      </div>
+    </section>
+
+    <div style="text-align:center; margin-bottom:24px;">
+      <p style="font-size:0.75rem; color:var(--muted);">
+        Prefer raw plain text? <a href="/ydrbn-app/install.txt" style="color:var(--amber);">View install.txt</a> &bull;
+        <a href="/ydrbn-app/reset.html" style="color:var(--amber);">Reset Guide</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let savedPrompt = null;
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/ydrbn-app/sw.js', { scope: '/ydrbn-app/' }).catch(() => {});
+      });
+    }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      savedPrompt = e;
+      const btn = document.getElementById('direct-install-btn');
+      if (btn) btn.style.display = 'block';
+    });
+    async function triggerInstall() {
+      if (!savedPrompt) return;
+      savedPrompt.prompt();
+      const { outcome } = await savedPrompt.userChoice;
+      if (outcome === 'accepted') {
+        savedPrompt = null;
+        document.getElementById('direct-install-btn').style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
