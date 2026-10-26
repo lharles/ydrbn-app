@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Y.D.R.B.N. — Reset & Reinstall Guide</title>
+  <style>
+    :root {
+      --bg: #12100e;
+      --card: #1c1814;
+      --border: #4a3d31;
+      --amber: #f59e0b;
+      --amber-light: #fde047;
+      --text: #f3ede4;
+      --muted: #a39480;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.25rem;
+      letter-spacing: 0.08em;
+      color: var(--amber-light);
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0;
+    }
+    .jump-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid var(--amber);
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber-light);
+    }
+    .btn-launch {
+      display: block;
+      width: 100%;
+      background: var(--amber);
+      color: #12100e;
+      border: none;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.05rem;
+      color: var(--amber-light);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .step {
+      margin-bottom: 14px;
+    }
+    .step-title {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 0.9rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #d6cbbd;
+      font-size: 0.85rem;
+    }
+    li { margin-bottom: 4px; }
+    .status-msg {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #34d399;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Y.D.R.B.N. SERVICE DECK</h1>
+      <p class="subtitle">Full App Reset &amp; Clean Reinstall Guide</p>
+      <button class="btn btn-launch" onclick="purgeBrowserNow()">
+        ⚡ 1-Tap Purge Browser Cache Now
+      </button>
+      <div id="purge-status" class="status-msg">
+        ✓ Browser storage &amp; service workers cleared!
+      </div>
+    </header>
+
+    <div class="jump-bar">
+      <a href="#ios" class="btn">🍎 iPhone / iOS Steps</a>
+      <a href="#android" class="btn">🤖 Android Steps</a>
+    </div>
+
+    <section id="ios" class="card">
+      <h2>🍎 Apple / iPhone (iOS) Full Reset</h2>
+      <div class="step">
+        <span class="step-title">STEP 1: Delete the Old Home Screen Icon</span>
+        <ul>
+          <li>Find the <strong>Y.D.R.B.N.</strong> icon on your iPhone home screen.</li>
+          <li>Press and hold the icon until the menu pops up.</li>
+          <li>Tap <strong>Delete Bookmark</strong> (or <strong>Remove App &rarr; Delete</strong>).</li>
+          <li><em>Required so your iPhone drops the old logo icon.</em></li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 2: Close Old Safari Tabs</span>
+        <ul>
+          <li>Open Safari, tap the <strong>Tabs</strong> button (bottom-right), and close any open <strong>Y.D.R.B.N.</strong> or <strong>github.io</strong> tabs.</li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 3: Clear Safari Website Data</span>
+        <ul>
+          <li>Open your iPhone's main <strong>Settings</strong> app (silver gear).</li>
+          <li><strong>iOS 18+:</strong> Scroll to the bottom &rarr; tap <strong>Apps</strong> &rarr; tap <strong>Safari</strong>.<br/>
+              <strong>iOS 17 &amp; older:</strong> Scroll down and tap <strong>Safari</strong>.</li>
+          <li>Scroll to the bottom and tap <strong>Advanced</strong> &rarr; <strong>Website Data</strong>.</li>
+          <li>Search for <strong>github.io</strong> at the top, swipe left on it, and tap <strong>Delete</strong>.</li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 4: Open Fresh &amp; Re-Add to Home Screen</span>
+        <ul>
+          <li>Open <strong>Safari</strong> and go to <a href="/ydrbn-app/" style="color:#fde047;">lharles.github.io/ydrbn-app/</a></li>
+          <li>Tap the circular <strong>Refresh</strong> arrow in the address bar.</li>
+          <li>Tap the <strong>Share</strong> button at the bottom &rarr; <strong>Add to Home Screen</strong> &rarr; <strong>Add</strong>.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="android" class="card">
+      <h2>🤖 Android Full Reset</h2>
+      <div class="step">
+        <span class="step-title">STEP 1: Uninstall the Old App</span>
+        <ul>
+          <li>Press and hold the <strong>Y.D.R.B.N.</strong> icon on your home screen or app drawer.</li>
+          <li>Tap <strong>App info</strong> (the "i" circle) and tap <strong>Uninstall</strong> (or drag straight up to the <strong>Uninstall</strong> trash can).</li>
+          <li><em>Note: Do NOT tap "Remove" (that only deletes the shortcut).</em></li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 2: Clear Old Site Storage in Chrome</span>
+        <ul>
+          <li>Open <strong>Chrome</strong> and go to <a href="/ydrbn-app/" style="color:#fde047;">lharles.github.io/ydrbn-app/</a></li>
+          <li>Tap the <strong>Tune / Sliders</strong> icon on the left side of the address bar.</li>
+          <li>Tap <strong>Cookies and site data</strong> (or <strong>Site settings</strong>) &rarr; tap the <strong>Trash Can / Clear &amp; reset</strong>.</li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="step-title">STEP 3: Refresh &amp; Reinstall</span>
+        <ul>
+          <li>Tap Chrome's three dots (top right) and tap the <strong>Refresh</strong> arrow.</li>
+          <li>Tap <strong>INSTALL</strong> in the top bar (or tap Chrome's three dots &rarr; <strong>Install app</strong>).</li>
+        </ul>
+      </div>
+    </section>
+
+    <div style="text-align:center; margin-bottom:24px;">
+      <a href="/ydrbn-app/" class="btn btn-launch">Launch Y.D.R.B.N. App &rarr;</a>
+      <p style="font-size:0.75rem; color:var(--muted); margin-top:10px;">
+        Prefer raw plain text? <a href="/ydrbn-app/reset.txt" style="color:var(--amber);">View reset.txt</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    async function purgeBrowserNow() {
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+      try {
+        if (window.indexedDB) {
+          indexedDB.deleteDatabase('ydrbn_packs_db');
+          if (indexedDB.databases) {
+            const dbs = await indexedDB.databases();
+            dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name));
+          }
+        }
+      } catch (e) {}
+      try {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+      } catch (e) {}
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+      } catch (e) {}
+      document.getElementById('purge-status').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

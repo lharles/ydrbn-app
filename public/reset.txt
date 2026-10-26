@@ -1,0 +1,64 @@
+========================================================
+Y.D.R.B.N. - FULL APP RESET & UPDATE GUIDE
+Live App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+PART 1: APPLE / iPHONE (iOS) FULL RESET STEPS
+--------------------------------------------------------
+
+STEP 1: DELETE THE OLD HOME SCREEN ICON
+- Find the Y.D.R.B.N. icon on your iPhone home screen.
+- Press and hold the icon until the menu pops up.
+- Tap "Delete Bookmark" (or "Remove App" -> "Delete").
+- (Required so your iPhone drops the old logo icon).
+
+STEP 2: CLOSE OLD SAFARI TABS
+- Open the Safari browser app.
+- Tap the Tabs icon (two overlapping squares in bottom-right).
+- Close any open tabs showing Y.D.R.B.N. or github.io.
+
+STEP 3: CLEAR SAFARI WEBSITE DATA FOR GITHUB.IO
+- Open your iPhone's main "Settings" app (silver gear icon).
+- Open Safari settings:
+  * iOS 18 or newer: Scroll to the bottom, tap "Apps", then "Safari".
+  * iOS 17 or older: Scroll down the main list and tap "Safari".
+- Scroll to the very bottom and tap "Advanced" -> "Website Data".
+- Type "github.io" in the search bar at the top.
+- Swipe left on "github.io" (or tap Edit) and tap "Delete".
+
+STEP 4: OPEN FRESH IN SAFARI
+- Open the Safari app (use Safari, not Chrome).
+- Go to: https://lharles.github.io/ydrbn-app/
+- Tap the circular Refresh arrow in the address bar once.
+
+STEP 5: ADD BACK TO HOME SCREEN
+- Tap the "Share" button at the bottom middle of Safari.
+- Scroll down and tap "Add to Home Screen".
+- Confirm you see the new plain album cover icon, then tap "Add".
+
+
+--------------------------------------------------------
+PART 2: ANDROID FULL RESET STEPS
+--------------------------------------------------------
+
+STEP 1: UNINSTALL THE OLD APP
+- Find the Y.D.R.B.N. icon on your home screen or app drawer.
+- Press and hold the icon.
+- Tap "App info" (the "i" circle) and tap "Uninstall" (or drag straight up to the "Uninstall" trash can at the top).
+- NOTE: Do NOT tap "Remove" (that only deletes the shortcut).
+
+STEP 2: CLEAR OLD SITE STORAGE IN CHROME
+- Open the Chrome browser app.
+- Go to: https://lharles.github.io/ydrbn-app/
+- Tap the "Tune / Sliders" icon on the left side of the address bar.
+- Tap "Cookies and site data" (or "Site settings").
+- Tap the Trash Can icon (or "Clear & reset" / "Delete data") and confirm.
+
+STEP 3: HARD REFRESH THE PAGE
+- Back on the Y.D.R.B.N. page in Chrome, tap the three dots (top right).
+- Tap the Refresh arrow at the top of the menu.
+
+STEP 4: REINSTALL WITH THE NEW ICON
+- Tap the "INSTALL" button in the top bar (or tap the Gear icon in the bottom right and tap "Install App").
+- Or tap Chrome's three dots (top right) and select "Install app".
