@@ -30,7 +30,11 @@ import { getPreferences, togglePackStatus } from '../services/preferencesService
 import { hydrateContentPools } from '../services/proceduralGenerator';
 import { CrateForgeModal, CustomPackBundle } from './CrateForgeModal';
 
-export const ContentPackSection: React.FC = () => {
+interface ContentPackSectionProps {
+  onNotify?: (type: 'success' | 'error' | 'info', text: string) => void;
+}
+
+export const ContentPackSection: React.FC<ContentPackSectionProps> = ({ onNotify }) => {
   const [packs, setPacks] = useState<any[]>([]);
   const [customPacks, setCustomPacks] = useState<StoredPack[]>([]);
   const [statuses, setStatuses] = useState<Record<string, any>>({});
@@ -537,6 +541,7 @@ export const ContentPackSection: React.FC = () => {
         isOpen={isForgeOpen}
         onClose={() => setIsForgeOpen(false)}
         onSavePack={handleSaveCustomBundle}
+        onNotify={onNotify}
         initialPack={editingPackBundle}
       />
     </div>

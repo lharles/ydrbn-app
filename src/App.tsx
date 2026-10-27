@@ -809,6 +809,7 @@ export default function App() {
         hasServerKey={false}
         onOpenDispatch={() => setIsDispatchOpen(true)}
         onOpenTechnician={() => setIsTechnicianOpen(true)}
+        onNotify={addToast}
       />
 
       <TechnicianModal

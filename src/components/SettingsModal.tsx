@@ -44,6 +44,7 @@ interface SettingsModalProps {
   hasServerKey?: boolean;
   onOpenDispatch?: () => void;
   onOpenTechnician?: () => void;
+  onNotify?: (type: 'success' | 'error' | 'info', text: string) => void;
 }
 
 type SettingsView = 'main' | 'cargo-bay' | 'directors-chair';
@@ -79,6 +80,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onToggleDevMode,
   onOpenDispatch,
   onOpenTechnician,
+  onNotify,
 }) => {
   const [currentView, setCurrentView] = useState<SettingsView>('main');
 
@@ -256,7 +258,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* VIEW 1: THE CARGO BAY SUBMENU */}
         {currentView === 'cargo-bay' && (
           <div className="p-3 overflow-y-auto text-xs text-slate-300 flex-1">
-            <ContentPackSection />
+            <ContentPackSection onNotify={onNotify} />
           </div>
         )}
 

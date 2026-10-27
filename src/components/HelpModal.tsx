@@ -81,7 +81,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <span className="text-amber-400">▶</span>
                   <span>Watch Functionality Walkthrough</span>
                 </button>
-                <span className="text-[9px] font-mono text-slate-500 uppercase">MP4 // ~3.5 min</span>
+                <span className="text-[9px] font-mono text-slate-500 uppercase">MP4 // ~2 min</span>
               </div>
             </div>
 
@@ -204,15 +204,34 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <p className="text-[10px] text-slate-400 leading-tight">
                     Or clear browser storage manually if the app remains stuck:
                   </p>
+
                   <div className="space-y-1 text-[9.5px] text-slate-400 font-mono leading-relaxed bg-black/40 p-2 rounded border border-slate-800/80">
                     <div>
                       <strong className="text-slate-200">iOS Safari:</strong> Settings → Safari → Advanced → Website Data → Delete.
                     </div>
                     <div>
-                      <strong className="text-slate-200">Android Chrome:</strong> Settings → Apps → Chrome → Storage → Clear Storage.
+                      <strong className="text-slate-200">Android Chrome:</strong> Address Bar Sliders → Cookies &amp; site data → Delete.
                     </div>
                     <div>
                       <strong className="text-slate-200">Desktop:</strong> Press <strong className="text-slate-200">Ctrl/Cmd + Shift + R</strong>.
+                    </div>
+                    <div className="pt-1 mt-1 border-t border-slate-800 flex items-center justify-between text-[9.5px]">
+                      <a
+                        href={`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/install.html`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 hover:underline"
+                      >
+                        Full Install Guide ↗
+                      </a>
+                      <a
+                        href={`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/reset.html`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 hover:underline"
+                      >
+                        Full Reset Guide ↗
+                      </a>
                     </div>
                   </div>
                 </div>
