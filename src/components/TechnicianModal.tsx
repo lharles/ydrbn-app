@@ -270,7 +270,7 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
 
         {/* Footer */}
         <div className="px-4 py-2 border-t border-slate-800 bg-[#0e0c0a] flex items-center justify-between shrink-0">
-          <span className="text-[9px] font-mono text-slate-500">DEV TOOL v1.0</span>
+          <span className="text-[9px] font-mono text-slate-500">DEV TOOL v1.1</span>
           <button
             type="button"
             onClick={onClose}

@@ -241,7 +241,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
           {/* Footer */}
           <div className="px-4 py-2.5 border-t border-slate-800 bg-[#0c101d] flex items-center justify-between shrink-0">
-            <span className="text-[10px] font-mono text-slate-500">INFO DOC v1.0</span>
+            <span className="text-[10px] font-mono text-slate-500">INFO DOC v1.1</span>
             <button
               type="button"
               onClick={onClose}

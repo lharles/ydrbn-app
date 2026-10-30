@@ -95,7 +95,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
 
         {/* Footer Confirmation */}
         <div className="px-4 py-2.5 border-t border-slate-800 bg-[#0c101d] flex items-center justify-between">
-          <span className="text-[10px] font-mono text-slate-500">DATA SHEET v1.0</span>
+          <span className="text-[10px] font-mono text-slate-500">DATA SHEET v1.1</span>
           <button
             type="button"
             onClick={onClose}

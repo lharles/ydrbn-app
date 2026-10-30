@@ -34,7 +34,7 @@ export interface DispatchResult {
 export async function transmitDispatch(
   category: string,
   content: string,
-  appVersion: string = 'v1.0.0'
+  appVersion: string = 'v1.1.0'
 ): Promise<DispatchResult> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return {
