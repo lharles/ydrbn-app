@@ -744,6 +744,8 @@ export interface AlbumMetadata {
   bandBio: string;
 }
 
+// Replace from `export interface AlbumEntry` to the end of src/types.ts with:
+
 export interface AlbumEntry extends AlbumMetadata {
   id: string;
   coverImageUrl: string;
@@ -757,11 +759,17 @@ export interface AlbumEntry extends AlbumMetadata {
   textColor?: string;
   shadowStyle?: TitleShadowStyle;
   titleLayout?: TitleComposition;
-  isCustomPressing?: boolean;    // Flag for White Label / Bootleg drops
-  customPressingTag?: string;    // 'WHITE LABEL' or 'PRIVATE PRESSING'
+  isCustomPressing?: boolean;
+  customPressingTag?: string;
+  conditionGrade?: string;
+  isWarpedAudio?: boolean;
 }
 
-// Add to src/types.ts:
+export interface HarvestedWordsPayload {
+  nouns: string[];
+  adjectives: string[];
+  ensembles: string[];
+}
 
 export interface CustomDropInput {
   bandName?: string;
@@ -772,6 +780,11 @@ export interface CustomDropInput {
   review?: string;
   coverImageBase64?: string;
   audioPreset?: AlbumEntry['audioPreset'];
+  harvestToRotation?: boolean;
+  harvestedWords?: HarvestedWordsPayload;
+  harvestImageMode?: 'subject' | 'backdrop' | 'none';
+  allowBandNameRecurrence?: boolean;
+  dnaClonedAlbum?: AlbumEntry;
 }
 
 export interface AppSettings {

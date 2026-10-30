@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Wrench, 
-  Download, 
-  Trash2, 
-  Clock, 
-  Radio, 
-  CheckCircle2, 
-  AlertCircle,
-  Smartphone,
-  Layers,
-  RotateCcw
+import {
+  X,
+  Wrench,
+  Download,
+  Clock,
+  RotateCcw,
+  Sparkles,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { performFactoryReset } from '../services/storageService';
+import {
+  VipEdition,
+  VIP_EDITION_CONFIG,
+  VipEditionMetadata,
+} from '../services/preferencesService';
 
 interface TechnicianModalProps {
   isOpen: boolean;
@@ -21,7 +23,11 @@ interface TechnicianModalProps {
   onTriggerInstall: () => void;
   onResetCooldown: () => void;
   onNotify: (type: 'success' | 'info' | 'error', text: string) => void;
+  vipEdition?: VipEdition;
+  onSelectVipEdition?: (edition: VipEdition) => void;
 }
+
+const VIP_LIST: VipEditionMetadata[] = Object.values(VIP_EDITION_CONFIG);
 
 export const TechnicianModal: React.FC<TechnicianModalProps> = ({
   isOpen,
@@ -30,15 +36,19 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
   onTriggerInstall,
   onResetCooldown,
   onNotify,
+  vipEdition = 'none',
+  onSelectVipEdition,
 }) => {
   const [swCount, setSwCount] = useState<number>(0);
   const [cacheKeys, setCacheKeys] = useState<string[]>([]);
   const [hasPrompt, setHasPrompt] = useState<boolean>(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setConfirmWipe(false);
+      setCopiedLink(false);
       return;
     }
 
@@ -58,6 +68,16 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const activeOption = VIP_EDITION_CONFIG[vipEdition] || VIP_EDITION_CONFIG.none;
+  const shareUrl = `https://lharles.github.io/ydrbn-app/?edition=${activeOption.primaryUrlParam}`;
+
+  const handleCopyVipUrl = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    onNotify('success', `Copied VIP unlock URL: ?edition=${activeOption.primaryUrlParam}`);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 bg-black/85 backdrop-blur-sm animate-in fade-in select-none">
@@ -114,6 +134,58 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
                 <span className="text-slate-200">{cacheKeys.length} keys</span>
               </div>
             </div>
+          </div>
+
+          {/* Special URL / VIP Edition Hardware Selector */}
+          <div className="p-2.5 rounded-xl bg-black/60 border border-amber-500/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-amber-300 uppercase flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>VIP Edition / Bezel &amp; Wax:</span>
+              </span>
+              <span className="text-[9px] text-amber-400 uppercase">{activeOption.primaryUrlParam}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
+              {VIP_LIST.map((opt) => {
+                const isSelected = vipEdition === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => onSelectVipEdition?.(opt.id)}
+                    className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500/20 border-amber-400 text-amber-200 shadow-sm'
+                        : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold block truncate">{opt.techMenuLabel}</span>
+                    <span className="text-[8px] text-slate-500 block truncate">
+                      ?edition={opt.primaryUrlParam}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyVipUrl}
+              className="w-full py-1.5 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <span className="truncate">Copied ?edition={activeOption.primaryUrlParam}!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span className="truncate">Copy ?edition={activeOption.primaryUrlParam} Link</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* QA Actions */}

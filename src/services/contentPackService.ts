@@ -9,7 +9,10 @@ import {
   savePackRecord,
   getAllInstalledPacks,
 } from './packStorage';
-import type { CustomPackBundle } from '../components/CrateForgeModal';
+import type { CustomPackBundle, CustomStamp } from '../components/CrateForgeModal';
+import type { HarvestedWordsPayload } from '../types';
+
+export const HARVEST_PACK_ID = 'pack-user-custom-drops';
 
 export async function getAvailablePacks() {
   const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
@@ -49,7 +52,6 @@ export async function installCurrentPack(manifestUrl: string): Promise<StoredPac
     words = await wordsRes.json();
   }
 
-  // Download background stamps into IndexedDB Blobs
   if (manifest.stamps && Array.isArray(manifest.stamps)) {
     for (const filename of manifest.stamps) {
       const imgRes = await fetch(`${base}content/${folderPath}/stamps/${filename}`, { cache: 'no-store' });
@@ -58,7 +60,6 @@ export async function installCurrentPack(manifestUrl: string): Promise<StoredPac
     }
   }
 
-  // Download subject illustrations into IndexedDB Blobs
   if (manifest.subjects && Array.isArray(manifest.subjects)) {
     for (const filename of manifest.subjects) {
       const imgRes = await fetch(`${base}content/${folderPath}/subjects/${filename}`, { cache: 'no-store' });
@@ -77,13 +78,6 @@ export async function uninstallCurrentPack(packId: string): Promise<void> {
   await hydrateContentPools();
 }
 
-// =========================================================================
-// CUSTOM CRATE FORGE SERVICE METHODS
-// =========================================================================
-
-/**
- * Converts a data URL to an IndexedDB Blob safely
- */
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   if (dataUrl.startsWith('data:')) {
     try {
@@ -104,13 +98,9 @@ async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   return new Blob([ab], { type: mimeString });
 }
 
-/**
- * Saves a user-authored custom pack bundle into IndexedDB and immediately re-hydrates the randomizer
- */
 export async function saveCustomPack(bundle: CustomPackBundle): Promise<StoredPack> {
   const stampKeys: string[] = [];
 
-  // Convert each staged cutout to an IndexedDB Blob
   if (bundle.stamps && Array.isArray(bundle.stamps)) {
     for (const stamp of bundle.stamps) {
       const stampKey = `custom_${stamp.id}.png`;
@@ -152,16 +142,135 @@ export async function saveCustomPack(bundle: CustomPackBundle): Promise<StoredPa
 }
 
 /**
- * Returns all custom packs created on this device
+ * Appends novel words and optional artwork from a Custom Drop into the persistent
+ * 'Custom Drop Additions' user crate in IndexedDB and re-hydrates active generator pools.
  */
+export async function harvestCustomDropToPack(
+  harvestedWords: HarvestedWordsPayload,
+  imageBase64?: string,
+  imageMode: 'subject' | 'backdrop' | 'none' = 'none',
+  labelHint: string = 'drop'
+): Promise<{ addedWordsCount: number; addedImage: boolean }> {
+  const existing = await getInstalledPack(HARVEST_PACK_ID);
+
+  const prevNouns: string[] = existing?.words?.nouns || [];
+  const prevAdjectives: string[] = existing?.words?.adjectives || [];
+  const prevEnsembles: string[] = existing?.words?.ensembles || [];
+  const prevSubjects: string[] = existing?.manifest?.subjects || [];
+  const prevStamps: string[] = existing?.manifest?.stamps || [];
+  const prevBundleStamps: CustomStamp[] = existing?.customBundle?.stamps || [];
+
+  const mergeUnique = (oldList: string[], newList: string[]) => {
+    const seen = new Set(oldList.map((w) => w.toLowerCase()));
+    const combined = [...oldList];
+    let added = 0;
+    for (const item of newList) {
+      const clean = item.trim();
+      if (clean && !seen.has(clean.toLowerCase())) {
+        seen.add(clean.toLowerCase());
+        combined.push(clean);
+        added++;
+      }
+    }
+    return { combined, added };
+  };
+
+  const mergedNouns = mergeUnique(prevNouns, harvestedWords.nouns);
+  const mergedAdjs = mergeUnique(prevAdjectives, harvestedWords.adjectives);
+  const mergedEns = mergeUnique(prevEnsembles, harvestedWords.ensembles);
+
+  const addedWordsCount = mergedNouns.added + mergedAdjs.added + mergedEns.added;
+  let addedImage = false;
+
+  const nextSubjects = [...prevSubjects];
+  const nextStamps = [...prevStamps];
+  const nextBundleStamps = [...prevBundleStamps];
+
+  if (imageBase64 && imageMode !== 'none') {
+    const cleanSlug = labelHint.toLowerCase().replace(/[^a-z0-9]/gi, '_').slice(0, 18) || 'drop';
+    const stampId = `harvest-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const ext = imageMode === 'subject' ? 'png' : 'jpg';
+    const assetKey = `custom_${stampId}_${cleanSlug}.${ext}`;
+
+    const blob = await dataUrlToBlob(imageBase64);
+    await saveStamp(assetKey, blob);
+
+    if (imageMode === 'subject') {
+      nextSubjects.push(assetKey);
+      nextBundleStamps.push({
+        id: `${stampId}_${cleanSlug}`,
+        name: `${labelHint} (Subject)`,
+        dataUrl: imageBase64,
+      });
+    } else if (imageMode === 'backdrop') {
+      nextStamps.push(assetKey);
+    }
+    addedImage = true;
+  }
+
+  if (addedWordsCount === 0 && !addedImage) {
+    return { addedWordsCount: 0, addedImage: false };
+  }
+
+  const createdAt = existing?.manifest?.createdAt || Date.now();
+  const nextVersionNum = existing
+    ? (parseFloat(existing.installedVersion || '1.0') + 0.1).toFixed(1)
+    : '1.0.0';
+
+  const manifest = {
+    id: HARVEST_PACK_ID,
+    name: 'Custom Drop Additions',
+    description: 'Words and artwork harvested from your Custom Drops.',
+    version: String(nextVersionNum),
+    author: 'Custom Drop Studio',
+    isCustom: true,
+    createdAt,
+    subjects: nextSubjects,
+    stamps: nextStamps,
+    words: 'custom',
+  };
+
+  const words = {
+    nouns: mergedNouns.combined,
+    adjectives: mergedAdjs.combined,
+    ensembles: mergedEns.combined,
+  };
+
+  const customBundle: CustomPackBundle = {
+    manifest: {
+      id: HARVEST_PACK_ID,
+      name: manifest.name,
+      description: manifest.description,
+      version: manifest.version,
+      author: manifest.author,
+      isCustom: true,
+      createdAt,
+    },
+    words,
+    stamps: nextBundleStamps,
+  };
+
+  const storedPack: StoredPack = {
+    id: HARVEST_PACK_ID,
+    manifest,
+    words,
+    installedVersion: manifest.version,
+    installedAt: Date.now(),
+    isCustom: true,
+    customBundle,
+  };
+
+  await savePackRecord(storedPack);
+  await hydrateContentPools();
+
+  return { addedWordsCount, addedImage };
+}
+
 export async function getCustomPacks(): Promise<StoredPack[]> {
   const all = await getAllInstalledPacks();
   return all.filter((p) => p.isCustom || p.manifest?.isCustom);
 }
 
-/**
- * Uninstalls a custom pack and purges its stored subject stamps from IndexedDB
- */
 export async function deleteCustomPack(packId: string): Promise<void> {
   const pack = await getInstalledPack(packId);
   if (pack && pack.manifest?.subjects && Array.isArray(pack.manifest.subjects)) {
@@ -169,13 +278,15 @@ export async function deleteCustomPack(packId: string): Promise<void> {
       await removeStamp(key);
     }
   }
+  if (pack && pack.manifest?.stamps && Array.isArray(pack.manifest.stamps)) {
+    for (const key of pack.manifest.stamps) {
+      await removeStamp(key);
+    }
+  }
   await removePack(packId);
   await hydrateContentPools();
 }
 
-/**
- * Downloads a custom pack bundle directly as a standalone .json file
- */
 export function exportCustomPackAsJson(bundle: CustomPackBundle): void {
   const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

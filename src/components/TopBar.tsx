@@ -1,5 +1,6 @@
 import React from 'react';
 import { Archive, Heart, Share2, Shirt, Download } from 'lucide-react';
+import { VipEdition, VIP_EDITION_CONFIG } from '../services/preferencesService';
 
 interface TopBarProps {
   onOpenArchive: () => void;
@@ -14,6 +15,7 @@ interface TopBarProps {
   onOpenAtjVideo?: () => void;
   isStandalone?: boolean;
   onInstall?: () => void;
+  vipEdition?: VipEdition;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -29,7 +31,10 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenAtjVideo,
   isStandalone = false,
   onInstall,
+  vipEdition = 'none',
 }) => {
+  const vipMeta = VIP_EDITION_CONFIG[vipEdition] || VIP_EDITION_CONFIG.none;
+
   return (
     <header className="w-full flex items-center justify-between px-1.5 sm:px-3 py-1.5 border-b border-slate-800/80 bg-[#0c101d]/90 backdrop-blur-md z-30 select-none">
       {/* Left: Archive Button (Icon-only on mobile) */}
@@ -73,8 +78,10 @@ export const TopBar: React.FC<TopBarProps> = ({
               ATJ
             </button>
           ) : (
-            <span className="text-[7.5px] sm:text-[8px] font-mono font-bold tracking-wider sm:tracking-widest text-amber-400/90 uppercase px-1 py-0.5 rounded bg-black/50 border border-amber-700/30">
-              SN: CRK3
+            <span
+              className={`text-[7.5px] sm:text-[8px] font-mono font-bold tracking-wider sm:tracking-widest uppercase px-1 py-0.5 rounded border ${vipMeta.serialBadgeClass}`}
+            >
+              {vipMeta.serialBadgeText}
             </span>
           )}
         </div>
@@ -82,7 +89,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Right Action Cluster */}
       <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
-        {/* Hardware Install Icon (Option 2) */}
+        {/* Hardware Install Icon */}
         {!isStandalone && onInstall && (
           <button
             type="button"

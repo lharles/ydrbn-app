@@ -41,11 +41,18 @@ import {
   generateDailyDrop,
   forgeCustomDrop,
   hydrateContentPools,
+  resolveConditionGrade,
 } from './services/proceduralGenerator';
 import { gagCanvasEngine } from './services/gagCanvasEngine';
 import { audioSynthesizer, TurntableRpm } from './services/audioSynthesizer';
 import { getAvailablePacks, checkPackStatus } from './services/contentPackService';
-import { getPreferences, applyColorMode } from './services/preferencesService';
+import {
+  getPreferences,
+  applyColorMode,
+  VipEdition,
+  setVipEditionPref,
+  checkUrlEditionUnlock,
+} from './services/preferencesService';
 
 function getIsStandalone(): boolean {
   if (typeof window === 'undefined') return false;
@@ -118,9 +125,14 @@ export default function App() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [turntableRpm, setTurntableRpm] = useState<TurntableRpm>(33);
   const [activeTrackIndex, setActiveTrackIndex] = useState<number | null>(null);
+  const [isCollegeRadioActive, setIsCollegeRadioActive] = useState(false);
   const [isPlayingAtj, setIsPlayingAtj] = useState(false);
   const [hasUnlockedAtj, setHasUnlockedAtj] = useState<boolean>(() => {
     return typeof window !== 'undefined' && localStorage.getItem('ydrbn_atj_played') === 'true';
+  });
+
+  const [vipEdition, setVipEdition] = useState<VipEdition>(() => {
+    return getPreferences().vipEdition || 'none';
   });
 
   const [useCustomPhotos, setUseCustomPhotos] = useState(false);
@@ -163,10 +175,34 @@ export default function App() {
   const [isApparelOpen, setIsApparelOpen] = useState(false);
   const [isAtjVideoOpen, setIsAtjVideoOpen] = useState(false);
 
+  const addToast = (type: 'error' | 'success' | 'info', text: string) => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    setToasts((prev) => [...prev, { id, type, text }]);
+    if (type !== 'error') {
+      setTimeout(() => dismissToast(id), 4000);
+    }
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const prefs = getPreferences();
     applyColorMode(prefs.colorMode || 'default');
+
+    // Check if the user launched via a special VIP Edition URL (?edition=founder | splatter | radioactive)
+    const { unlocked, label } = checkUrlEditionUnlock();
+    if (unlocked !== null) {
+      setVipEdition(unlocked);
+      if (unlocked !== 'none') {
+        triggerConfettiBurst();
+        addToast('success', `✦ VIP DECK UNLOCKED: ${label} ✦`);
+      } else {
+        addToast('info', 'Restored standard factory deck finish.');
+      }
+    }
 
     const seenHelp = localStorage.getItem('ydrbn_has_seen_help') === 'true';
     const seenInfo = localStorage.getItem('ydrbn_has_seen_info') === 'true';
@@ -193,6 +229,17 @@ export default function App() {
     window.addEventListener('ydrbn-atj-fanfare', handleFanfare);
     return () => window.removeEventListener('ydrbn-atj-fanfare', handleFanfare);
   }, []);
+
+  const handleSelectVipEdition = (edition: VipEdition) => {
+    setVipEditionPref(edition);
+    setVipEdition(edition);
+    if (edition !== 'none') {
+      triggerConfettiBurst();
+      addToast('success', `✦ VIP Edition Active: ${edition.toUpperCase()} ✦`);
+    } else {
+      addToast('info', 'Standard factory deck restored.');
+    }
+  };
 
   const handleOpenHelp = () => {
     setIsHelpOpen(true);
@@ -227,18 +274,6 @@ export default function App() {
       localStorage.setItem('ydrbn_has_seen_info', 'true');
       setHasSeenInfo(true);
     }
-  };
-
-  const addToast = (type: 'error' | 'success' | 'info', text: string) => {
-    const id = `toast-${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, type, text }]);
-    if (type !== 'error') {
-      setTimeout(() => dismissToast(id), 4000);
-    }
-  };
-
-  const dismissToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   useEffect(() => {
@@ -324,12 +359,64 @@ export default function App() {
 
   const currentAlbum = albums[currentIndex] || null;
 
-  const stopPlaybackState = () => {
+  const stopPlaybackState = (keepRadio = false) => {
     audioSynthesizer.stopAll();
     setIsPlayingAudio(false);
     setActiveTrackIndex(null);
     setIsPlayingAtj(false);
+    if (!keepRadio) {
+      setIsCollegeRadioActive(false);
+    }
   };
+
+  // College Radio Hands-Free Sequential Playback Loop
+  useEffect(() => {
+    if (!isCollegeRadioActive || albums.length === 0 || isGenerating) return;
+
+    let cancelled = false;
+    let nextTimer: NodeJS.Timeout | null = null;
+
+    const spinCurrentAndAdvance = async () => {
+      const target = albums[currentIndex];
+      if (!target) return;
+
+      const isWarped =
+        typeof target.isWarpedAudio === 'boolean'
+          ? target.isWarpedAudio
+          : resolveConditionGrade(target.id).isWarped;
+
+      setIsPlayingAudio(true);
+      setActiveTrackIndex(null);
+
+      const completedNaturally = await audioSynthesizer.playAlbumClip(
+        target.id,
+        target.albumTitle,
+        target.year,
+        target.audioPreset,
+        isWarped
+      );
+
+      if (cancelled || !completedNaturally) {
+        setIsPlayingAudio(false);
+        return;
+      }
+
+      setIsPlayingAudio(false);
+      nextTimer = setTimeout(() => {
+        if (!cancelled) {
+          setIsFlipped(false);
+          setCurrentIndex((prev) => (prev + 1) % albums.length);
+        }
+      }, 1100);
+    };
+
+    spinCurrentAndAdvance();
+
+    return () => {
+      cancelled = true;
+      if (nextTimer) clearTimeout(nextTimer);
+    };
+  }, [isCollegeRadioActive, currentIndex, albums.length, isGenerating]);
 
   const handlePrev = () => {
     if (currentIndex > 0) {
@@ -414,11 +501,18 @@ export default function App() {
     try {
       setIsPlayingAudio(true);
       setActiveTrackIndex(null);
+
+      const isWarped =
+        typeof currentAlbum.isWarpedAudio === 'boolean'
+          ? currentAlbum.isWarpedAudio
+          : resolveConditionGrade(currentAlbum.id).isWarped;
+
       await audioSynthesizer.playAlbumClip(
         currentAlbum.id,
         currentAlbum.albumTitle,
         currentAlbum.year,
-        currentAlbum.audioPreset
+        currentAlbum.audioPreset,
+        isWarped
       );
     } catch (err: any) {
       addToast('error', `Audio error: ${err.message || err}`);
@@ -440,11 +534,18 @@ export default function App() {
     try {
       setIsPlayingAudio(true);
       setActiveTrackIndex(index);
+
+      const isWarped =
+        typeof currentAlbum.isWarpedAudio === 'boolean'
+          ? currentAlbum.isWarpedAudio
+          : resolveConditionGrade(currentAlbum.id).isWarped;
+
       await audioSynthesizer.playAlbumClip(
         currentAlbum.id,
         `${currentAlbum.albumTitle} - ${trackTitle}`,
         currentAlbum.year,
-        currentAlbum.audioPreset
+        currentAlbum.audioPreset,
+        isWarped
       );
     } catch (err: any) {
       addToast('error', `Audio error: ${err.message || err}`);
@@ -591,6 +692,22 @@ export default function App() {
     setIsGenerating(true);
     setLoadingStepText('Pressing Custom Drop...');
 
+  const harvestedCount =
+    (input.harvestedWords?.nouns.length || 0) +
+    (input.harvestedWords?.adjectives.length || 0) +
+    (input.harvestedWords?.ensembles.length || 0);
+  const harvestedImg =
+    input.harvestToRotation && input.coverImageBase64 && input.harvestImageMode !== 'none';
+
+  if (input.harvestToRotation && (harvestedCount > 0 || harvestedImg)) {
+    addToast(
+      'info',
+      `Harvested ${harvestedCount} novel word${harvestedCount === 1 ? '' : 's'}${
+        harvestedImg ? ` + 1 ${input.harvestImageMode}` : ''
+      } into generator rotation!`
+    );
+   }
+
     try {
       const forgedRecord = await forgeCustomDrop(input);
       if (input.coverImageBase64 && forgedRecord.recipe) {
@@ -668,6 +785,7 @@ export default function App() {
             onOpenAtjVideo={() => setIsAtjVideoOpen(true)}
             isStandalone={isStandalone}
             onInstall={handleTopBarInstall}
+            vipEdition={vipEdition}
           />
           <SubHeaderNav
             entries={albums}
@@ -702,6 +820,7 @@ export default function App() {
               loadingStepText={loadingStepText}
               onToggleFlip={() => setIsFlipped(!isFlipped)}
               onOpenZoom={() => setIsZoomOpen(true)}
+              vipEdition={vipEdition}
             />
           </div>
 
@@ -823,6 +942,8 @@ export default function App() {
           setCooldownMs(0);
         }}
         onNotify={addToast}
+        vipEdition={vipEdition}
+        onSelectVipEdition={handleSelectVipEdition}
       />
 
       <CustomDropModal
@@ -830,6 +951,7 @@ export default function App() {
         onClose={() => setIsCustomDropOpen(false)}
         onForge={handleForgeCustomDrop}
         isLoading={isGenerating}
+        onNotify={addToast}
       />
 
       <HelpModal isOpen={isHelpOpen} onClose={handleCloseHelp} />
@@ -878,6 +1000,17 @@ export default function App() {
         }}
         onToggleFavorite={handleToggleFavorite}
         onDeleteAlbum={handleDeleteAlbum}
+        isCollegeRadioActive={isCollegeRadioActive}
+        onToggleCollegeRadio={() => {
+          if (isCollegeRadioActive) {
+            stopPlaybackState(false);
+            addToast('info', '📻 College Radio Auto-Spin stopped.');
+          } else {
+            setIsArchiveOpen(false);
+            setIsCollegeRadioActive(true);
+            addToast('success', '📻 College Radio ON: Auto-spinning your crate!');
+          }
+        }}
       />
 
       {isAtjVideoOpen && (

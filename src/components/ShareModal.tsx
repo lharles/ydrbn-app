@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Share2, Copy, Download, Check, Image as ImageIcon, FileText, Disc } from 'lucide-react';
+import { X, Share2, Copy, Download, Check, Image as ImageIcon, FileText, Disc, Dna } from 'lucide-react';
 import { AlbumEntry } from '../types';
 import { compositeFrontSleeve, compositeBackSleeve } from '../services/shareImageService';
+import { encodePressingDna } from '../services/proceduralGenerator';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -21,15 +22,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
   const [isPreparing, setIsPreparing] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedDna, setCopiedDna] = useState(false);
 
-  // Cached pre-rendered blobs so navigator.share() can fire synchronously without gesture timeout
   const [cachedFrontBlob, setCachedFrontBlob] = useState<Blob | null>(null);
   const [cachedBackBlob, setCachedBackBlob] = useState<Blob | null>(null);
 
-  // Synchronous lock to drop duplicate tap events or touch bounces
   const isSharingRef = useRef(false);
 
-  // Pre-composite artwork in the background when the modal opens
   useEffect(() => {
     if (!isOpen || !album) {
       setCachedFrontBlob(null);
@@ -45,14 +44,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
     const prepareBlobs = async () => {
       try {
         const [front, back] = await Promise.all([
-          compositeFrontSleeve(album).catch((e) => {
-            console.warn('[ShareModal] Front composite warning:', e);
-            return null;
-          }),
-          compositeBackSleeve(album).catch((e) => {
-            console.warn('[ShareModal] Back composite warning:', e);
-            return null;
-          }),
+          compositeFrontSleeve(album).catch(() => null),
+          compositeBackSleeve(album).catch(() => null),
         ]);
 
         if (isMounted) {
@@ -60,8 +53,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
           setCachedBackBlob(back);
           setIsPreparing(false);
         }
-      } catch (err) {
-        console.warn('[ShareModal] Pre-compositing error:', err);
+      } catch {
         if (isMounted) {
           setIsPreparing(false);
         }
@@ -89,6 +81,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
     if (includeInfo) {
       parts.push(`📀 ${album.bandName.toUpperCase()} — "${album.albumTitle}" (${album.year})`);
       parts.push(`Catalog: ${album.catalogNumber}`);
+      if (album.conditionGrade) {
+        parts.push(`Condition: ${album.conditionGrade}`);
+      }
     }
 
     if (includeTracks && album.tracks && album.tracks.length > 0) {
@@ -119,6 +114,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
     setCopied(true);
     onNotify('success', 'Album details copied to clipboard.');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyDna = async () => {
+    try {
+      const dna = encodePressingDna(album);
+      await navigator.clipboard.writeText(dna);
+      setCopiedDna(true);
+      onNotify('success', 'Pressing DNA code copied! Paste in Custom Drop Studio to clone.');
+      setTimeout(() => setCopiedDna(false), 2500);
+    } catch (err: any) {
+      onNotify('error', `DNA encode error: ${err?.message || err}`);
+    }
   };
 
   const triggerDownload = (blob: Blob, filename: string) => {
@@ -157,7 +164,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
   };
 
   const handleNativeShare = async () => {
-    // Synchronously block duplicate calls from rapid double-taps
     if (isSharingRef.current || processing || isPreparing) return;
     isSharingRef.current = true;
     setProcessing(true);
@@ -166,7 +172,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
       const text = compileShareText();
       const files: File[] = [];
 
-      // Use pre-composited blobs immediately to preserve user activation
       if (includeFront) {
         const frontBlob = cachedFrontBlob || (await compositeFrontSleeve(album));
         if (frontBlob) {
@@ -199,7 +204,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
         onClose();
       }
     } catch (err: any) {
-      // AbortError is normal behavior when the user cancels the OS share dialog
       if (err.name !== 'AbortError') {
         onNotify('error', `Share failed: ${err?.message || err}`);
       }
@@ -217,7 +221,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
           <div className="flex items-center gap-2">
             <Share2 className="w-4 h-4 text-amber-400" />
             <h3 className="font-bold text-xs sm:text-sm tracking-wide text-white uppercase font-mono">
-              Export & Share Pressing
+              Export &amp; Share Pressing
             </h3>
           </div>
           <button
@@ -234,12 +238,42 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
           {/* Target Pressing Header */}
           <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
             <Disc className="w-5 h-5 text-amber-400 shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <span className="font-bold text-white block truncate text-xs">{album.bandName}</span>
               <span className="text-[11px] text-slate-400 truncate block">
-                "{album.albumTitle}" ({album.year})
+                &ldquo;{album.albumTitle}&rdquo; ({album.year})
               </span>
             </div>
+          </div>
+
+          {/* Pressing DNA Offline Share Code */}
+          <div className="p-2.5 rounded-xl bg-cyan-950/25 border border-cyan-500/30 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <span className="text-[10px] font-mono uppercase text-cyan-300 font-bold flex items-center gap-1">
+                <Dna className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span>Pressing DNA Code</span>
+              </span>
+              <span className="text-[10px] text-slate-400 block truncate">
+                Share exact recipe, tracks &amp; lore offline
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyDna}
+              className="px-2.5 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 font-mono font-bold text-[10px] flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer"
+            >
+              {copiedDna ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  <span>Copied DNA</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3 text-cyan-300" />
+                  <span>Copy DNA</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* Artwork Toggles */}
@@ -287,11 +321,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
           <div className="space-y-1.5">
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold tracking-wider flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-amber-400" />
-              Text & Metadata
+              Text &amp; Metadata
             </span>
             <div className="space-y-1">
               <label className="flex items-center justify-between p-2 rounded-lg bg-slate-950/50 border border-slate-800/80 cursor-pointer">
-                <span className="text-[11px] text-slate-300">Band, Title & Catalog ID</span>
+                <span className="text-[11px] text-slate-300">Band, Title, Catalog &amp; Condition</span>
                 <input
                   type="checkbox"
                   checked={includeInfo}
@@ -338,7 +372,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, album, 
           <button
             type="button"
             onClick={handleNativeShare}
-            disabled={isPreparing || processing || (!includeFront && !includeBack && !includeInfo && !includeTracks && !includeBio && !includeReviews)}
+            disabled={
+              isPreparing ||
+              processing ||
+              (!includeFront && !includeBack && !includeInfo && !includeTracks && !includeBio && !includeReviews)
+            }
             className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-bold rounded-lg transition-all text-xs flex items-center justify-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isPreparing ? (

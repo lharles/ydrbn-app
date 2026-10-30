@@ -139,22 +139,22 @@ export class RetroAudioSynthesizer {
       });
     });
   }
+  // Replace playAlbumClip() in src/services/audioSynthesizer.ts with:
 
   public async playAlbumClip(
     albumId: string,
     seedTitle: string,
     yearStr: string = '1975',
-    preset?: AlbumEntry['audioPreset']
+    preset?: AlbumEntry['audioPreset'],
+    isWarped: boolean = false
   ): Promise<boolean> {
     this.stopAll();
     this.isPlaying = true;
 
-    // 1. Resolve or retrieve the permanent stem plan for this specific album drop
     const plan = getOrSelectStemsForAlbum(albumId, yearStr);
     const isAtj = plan.isAtjFanfare || plan.stems.includes('ATJ.mp3');
     this.isAtjPlayingNow = isAtj;
 
-    // 2. If ATJ.mp3 is triggered, fire fanfare and stream full song via native HTMLAudioElement
     if (isAtj) {
       window.dispatchEvent(new CustomEvent('ydrbn-atj-fanfare'));
       return this.playAtjFullTrack();
@@ -168,7 +168,6 @@ export class RetroAudioSynthesizer {
     const rate = this.getRateMultiplier(this.currentRpm);
     const parsedYear = parseInt(yearStr.replace(/\D/g, ''), 10) || 1977;
 
-    // 3. Pre-load stem audio buffers
     const loadedBuffers = await Promise.all(
       plan.stems.map((filename) => loadStemBuffer(filename, ctx))
     );
@@ -185,7 +184,6 @@ export class RetroAudioSynthesizer {
     const duration = Math.min(maxDuration, 18.0);
     const now = ctx.currentTime;
 
-    // 4. Master Output Bus with analog compressor
     const masterComp = ctx.createDynamicsCompressor();
     masterComp.threshold.setValueAtTime(-18, now);
     masterComp.knee.setValueAtTime(12, now);
@@ -208,16 +206,31 @@ export class RetroAudioSynthesizer {
     this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
     masterGain.connect(this.analyser);
 
-    // 5. Play Continuous needle-drop vinyl crackle
     this.playVinylCrackle(ctx, masterComp, now, duration);
 
-    // 6. Trigger Sample Stems through master compression
+    // Optional Radiator-Warp Pitch-Wow LFO (0.55 Hz rotational warp)
+    let warpLfoGain: GainNode | null = null;
+    if (isWarped) {
+      const warpOsc = ctx.createOscillator();
+      warpOsc.type = 'sine';
+      warpOsc.frequency.setValueAtTime(0.55 * rate, now);
+      warpLfoGain = ctx.createGain();
+      warpLfoGain.gain.setValueAtTime(0.038 * rate, now);
+      warpOsc.connect(warpLfoGain);
+      warpOsc.start(now);
+      warpOsc.stop(now + duration);
+      this.activeNodes.push(warpOsc);
+    }
+
     if (validBuffers.length > 0) {
       const stemVol = plan.isSoloHarmonica ? 0.95 : 0.8 / Math.sqrt(validBuffers.length);
       validBuffers.forEach((buffer) => {
         const source = ctx.createBufferSource();
         source.buffer = buffer;
         source.playbackRate.setValueAtTime(rate, now);
+        if (warpLfoGain) {
+          warpLfoGain.connect(source.playbackRate);
+        }
 
         const stemGain = ctx.createGain();
         stemGain.gain.setValueAtTime(stemVol, now);
@@ -231,7 +244,6 @@ export class RetroAudioSynthesizer {
       });
     }
 
-    // 7. Play Procedural Synth attenuated to 25% volume
     const shouldPlaySynth = plan.enableSynthBacking || validBuffers.length === 0;
 
     if (shouldPlaySynth && !plan.isSoloHarmonica) {

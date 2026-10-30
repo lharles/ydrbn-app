@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlbumEntry } from '../types';
-import { X, Heart, Trash2, Disc, Search, Music, Sparkles } from 'lucide-react';
+import { X, Heart, Trash2, Disc, Search, Radio } from 'lucide-react';
+import { resolveConditionGrade } from '../services/proceduralGenerator';
 
 interface ArchiveDrawerProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface ArchiveDrawerProps {
   onSelectAlbum: (album: AlbumEntry) => void;
   onToggleFavorite: (id: string) => void;
   onDeleteAlbum: (id: string) => void;
+  isCollegeRadioActive?: boolean;
+  onToggleCollegeRadio?: () => void;
 }
 
 export const ArchiveDrawer: React.FC<ArchiveDrawerProps> = ({
@@ -20,6 +23,8 @@ export const ArchiveDrawer: React.FC<ArchiveDrawerProps> = ({
   onSelectAlbum,
   onToggleFavorite,
   onDeleteAlbum,
+  isCollegeRadioActive = false,
+  onToggleCollegeRadio,
 }) => {
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,18 +61,36 @@ export const ArchiveDrawer: React.FC<ArchiveDrawerProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close archive"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-1.5">
+            {onToggleCollegeRadio && albums.length > 0 && (
+              <button
+                type="button"
+                onClick={onToggleCollegeRadio}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase flex items-center gap-1.5 border transition-all active:scale-95 cursor-pointer ${
+                  isCollegeRadioActive
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60 shadow-[0_0_10px_rgba(16,185,129,0.3)] animate-pulse'
+                    : 'bg-slate-800/80 text-amber-300 border-amber-500/30 hover:bg-slate-700'
+                }`}
+                title="Hands-free sequential playback of your crate"
+              >
+                <Radio className="w-3.5 h-3.5" />
+                <span>{isCollegeRadioActive ? 'Radio ON' : 'Auto-Spin'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              aria-label="Close archive"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Filter & Search Bar */}
         <div className="p-3 border-b border-slate-800/80 bg-slate-900/60 space-y-2">
-          {/* Search input */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
@@ -87,7 +110,6 @@ export const ArchiveDrawer: React.FC<ArchiveDrawerProps> = ({
             )}
           </div>
 
-          {/* Filter Pills */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setFilterFavorites(false)}
@@ -131,6 +153,13 @@ export const ArchiveDrawer: React.FC<ArchiveDrawerProps> = ({
           ) : (
             filteredAlbums.map((album) => {
               const isSelected = album.id === currentId;
+              const cond = album.conditionGrade || resolveConditionGrade(album.id).grade;
+              const shortGrade = cond.split('(')[0].trim();
+              const isWarped =
+                typeof album.isWarpedAudio === 'boolean'
+                  ? album.isWarpedAudio
+                  : resolveConditionGrade(album.id).isWarped;
+
               return (
                 <div
                   key={album.id}
@@ -178,10 +207,19 @@ export const ArchiveDrawer: React.FC<ArchiveDrawerProps> = ({
                     <p className="text-[11px] text-amber-200/80 italic truncate">
                       {album.albumTitle}
                     </p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-0.5">
+                    <div className="flex items-center gap-1.5 text-[9.5px] text-slate-400 font-mono mt-0.5">
                       <span>{album.year}</span>
                       <span>&bull;</span>
-                      <span className="truncate">{album.catalogNumber}</span>
+                      <span
+                        className={`px-1 rounded border text-[8.5px] ${
+                          isWarped
+                            ? 'text-rose-300 border-rose-500/40 bg-rose-950/40'
+                            : 'text-amber-300/90 border-slate-700 bg-slate-900'
+                        }`}
+                        title={cond}
+                      >
+                        {shortGrade}
+                      </span>
                     </div>
                   </div>
 

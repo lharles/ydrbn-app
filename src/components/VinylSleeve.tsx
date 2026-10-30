@@ -1,3 +1,4 @@
+import { resolveConditionGrade } from '../services/proceduralGenerator';
 import React from 'react';
 import {
   AlbumEntry,
@@ -8,6 +9,7 @@ import {
 } from '../types';
 import { Disc, Sparkles, ZoomIn, Play, Volume2 } from 'lucide-react';
 import { TurntableRpm } from '../services/audioSynthesizer';
+import { VipEdition, VIP_EDITION_CONFIG } from '../services/preferencesService';
 
 interface VinylSleeveProps {
   album: AlbumEntry | null;
@@ -21,6 +23,7 @@ interface VinylSleeveProps {
   onToggleFlip: () => void;
   onOpenZoom?: () => void;
   hideZoomButton?: boolean;
+  vipEdition?: VipEdition;
 }
 
 const FAUX_RECORD_LABELS = [
@@ -36,6 +39,29 @@ const FAUX_RECORD_LABELS = [
   'AMALGAMATED HUBCAP RECORDS',
 ];
 
+const RUNOUT_GROOVE_ETCHINGS = [
+  'DO NOT FEED THE BASS PLAYER',
+  'MASTERED AT 3:47 AM ON BORROWED TAPE',
+  'SIDE B IS IDENTICAL BUT LOUDER',
+  'APPROVED BY ZONING SUBCOMMITTEE #4',
+  'IF YOU CAN READ THIS CHECK YOUR STYLUS',
+  'NO SYNTHESIZERS WERE APOLOGIZED TO',
+  'PORK CHOP EXPRESS MASTERING LABS',
+  '1.21 GIGAWATTS MINIMUM PLAYBACK',
+  'KOBAYASHI MARU TEST PRESSING',
+  'RETURN TO SENDER // ADDRESS UNKNOWN',
+  'CALIBRATED WITH A WOODEN RULER',
+  'WARRANTY VOID IF ROTATED CLOCKWISE',
+  'FILE UNDER MISCELLANEOUS NOISE',
+  'INSPECTED BY ARCHIVIST #1701',
+];
+
+const SRHSERV_TOP_BOTTOM_EMOJIS = ['💻', '🖥️', '💾', '🖱️', '⌨️', '🔌', '📡', '📟', '🕹️', '📼', '🔋', '💽', '💻'];
+const SRHSERV_SIDE_EMOJIS = ['🖥️', '💾', '⌨️', '🖱️', '🔌', '📡', '📟', '🕹️', '📼', '💽', '🔋'];
+
+const FANDAMNLY_TOP_BOTTOM_EMOJIS = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🩷', '🩵', '💖', '❤️', '🧡', '💛', '💚'];
+const FANDAMNLY_SIDE_EMOJIS = ['💜', '🩷', '🩵', '💖', '❤️', '🧡', '💛', '💚', '💙', '💜', '🩷'];
+
 function getRecordLabelName(id?: string): string {
   if (!id) return 'RECORD CORP';
   let h = 0;
@@ -44,6 +70,49 @@ function getRecordLabelName(id?: string): string {
   }
   return FAUX_RECORD_LABELS[h % FAUX_RECORD_LABELS.length];
 }
+
+function getRunoutEtching(id?: string, year?: string): string {
+  if (!id) return 'YDR-A1 // "DO NOT FOLD OR MUTILATE"';
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 37 + id.charCodeAt(i)) % 100000;
+  }
+  const phrase = RUNOUT_GROOVE_ETCHINGS[h % RUNOUT_GROOVE_ETCHINGS.length];
+  const matrixCode = `YDR-${(year || '77').slice(-2)}-A${(h % 9) + 1}`;
+  return `${matrixCode} // "${phrase}"`;
+}
+
+function buildZigZagPoints(size: number, inset: number, step: number, amp: number): string {
+  const pts: string[] = [];
+  let toggle = false;
+  // Top edge
+  for (let x = inset; x <= size - inset; x += step) {
+    const y = inset + (toggle ? -amp : amp);
+    pts.push(`${x},${y}`);
+    toggle = !toggle;
+  }
+  // Right edge
+  for (let y = inset; y <= size - inset; y += step) {
+    const x = size - inset + (toggle ? amp : -amp);
+    pts.push(`${x},${y}`);
+    toggle = !toggle;
+  }
+  // Bottom edge
+  for (let x = size - inset; x >= inset; x -= step) {
+    const y = size - inset + (toggle ? amp : -amp);
+    pts.push(`${x},${y}`);
+    toggle = !toggle;
+  }
+  // Left edge
+  for (let y = size - inset; y >= inset; y -= step) {
+    const x = inset + (toggle ? -amp : amp);
+    pts.push(`${x},${y}`);
+    toggle = !toggle;
+  }
+  return pts.join(' ');
+}
+
+const ZIGZAG_OUTER_POINTS = buildZigZagPoints(380, 6, 9, 4.5);
 
 function normalizeCoverLayout(
   layout?: TitleComposition
@@ -84,8 +153,20 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
   onToggleFlip,
   onOpenZoom,
   hideZoomButton = false,
+  vipEdition = 'none',
 }) => {
   const isFuturePressing = album ? parseInt(album.year, 10) > new Date().getFullYear() : false;
+  const vipMeta = VIP_EDITION_CONFIG[vipEdition] || VIP_EDITION_CONFIG.none;
+
+  const resolvedCond = album
+    ? {
+        grade: album.conditionGrade || resolveConditionGrade(album.id).grade,
+        isWarped:
+          typeof album.isWarpedAudio === 'boolean'
+            ? album.isWarpedAudio
+            : resolveConditionGrade(album.id).isWarped,
+      }
+    : { grade: 'MINT', isWarped: false };
 
   const tracks = album?.tracks || [
     'Echoes of the Marmalade Sun',
@@ -215,6 +296,242 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
       default:
         return index === 0 ? 'top-left' : 'top-right';
     }
+  };
+
+  const getVinylWaxStyle = (): string => {
+    if (isFuturePressing) {
+      return 'radial-gradient(circle, #06b6d4 0%, #0e7490 35%, #164e63 68%, #083344 100%)';
+    }
+    if (vipEdition === 'founder') {
+      return 'radial-gradient(circle, #fef08a 0%, #eab308 32%, #ca8a04 56%, #854d0e 76%, #eab308 82%, #422006 100%)';
+    }
+    if (vipEdition === 'splatter') {
+      return 'conic-gradient(from 45deg, #84cc16, #eab308, #ec4899, #a3e635, #ca8a04, #84cc16)';
+    }
+    if (vipEdition === 'radioactive') {
+      return 'radial-gradient(circle, #d9f99d 0%, #84cc16 35%, #3f6212 68%, #1a2e05 100%)';
+    }
+    if (vipEdition === 'srhserv') {
+      return 'radial-gradient(circle, #67e8f9 0%, #0891b2 32%, #0f172a 60%, #10b981 78%, #022c22 100%)';
+    }
+    if (vipEdition === 'fandamnly') {
+      return 'conic-gradient(from 0deg, #f43f5e, #fb923c, #facc15, #4ade80, #38bdf8, #a855f7, #ec4899, #f43f5e)';
+    }
+    return 'radial-gradient(circle, #18181b 0%, #09090b 55%, #18181b 58%, #09090b 75%, #27272a 78%, #09090b 100%)';
+  };
+
+  /**
+   * Renders the spaced outer decorative bezel & external top title bar when a VIP Edition is active
+   */
+  const renderExternalVipFrame = () => {
+    if (vipEdition === 'none' || hideZoomButton) return null;
+
+    return (
+      <div className="export-exclude pointer-events-none absolute -inset-[15px] z-20 select-none">
+        {/* 1. External Title Bar (Positioned ABOVE the outer border, completely outside album cover space) */}
+        {vipMeta.plaqueText && (
+          <div className="absolute -top-[22px] left-1/2 -translate-x-1/2 z-30">
+            <div
+              className={`px-2.5 py-0.5 rounded-full border text-[8px] font-mono font-black tracking-widest uppercase whitespace-nowrap ${vipMeta.plaqueClass}`}
+            >
+              {vipMeta.plaqueText}
+            </div>
+          </div>
+        )}
+
+        {/* 2A. FOUNDER EDITION: Scalloped 24K Gold Filigree Loops with 8px separation gap */}
+        {vipEdition === 'founder' && (
+          <svg
+            viewBox="0 0 380 380"
+            className="w-full h-full overflow-visible drop-shadow-[0_0_8px_rgba(234,179,8,0.45)]"
+          >
+            {/* Outer & Inner Filigree Rails */}
+            <rect
+              x="3"
+              y="3"
+              width="374"
+              height="374"
+              rx="10"
+              fill="none"
+              stroke="#eab308"
+              strokeWidth="2.5"
+            />
+            <rect
+              x="10"
+              y="10"
+              width="360"
+              height="360"
+              rx="7"
+              fill="none"
+              stroke="#fde047"
+              strokeWidth="1.2"
+              strokeDasharray="6 4"
+            />
+            {/* Ornamental Scallop Loops along all 4 sides */}
+            {Array.from({ length: 21 }).map((_, idx) => {
+              const pos = 20 + idx * 17;
+              return (
+                <g key={idx} stroke="#fde047" strokeWidth="1.6" fill="#422006">
+                  <circle cx={pos} cy="6.5" r="3.2" />
+                  <circle cx={pos} cy="373.5" r="3.2" />
+                  <circle cx="6.5" cy={pos} r="3.2" />
+                  <circle cx="373.5" cy={pos} r="3.2" />
+                </g>
+              );
+            })}
+          </svg>
+        )}
+
+        {/* 2B. BARF / BLECH EDITION: Sharp Zig-Zag Sawtooth Perimeter with separation gap */}
+        {vipEdition === 'splatter' && (
+          <svg
+            viewBox="0 0 380 380"
+            className="w-full h-full overflow-visible drop-shadow-[0_0_8px_rgba(163,230,53,0.45)]"
+          >
+            <polygon
+              points={ZIGZAG_OUTER_POINTS}
+              fill="none"
+              stroke="#a3e635"
+              strokeWidth="2.8"
+              strokeLinejoin="miter"
+            />
+            <rect
+              x="11"
+              y="11"
+              width="358"
+              height="358"
+              rx="6"
+              fill="none"
+              stroke="#facc15"
+              strokeWidth="1.5"
+              strokeDasharray="10 5 3 5"
+            />
+          </svg>
+        )}
+
+        {/* 2C. JOE'S TOXIC WASTE EMPORIUM: Alternating Hazard Coil Loops & Corner Trefoils */}
+        {vipEdition === 'radioactive' && (
+          <svg
+            viewBox="0 0 380 380"
+            className="w-full h-full overflow-visible drop-shadow-[0_0_10px_rgba(132,204,22,0.55)]"
+          >
+            {/* Outer glowing uranium rail */}
+            <rect
+              x="3"
+              y="3"
+              width="374"
+              height="374"
+              rx="9"
+              fill="none"
+              stroke="#84cc16"
+              strokeWidth="2.5"
+            />
+            {/* Angled caution coil loops */}
+            <rect
+              x="7"
+              y="7"
+              width="366"
+              height="366"
+              rx="7"
+              fill="none"
+              stroke="#facc15"
+              strokeWidth="4"
+              strokeDasharray="12 10"
+            />
+            <rect
+              x="11"
+              y="11"
+              width="358"
+              height="358"
+              rx="6"
+              fill="none"
+              stroke="#4d7c0f"
+              strokeWidth="1.5"
+            />
+          </svg>
+        )}
+
+        {/* 2D. SRHSERV EDITION: Computer & Mainframe Emojis Surrounding All 4 Sides */}
+        {vipEdition === 'srhserv' && (
+          <div className="w-full h-full relative rounded-xl border border-cyan-400/70 bg-cyan-950/15 shadow-[0_0_14px_rgba(34,211,238,0.28)]">
+            {/* Inner separation rule (leaves clean gap before album sleeve) */}
+            <div className="absolute inset-[13px] rounded-md border border-cyan-500/40" />
+
+            {/* Top Emoji Row */}
+            <div className="absolute top-0 left-1 right-1 h-[13px] flex items-center justify-between text-[9.5px] leading-none">
+              {SRHSERV_TOP_BOTTOM_EMOJIS.map((em, i) => (
+                <span key={`top-${i}`}>{em}</span>
+              ))}
+            </div>
+
+            {/* Bottom Emoji Row */}
+            <div className="absolute bottom-0 left-1 right-1 h-[13px] flex items-center justify-between text-[9.5px] leading-none">
+              {SRHSERV_TOP_BOTTOM_EMOJIS.slice()
+                .reverse()
+                .map((em, i) => (
+                  <span key={`bot-${i}`}>{em}</span>
+                ))}
+            </div>
+
+            {/* Left Emoji Column */}
+            <div className="absolute top-[14px] bottom-[14px] left-0 w-[13px] flex flex-col items-center justify-between text-[9.5px] leading-none">
+              {SRHSERV_SIDE_EMOJIS.map((em, i) => (
+                <span key={`left-${i}`}>{em}</span>
+              ))}
+            </div>
+
+            {/* Right Emoji Column */}
+            <div className="absolute top-[14px] bottom-[14px] right-0 w-[13px] flex flex-col items-center justify-between text-[9.5px] leading-none">
+              {SRHSERV_SIDE_EMOJIS.slice()
+                .reverse()
+                .map((em, i) => (
+                  <span key={`right-${i}`}>{em}</span>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* 2E. FANDAMNLY EDITION: Multi-Colored Heart Emojis Surrounding All 4 Sides */}
+        {vipEdition === 'fandamnly' && (
+          <div className="w-full h-full relative rounded-xl border border-pink-400/70 bg-rose-950/15 shadow-[0_0_14px_rgba(244,114,182,0.3)]">
+            {/* Inner separation rule (leaves clean gap before album sleeve) */}
+            <div className="absolute inset-[13px] rounded-md border border-pink-400/40" />
+
+            {/* Top Heart Row */}
+            <div className="absolute top-0 left-1 right-1 h-[13px] flex items-center justify-between text-[9.5px] leading-none">
+              {FANDAMNLY_TOP_BOTTOM_EMOJIS.map((em, i) => (
+                <span key={`top-${i}`}>{em}</span>
+              ))}
+            </div>
+
+            {/* Bottom Heart Row */}
+            <div className="absolute bottom-0 left-1 right-1 h-[13px] flex items-center justify-between text-[9.5px] leading-none">
+              {FANDAMNLY_TOP_BOTTOM_EMOJIS.slice()
+                .reverse()
+                .map((em, i) => (
+                  <span key={`bot-${i}`}>{em}</span>
+                ))}
+            </div>
+
+            {/* Left Heart Column */}
+            <div className="absolute top-[14px] bottom-[14px] left-0 w-[13px] flex flex-col items-center justify-between text-[9.5px] leading-none">
+              {FANDAMNLY_SIDE_EMOJIS.map((em, i) => (
+                <span key={`left-${i}`}>{em}</span>
+              ))}
+            </div>
+
+            {/* Right Heart Column */}
+            <div className="absolute top-[14px] bottom-[14px] right-0 w-[13px] flex flex-col items-center justify-between text-[9.5px] leading-none">
+              {FANDAMNLY_SIDE_EMOJIS.slice()
+                .reverse()
+                .map((em, i) => (
+                  <span key={`right-${i}`}>{em}</span>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderTitleComposition = () => {
@@ -363,14 +680,21 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
       ? 'animate-[spin_3.4s_linear_infinite]'
       : 'animate-[spin_1.8s_linear_infinite]';
 
+  const hasExternalFrame = vipEdition !== 'none' && !hideZoomButton;
+
   return (
     <div
-      className="relative w-full max-w-[345px] aspect-square mx-auto select-none perspective-1000"
+      className={`relative w-full ${
+        hasExternalFrame ? 'max-w-[325px] mt-7 mb-3.5' : 'max-w-[345px]'
+      } aspect-square mx-auto select-none perspective-1000 transition-all duration-300`}
       style={{
         perspective: '1000px',
         WebkitPerspective: '1000px',
       }}
     >
+      {/* EXTERNAL SPACED VIP EDITION BORDER & TOP TITLE BAR */}
+      {renderExternalVipFrame()}
+
       {/* SLIDING 33⅓ / 45 / 16⅔ RPM SPINNING VINYL DISC */}
       {album && (
         <div
@@ -381,9 +705,7 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
               : 'translate-x-0 opacity-0'
           }`}
           style={{
-            background: isFuturePressing
-              ? 'radial-gradient(circle, #06b6d4 0%, #0e7490 35%, #164e63 68%, #083344 100%)'
-              : 'radial-gradient(circle, #18181b 0%, #09090b 55%, #18181b 58%, #09090b 75%, #27272a 78%, #09090b 100%)',
+            background: getVinylWaxStyle(),
           }}
         >
           <div
@@ -391,23 +713,35 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
               isPlayingAudio ? spinAnimationClass : ''
             }`}
           >
-            <div className="absolute inset-3 rounded-full border border-white/10" />
-            <div className="absolute inset-7 rounded-full border border-white/5" />
-            <div className="absolute inset-11 rounded-full border border-white/10" />
-            <div className="absolute inset-16 rounded-full border border-white/5" />
-            <div className="absolute inset-20 rounded-full border border-white/10" />
+            <div className="absolute inset-3 rounded-full border border-white/15" />
+            <div className="absolute inset-7 rounded-full border border-black/25" />
+            <div className="absolute inset-11 rounded-full border border-white/15" />
+            <div className="absolute inset-16 rounded-full border border-black/25" />
+            <div className="absolute inset-20 rounded-full border border-white/15" />
 
             <div
               className={`w-28 h-28 rounded-full border-2 flex flex-col items-center justify-between p-2.5 text-center shadow-inner ${
                 album.isCustomPressing
                   ? 'bg-[#f8fafc] border-stone-400 text-stone-950'
+                  : vipEdition === 'founder'
+                  ? 'bg-[#12100e] border-yellow-400 text-yellow-300'
+                  : vipEdition === 'radioactive'
+                  ? 'bg-lime-950 border-lime-400 text-lime-200'
+                  : vipEdition === 'srhserv'
+                  ? 'bg-slate-950 border-cyan-400 text-cyan-200'
+                  : vipEdition === 'fandamnly'
+                  ? 'bg-rose-950 border-pink-400 text-pink-200'
                   : isFuturePressing
                   ? 'bg-cyan-950 border-cyan-400 text-cyan-200'
                   : 'bg-gradient-to-b from-amber-500 via-amber-600 to-orange-700 border-amber-200/60 text-stone-950'
               }`}
             >
               <span className="font-mono text-[6.5px] font-black tracking-widest uppercase truncate max-w-[75px]">
-                {album.isCustomPressing ? 'CUSTOM DROP' : `${rpm} RPM HI-FI`}
+                {album.isCustomPressing
+                  ? 'CUSTOM DROP'
+                  : vipEdition !== 'none'
+                  ? vipMeta.discLabelText
+                  : `${rpm} RPM HI-FI`}
               </span>
               <div className="w-3.5 h-3.5 rounded-full bg-[#12100e] border border-white/30 shadow-inner my-auto" />
               <span className="font-mono text-[6px] font-bold truncate max-w-[82px]">
@@ -667,35 +1001,52 @@ export const VinylSleeve: React.FC<VinylSleeveProps> = ({
             )}
           </div>
 
-          {/* 4. Barcode & Hi-Fi Footer */}
-          <div className="relative z-10 shrink-0 pt-1 border-t border-stone-800 flex items-center justify-between text-[8px] font-mono text-stone-500">
-            <div className="flex items-center gap-1.5">
-              <span className="px-1 py-0.2 border border-stone-600 text-stone-300 font-black tracking-widest text-[7px] rounded-xs">
-                HI-FI
+          {/* 4. Dead-Wax Runout Groove Etching, Condition Grade & Barcode Footer */}
+          <div className="relative z-10 shrink-0 pt-1 border-t border-stone-800 space-y-0.5">
+            <div className="flex items-center justify-between gap-1 text-[6.5px] font-mono uppercase">
+              <span className="text-amber-400/75 tracking-wider truncate">
+                RUNOUT: {getRunoutEtching(album?.id, album?.year)}
               </span>
-              <span className="px-1 py-0.2 border border-amber-600/60 text-amber-400 font-bold text-[7px] rounded-xs">
-                FULL STEREO
+              <span
+                className={`px-1 py-0.2 rounded border shrink-0 font-bold ${
+                  resolvedCond.isWarped
+                    ? 'bg-rose-950/80 text-rose-300 border-rose-500/50'
+                    : 'bg-stone-800/80 text-amber-200/90 border-stone-600/60'
+                }`}
+              >
+                {resolvedCond.grade}
               </span>
             </div>
 
-            <div className="text-[7px] text-stone-500 text-center truncate max-w-[140px]">
-              Y.D.R.B.N. MASTER SOUND LABS • ALL RIGHTS RESERVED
-            </div>
-
-            <div className="flex flex-col items-center bg-white px-1 py-0.5 rounded-xs">
-              <div className="flex gap-[1px] h-3 items-end">
-                <div className="w-[1.5px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[3px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
+            <div className="flex items-center justify-between text-[8px] font-mono text-stone-500">
+              <div className="flex items-center gap-1.5">
+                <span className="px-1 py-0.2 border border-stone-600 text-stone-300 font-black tracking-widest text-[7px] rounded-xs">
+                  HI-FI
+                </span>
+                <span className="px-1 py-0.2 border border-amber-600/60 text-amber-400 font-bold text-[7px] rounded-xs">
+                  FULL STEREO
+                </span>
               </div>
-              <span className="text-[6px] text-black font-mono leading-none tracking-tighter">
-                {getBarcodeNumber(album?.id, album?.year)}
-              </span>
+
+              <div className="text-[7px] text-stone-500 text-center truncate max-w-[140px]">
+                Y.D.R.B.N. MASTER SOUND LABS • ALL RIGHTS RESERVED
+              </div>
+
+              <div className="flex flex-col items-center bg-white px-1 py-0.5 rounded-xs">
+                <div className="flex gap-[1px] h-3 items-end">
+                  <div className="w-[1.5px] h-full bg-black" />
+                  <div className="w-[1px] h-full bg-black" />
+                  <div className="w-[2px] h-full bg-black" />
+                  <div className="w-[1px] h-full bg-black" />
+                  <div className="w-[3px] h-full bg-black" />
+                  <div className="w-[1px] h-full bg-black" />
+                  <div className="w-[2px] h-full bg-black" />
+                  <div className="w-[1px] h-full bg-black" />
+                </div>
+                <span className="text-[6px] text-black font-mono leading-none tracking-tighter">
+                  {getBarcodeNumber(album?.id, album?.year)}
+                </span>
+              </div>
             </div>
           </div>
         </div>

@@ -475,6 +475,137 @@ public renderCover(
         break;
       }
 
+      // 7B. Retro 1970s Checkerboard with perspective floor
+      case 'checkerboard': {
+        const horizonY = 520;
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+        skyGrad.addColorStop(0, palette.background);
+        skyGrad.addColorStop(1, palette.primary);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, 1024, horizonY);
+
+        const rows = 8;
+        const cols = 10;
+        const tileH = (1024 - horizonY) / rows;
+        const tileW = 1024 / cols;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            ctx.fillStyle = (r + c) % 2 === 0 ? palette.secondary : '#0f172a';
+            ctx.fillRect(c * tileW, horizonY + r * tileH, tileW + 1, tileH + 1);
+          }
+        }
+
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(1024, horizonY);
+        ctx.stroke();
+        break;
+      }
+
+      // 7C. Abstract 1970s Meteorological Weather Map with Isobars & Fronts
+      case 'weather_map': {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Topographic grid lines
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.14)';
+        ctx.lineWidth = 1.5;
+        for (let i = 64; i < 1024; i += 64) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, 1024);
+          ctx.moveTo(0, i);
+          ctx.lineTo(1024, i);
+          ctx.stroke();
+        }
+
+        // Isobar pressure rings
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.45)';
+        ctx.lineWidth = 3;
+        [140, 230, 320, 420].forEach((rad, idx) => {
+          ctx.beginPath();
+          ctx.ellipse(cx - 80, cy + 30, rad * 1.15, rad * 0.8, 0.25, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = 'bold 16px "Space Mono", monospace';
+          ctx.fillText(`${1000 + idx * 8} mb`, cx - 80 + rad * 0.75, cy + 30 - rad * 0.55);
+        });
+
+        // Cold Front Line (Blue with triangles)
+        ctx.strokeStyle = '#38bdf8';
+        ctx.fillStyle = '#38bdf8';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(80, 260);
+        ctx.quadraticCurveTo(512, 420, 940, 220);
+        ctx.stroke();
+        for (let t = 0.15; t <= 0.85; t += 0.14) {
+          const bx = (1 - t) * (1 - t) * 80 + 2 * (1 - t) * t * 512 + t * t * 940;
+          const by = (1 - t) * (1 - t) * 260 + 2 * (1 - t) * t * 420 + t * t * 220;
+          ctx.beginPath();
+          ctx.moveTo(bx - 12, by);
+          ctx.lineTo(bx + 12, by);
+          ctx.lineTo(bx, by + 22);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // High & Low Pressure Stamps
+        ctx.font = '900 64px "Oswald", sans-serif';
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('H', 210, 480);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText('L', 780, 620);
+        break;
+      }
+
+      // 7D. Bureaucratic Legal Document / Subpoena Pleading Paper
+      case 'legal_document': {
+        ctx.fillStyle = '#fef3c7';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Pink double vertical court margin lines on left
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(110, 0);
+        ctx.lineTo(110, 1024);
+        ctx.moveTo(122, 0);
+        ctx.lineTo(122, 1024);
+        ctx.stroke();
+
+        // Ruled horizontal pleading lines & line numbers
+        ctx.fillStyle = '#78716c';
+        ctx.font = 'bold 16px "Courier Prime", monospace';
+        for (let line = 1; line <= 20; line++) {
+          const y = 110 + line * 42;
+          ctx.strokeStyle = 'rgba(120, 113, 108, 0.28)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(122, y);
+          ctx.lineTo(960, y);
+          ctx.stroke();
+          ctx.fillText(String(line).padStart(2, '0'), 62, y - 6);
+
+          // Simulated typed legal clauses
+          if (line % 3 !== 0) {
+            ctx.fillStyle = 'rgba(41, 37, 36, 0.22)';
+            const barW = 280 + ((line * 137) % 420);
+            ctx.fillRect(150, y - 22, barW, 12);
+            ctx.fillStyle = '#78716c';
+          }
+        }
+
+        // Official Header Stamp
+        ctx.fillStyle = '#1c1917';
+        ctx.font = 'bold 22px "Courier Prime", monospace';
+        ctx.fillText('FORM 1040-Z // MUNICIPAL SUBPOENA & ARCHIVAL NOTICE', 150, 72);
+        break;
+      }
+
       // 8. Centered framed inset panel with double-line borders
       case 'minimal_box': {
         const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
@@ -3180,6 +3311,151 @@ public renderCover(
         ctx.font = '900 28px "Oswald", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(recipe.stampText || 'FILE UNDER MISC', 0, 8);
+        ctx.restore();
+        break;
+      }
+
+      case 'sticky_notes': {
+        const notes = [
+          { x: 195, y: 360, rot: -0.14, bg: '#fef08a', text: 'SEE ATTACHED' },
+          { x: 830, y: 420, rot: 0.16, bg: '#f9a8d4', text: 'WHO APPROVED?' },
+          { x: 220, y: 720, rot: 0.09, bg: '#67e8f9', text: 'DO NOT TOUCH' },
+        ];
+        notes.forEach((n) => {
+          ctx.save();
+          ctx.translate(n.x, n.y);
+          ctx.rotate(n.rot);
+          ctx.shadowColor = 'rgba(0,0,0,0.45)';
+          ctx.shadowBlur = 12;
+          ctx.shadowOffsetY = 6;
+          ctx.fillStyle = n.bg;
+          ctx.fillRect(-85, -70, 170, 140);
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(-85, -70, 170, 140);
+          ctx.fillStyle = 'rgba(0,0,0,0.12)';
+          ctx.fillRect(-85, -70, 170, 22);
+          ctx.fillStyle = '#0f172a';
+          ctx.font = '900 18px "Permanent Marker", "Oswald", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(n.text, 0, 10);
+          ctx.restore();
+        });
+        break;
+      }
+
+      case 'official_seal': {
+        ctx.save();
+        ctx.translate(cx + 210, 690);
+        ctx.rotate(-0.15);
+
+        // Ribbon tails
+        ctx.fillStyle = '#991b1b';
+        ctx.beginPath();
+        ctx.moveTo(-35, 60);
+        ctx.lineTo(-55, 145);
+        ctx.lineTo(-20, 125);
+        ctx.lineTo(-5, 150);
+        ctx.lineTo(10, 60);
+        ctx.closePath();
+        ctx.fill();
+
+        // Serrated 24-tooth gold wafer seal
+        ctx.fillStyle = '#eab308';
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        const teeth = 24;
+        for (let i = 0; i < teeth * 2; i++) {
+          const rad = i % 2 === 0 ? 88 : 74;
+          const a = (i * Math.PI) / teeth;
+          const sx = Math.cos(a) * rad;
+          const sy = Math.sin(a) * rad;
+          if (i === 0) ctx.moveTo(sx, sy);
+          else ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 58, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#451a03';
+        ctx.font = '900 16px "Oswald", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('OFFICIAL SEAL', 0, -6);
+        ctx.font = 'bold 11px "Space Mono", monospace';
+        ctx.fillText('NOTARIZED GAG', 0, 14);
+        ctx.restore();
+        break;
+      }
+
+      case 'tiny_hazard_tape': {
+        const drawTapeStrip = (yPos: number, angle: number) => {
+          ctx.save();
+          ctx.translate(cx, yPos);
+          ctx.rotate(angle);
+          ctx.fillStyle = '#facc15';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 4;
+          ctx.fillRect(-560, -22, 1120, 44);
+          ctx.strokeRect(-560, -22, 1120, 44);
+
+          ctx.fillStyle = '#000000';
+          for (let x = -540; x < 540; x += 70) {
+            ctx.beginPath();
+            ctx.moveTo(x, -22);
+            ctx.lineTo(x + 30, -22);
+            ctx.lineTo(x + 10, 22);
+            ctx.lineTo(x - 20, 22);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.restore();
+        };
+        drawTapeStrip(735, -0.09);
+        break;
+      }
+
+      case 'electric_arcs': {
+        ctx.save();
+        const origins = [
+          { x: 120, y: 280 },
+          { x: 904, y: 300 },
+          { x: 140, y: 740 },
+          { x: 890, y: 720 },
+        ];
+        origins.forEach((org) => {
+          ctx.strokeStyle = '#38bdf8';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 14;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(org.x, org.y);
+          const midX = (org.x + cx) / 2 + (Math.random() * 60 - 30);
+          const midY = (org.y + cy) / 2 + (Math.random() * 60 - 30);
+          ctx.lineTo(midX, midY);
+          ctx.lineTo(cx + (Math.random() * 90 - 45), cy + (Math.random() * 90 - 45));
+          ctx.stroke();
+        });
+        ctx.restore();
+        break;
+      }
+
+      case 'dotted_outline': {
+        ctx.save();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([14, 10]);
+        ctx.strokeRect(cx - 230, cy - 210, 460, 420);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px "Space Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('✂ CUT ALONG DOTTED LINE', cx - 220, cy - 222);
         ctx.restore();
         break;
       }

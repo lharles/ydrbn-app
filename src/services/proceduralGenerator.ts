@@ -29,6 +29,8 @@ import {
 } from '../types';
 import { gagCanvasEngine } from './gagCanvasEngine';
 import { loadRecipeAssets } from './assetManager';
+// 1. Add this import at the top of src/services/proceduralGenerator.ts (right below `./assetManager`):
+import { harvestCustomDropToPack } from './contentPackService';
 
 // ---------------------------------------------------------
 // LINGUISTIC & GRAMMAR INFLECTION HELPERS
@@ -695,6 +697,9 @@ export const BACKDROPS: BackdropType[] = [
   'dark_forest',
   'urban_skyline',
   'traffic_jam',
+  'checkerboard',
+  'weather_map',
+  'legal_document',
 ];
 
 export const SUBJECT_VECTORS: SubjectVectorType[] = [
@@ -744,6 +749,11 @@ export const GAG_MODIFIERS: any[] = [
   'halftone_dots',
   'spotlight',
   'rubber_stamp',
+  'sticky_notes',
+  'official_seal',
+  'tiny_hazard_tape',
+  'electric_arcs',
+  'dotted_outline',
   'none',
   'emoji_🥩', 'emoji_👁️', 'emoji_🦷', 'emoji_💾', 'emoji_💊',
   'emoji_🛒', 'emoji_🧲', 'emoji_📎', 'emoji_🪤', 'emoji_📞',
@@ -1049,6 +1059,9 @@ export function detectContextualBackdrop(
   if (/\b(traffic|jam|cars?|highway|freeway|asphalt|gridlock|taillight)\b/i.test(combined)) return 'traffic_jam';
   if (/\b(space|cosmic|nebula|star|astral|orbit|galaxy|intergalactic)\b/i.test(combined)) return 'deep_space';
   if (/\b(blueprint|schematic|technical|caliper|drafting|grid|formula)\b/i.test(combined)) return 'drafting_grid';
+  if (/\b(weather|storm|barometric|barometer|forecast|rain|cloud|wind|tornado)\b/i.test(combined)) return 'weather_map';
+  if (/\b(legal|attorney|subpoena|judicial|tribunal|verdict|litigious|invoice|patent|contract)\b/i.test(combined)) return 'legal_document';
+  if (/\b(checker|chess|square|tile|boardroom)\b/i.test(combined)) return 'checkerboard';
   return null;
 }
 
@@ -1731,28 +1744,59 @@ function generateDynamicAlbumTitle(bandName: string, pool: SemanticWordPool): st
   const pluralOrMass2 = toPluralOrMass(rawNoun2);
 
   const key = generateSurrealKey(bandWordsExclusion);
+  const studyNum = Math.floor(Math.random() * 99) + 1;
+  const studyFormats = [
+    studyNum === 1 ? 'Study' : 'Studies',
+    studyNum === 1 ? 'Variation' : 'Variations',
+    studyNum === 1 ? 'Exercise' : 'Exercises',
+    studyNum === 1 ? 'Experiment' : 'Experiments',
+    studyNum === 1 ? 'Observation' : 'Observations',
+    studyNum === 1 ? 'Theorem' : 'Theorems',
+  ];
+  const studyWord = studyFormats[Math.floor(Math.random() * studyFormats.length)];
 
   const titleTemplates = [
-    // --- 1. Crisp 1-to-2 Word Deadpan Titles (Like "Roll", "Sharp", "Ditto", "Meatcake", "Plastic Spoons", "Acoustic Siege") ---
+    // --- 1. Crisp 1-to-2 Word Deadpan Titles ---
     () => `${adj1} ${pluralOrMass1}`,
     () => `${adj1} ${singular1}`,
     () => `The ${adj1} ${singular1}`,
+    () => `The ${adj1} ${pluralizeWord(singular1)}`,
     () => `${singular1} ${rawNoun2}`,
     () => `${singular1} ${pluralOrMass2}`,
     () => `${adv} ${adj1}`,
     () => `${adj1} & ${adj2}`,
+    () => `${pluralOrMass1} & ${pluralOrMass2}`,
     () => `Not ${withAOrAn(singular1)}`,
     () => `Strictly ${adj1}`,
     () => `Certified ${adj1}`,
+    () => `Mildly ${adj1}`,
+    () => ` Zero ${pluralOrMass1}`,
+    () => `Emergency ${singular1}`,
+    () => `Counterfeit ${pluralOrMass1}`,
+    () => `Unlicensed ${pluralOrMass1}`,
+    () => `Standard ${singular1}`,
+    () => `Provisional ${pluralOrMass1}`,
+    () => ` Obsolete ${pluralOrMass1}`,
 
-    // --- 2. 3-Word Prepositional & Situational Titles (Like "Trousers in the Wind", "Pantaloons on the Porch") ---
+    // --- 2. Prepositional, Institutional & Situational Titles ---
     () => `${pluralOrMass1} in the ${singular2}`,
     () => `${pluralOrMass1} on the ${singular2}`,
+    () => `${pluralOrMass1} Under the ${singular2}`,
+    () => `${singular1} Behind the ${singular2}`,
+    () => `${singular1} Across the ${singular2}`,
     () => (Math.random() < 0.30 ? `${pluralOrMass1} in ${key}` : `The ${adj1} ${singular1}`),
     () => `${singular1} of ${pluralOrMass2}`,
     () => `${pluralizeWord(singular1)} of ${pluralOrMass2}`,
     () => `The ${singular1} ${ensemble}`,
     () => `The ${adj1} ${ensemble}`,
+    () => `The ${singular1} Department`,
+    () => `The ${singular1} Protocol`,
+    () => `The ${singular1} Incident`,
+    () => `The ${singular1} Dilemma`,
+    () => `The ${singular1} Hypothesis`,
+    () => `The ${adj1} Method`,
+    () => `The ${singular1} Directive`,
+    () => `The ${singular1} Shortage`,
     () => `Beware of ${pluralOrMass1}`,
     () => `Equipped with ${pluralOrMass1}`,
     () => `Measured in ${pluralizeWord(singular1)}`,
@@ -1760,17 +1804,330 @@ function generateDynamicAlbumTitle(bandName: string, pool: SemanticWordPool): st
     () => `Unaware of ${pluralOrMass1}`,
     () => `Facts About ${pluralizeWord(singular1)}`,
     () => `Too Much ${pluralOrMass1}`,
+    () => `Not Enough ${pluralOrMass1}`,
     () => `Secondhand ${pluralOrMass1}`,
     () => `Optional ${pluralizeWord(singular1)}`,
     () => `Guilty of ${pluralOrMass1}`,
     () => `Music for ${adj1} ${pluralizeWord(singular1)}`,
-    () => `Twelve Studies for ${pluralOrMass1}`,
     () => `Notes on ${pluralOrMass1}`,
+    () => `A Brief History of ${pluralOrMass1}`,
+    () => `Songs About ${pluralOrMass1}`,
+    () => `The Trouble with ${pluralOrMass1}`,
+    () => `The Shape of ${pluralOrMass1}`,
+    () => `The Sound of ${pluralOrMass1}`,
+    () => `The Weight of ${pluralOrMass1}`,
+    () => `Waiting for ${pluralOrMass1}`,
+    () => `Please Hold the ${pluralOrMass1}`,
+    () => `Leave the ${pluralOrMass1} Behind`,
+    () => `Bring Your Own ${singular1}`,
+    () => `Nobody Asked for ${pluralOrMass1}`,
+    () => `Who Ordered the ${singular1}?`,
+    () => `How to Avoid ${pluralOrMass1}`,
+    () => `When the ${singular1} Stops`,
+    () => `After the ${singular1} Ends`,
+    () => `Before the ${singular1} Begins`,
+    () => `Both Sides of the ${singular1}`,
+    () => `A Study in ${adj1} ${pluralOrMass1}`,
+    () => `Principles of ${adj1} ${pluralOrMass1}`,
+    () => `Do Not Fold the ${singular1}`,
+    () => `Strictly for ${adj1} ${pluralizeWord(singular1)}`,
+
+    // --- 3. Dynamic 1-99 Numbered Archetypes ---
+    () => `${studyNum} ${studyWord} for ${pluralOrMass1}`,
+    () => `${studyNum} Ways to Avoid ${pluralOrMass1}`,
+    () => `${studyNum}% ${adj1}`,
+    () => `Form ${studyNum}-B: ${pluralOrMass1}`,
+    () => `Rule #${studyNum}: No ${pluralizeWord(singular1)}`,
   ];
 
-  const roll = Math.floor(Math.random() * titleTemplates.length);
+  // Rolling Template-Structure Cooldown: prevents the same template index from firing twice within 22 drops
+  let recentIdx: number[] = [];
+  try {
+    const rawIdx = localStorage.getItem('ydrbn_recent_title_tpl_idx');
+    if (rawIdx) recentIdx = JSON.parse(rawIdx);
+  } catch {}
+
+  let roll = Math.floor(Math.random() * titleTemplates.length);
+  for (let attempt = 0; attempt < 25; attempt++) {
+    if (!recentIdx.includes(roll)) break;
+    roll = Math.floor(Math.random() * titleTemplates.length);
+  }
+
+  recentIdx.unshift(roll);
+  if (recentIdx.length > 22) recentIdx = recentIdx.slice(0, 22);
+  try {
+    localStorage.setItem('ydrbn_recent_title_tpl_idx', JSON.stringify(recentIdx));
+  } catch {}
+
   return titleTemplates[roll]().trim();
 }
+
+// =========================================================================
+// BARGAIN-BIN CONDITION GRADING & ANALOG WARP ENGINE
+// =========================================================================
+
+export interface ConditionGradeSpec {
+  grade: string;
+  isWarped: boolean;
+}
+
+export const BARGAIN_BIN_GRADES: ConditionGradeSpec[] = [
+  { grade: 'MINT (SEALED ARCHIVAL STOCK)', isWarped: false },
+  { grade: 'NM- (FAINT MUSTARD RING ON SLEEVE)', isWarped: false },
+  { grade: 'VG+ (LIGHT BASEMENT HUMIDITY)', isWarped: false },
+  { grade: 'VG+ (PREVIOUS OWNER TRACED LETTERS)', isWarped: false },
+  { grade: 'VG (PRICE STICKER TORN OFF CORNER)', isWarped: false },
+  { grade: 'VG (SMELLS FAINTLY OF CELERY)', isWarped: false },
+  { grade: 'G+ (RADIATOR WARP // PITCH WOW)', isWarped: true },
+  { grade: 'FAIR (USED AS COASTER // WARPED)', isWarped: true },
+];
+
+export function resolveConditionGrade(seedStr?: string): ConditionGradeSpec {
+  if (!seedStr) {
+    return BARGAIN_BIN_GRADES[Math.floor(Math.random() * BARGAIN_BIN_GRADES.length)];
+  }
+  let h = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = (h * 31 + seedStr.charCodeAt(i)) % 100000;
+  }
+  return BARGAIN_BIN_GRADES[h % BARGAIN_BIN_GRADES.length];
+}
+
+// =========================================================================
+// CUSTOM DROP WORD DEDUPLICATION & PART-OF-SPEECH HARVESTER
+// =========================================================================
+
+const HARVEST_STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'from', 'into', 'onto', 'upon', 'under', 'over',
+  'between', 'through', 'during', 'before', 'after', 'above', 'below', 'about',
+  'against', 'among', 'around', 'behind', 'beside', 'beyond', 'inside', 'outside',
+  'within', 'without', 'across', 'along', 'amid', 'via', 'despite', 'towards',
+  'not', 'but', 'nor', 'yet', 'so', 'or', 'as', 'if', 'when', 'while', 'where',
+  'who', 'whom', 'whose', 'which', 'what', 'that', 'this', 'these', 'those',
+  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'side', 'part', 'track', 'song', 'opus', 'reprise', 'dub', 'mix', 'edit',
+  'version', 'intro', 'outro', 'interlude', 'vol', 'volume', 'act', 'scene',
+  'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had', 'having', 'does',
+  'did', 'doing', 'will', 'would', 'shall', 'should', 'can', 'could', 'may',
+  'might', 'must', 'ought', 'your', 'our', 'their', 'his', 'her', 'its', 'my',
+  'you', 'they', 'them', 'him', 'she', 'all', 'any', 'both', 'each', 'few',
+  'more', 'most', 'other', 'some', 'such', 'only', 'own', 'same', 'than', 'too',
+  'very', 'just', 'now', 'then', 'here', 'there', 'how', 'why',
+]);
+
+const ENSEMBLE_HINT_WORDS = new Set([
+  'trio', 'quartet', 'quintet', 'sextet', 'septet', 'octet', 'orchestra',
+  'syndicate', 'brigade', 'assembly', 'committee', 'coalition', 'consortium',
+  'council', 'collective', 'society', 'club', 'guild', 'union', 'league',
+  'band', 'group', 'ensemble', 'project', 'experience', 'department', 'bureau',
+  'ministry', 'authority', 'foundation', 'institute', 'academy', 'chorus',
+  'choir', 'legion', 'squadron', 'platoon', 'regiment', 'corps', 'posse',
+  'crew', 'gang', 'mob', 'caucus', 'tribunal', 'panel', 'board', 'dynasty',
+]);
+
+export type HarvestWordCategory = 'noun' | 'adjective' | 'ensemble' | 'skip';
+
+export interface AnalyzedHarvestWord {
+  word: string;
+  category: HarvestWordCategory;
+}
+
+/**
+ * Builds a complete lowercase Set of all words (plus singular and plural forms)
+ * currently present in ACTIVE_NOUNS, ACTIVE_ADJECTIVES, ACTIVE_ADVERBS, and ACTIVE_ENSEMBLES.
+ */
+export function buildActiveVocabularyLookup(): Set<string> {
+  const lookup = new Set<string>();
+  const allActive = [
+    ...ACTIVE_NOUNS,
+    ...ACTIVE_ADJECTIVES,
+    ...ACTIVE_ADVERBS,
+    ...ACTIVE_ENSEMBLES,
+  ];
+
+  for (const raw of allActive) {
+    const clean = raw.trim().toLowerCase();
+    if (!clean) continue;
+    lookup.add(clean);
+    lookup.add(toSingularModifier(clean).toLowerCase());
+    lookup.add(pluralizeWord(clean).toLowerCase());
+  }
+  return lookup;
+}
+
+/**
+ * Extracts tokens from user-supplied Custom Drop fields, filters out stop words
+ * and words already in active rotation, and classifies novel words.
+ */
+export function analyzeCustomDropWords(
+  bandName: string,
+  albumTitle: string,
+  tracksRaw: string
+): { novelWords: AnalyzedHarvestWord[]; skippedExistingCount: number } {
+  const existingLookup = buildActiveVocabularyLookup();
+  const seenInInput = new Set<string>();
+  const novelWords: AnalyzedHarvestWord[] = [];
+  let skippedExistingCount = 0;
+
+  const bandTokens = bandName
+    .split(/[\s,/"'()!?&.:;]+/)
+    .map((t) => t.replace(/[^a-zA-Z-]/g, '').trim())
+    .filter((t) => t.length >= 3);
+
+  const allRawText = `${bandName} ${albumTitle} ${tracksRaw}`;
+  const rawTokens = allRawText
+    .split(/[\s,/"'()!?&.:;]+/)
+    .map((t) => t.replace(/[^a-zA-Z-]/g, '').trim())
+    .filter((t) => t.length >= 3);
+
+  for (const token of rawTokens) {
+    const lower = token.toLowerCase();
+    if (HARVEST_STOP_WORDS.has(lower)) continue;
+
+    const singular = toSingularModifier(lower).toLowerCase();
+    const plural = pluralizeWord(singular).toLowerCase();
+
+    if (seenInInput.has(lower) || seenInInput.has(singular)) {
+      continue;
+    }
+    seenInInput.add(lower);
+    seenInInput.add(singular);
+
+    // Disregard if already present in active core or expansion pack pools
+    if (
+      existingLookup.has(lower) ||
+      existingLookup.has(singular) ||
+      existingLookup.has(plural)
+    ) {
+      skippedExistingCount++;
+      continue;
+    }
+
+    const formatted = capitalizeWord(token);
+    let category: HarvestWordCategory = 'noun';
+
+    if (ENSEMBLE_HINT_WORDS.has(lower) || ENSEMBLE_HINT_WORDS.has(singular)) {
+      category = 'ensemble';
+    } else if (
+      isAdverbWord(lower) ||
+      /(?:ed|ing|ous|ic|ical|al|ful|less|ish|ive|able|ible|esque|ant|ent)$/i.test(lower) ||
+      (bandTokens.length >= 2 && bandTokens[0].toLowerCase() === lower && !lower.endsWith('s'))
+    ) {
+      category = 'adjective';
+    } else if (
+      bandTokens.length >= 2 &&
+      bandTokens[bandTokens.length - 1].toLowerCase() === lower &&
+      bandName.toLowerCase().startsWith('the ') &&
+      !lower.endsWith('s')
+    ) {
+      category = 'ensemble';
+    }
+
+    novelWords.push({ word: formatted, category });
+  }
+
+  return { novelWords, skippedExistingCount };
+}
+
+// =========================================================================
+// OFFLINE "PRESSING DNA" SHARE & CLONE SERIALIZER
+// =========================================================================
+
+export function encodePressingDna(album: AlbumEntry): string {
+  const safeRecipe: CanvasRecipe | undefined = album.recipe
+    ? {
+        ...album.recipe,
+        customPhotoUrl: undefined,
+      }
+    : undefined;
+
+  const payload = {
+    v: 1,
+    b: album.bandName,
+    t: album.albumTitle,
+    y: album.year,
+    c: album.catalogNumber,
+    tr: album.tracks,
+    rv: album.fauxReviews,
+    bio: album.bandBio,
+    sk: album.skewDeg,
+    st: album.stickers,
+    rc: safeRecipe,
+    ap: album.audioPreset,
+    ff: album.fontFamily,
+    tc: album.textColor,
+    ss: album.shadowStyle,
+    tl: album.titleLayout,
+    cg: album.conditionGrade,
+    w: album.isWarpedAudio,
+  };
+
+  const json = JSON.stringify(payload);
+  const encoded = btoa(encodeURIComponent(json));
+  return `YDRBN-DNA:${encoded}`;
+}
+
+export async function decodePressingDna(dnaString: string): Promise<AlbumEntry> {
+  const clean = dnaString.trim();
+  const rawBase64 = clean.startsWith('YDRBN-DNA:')
+    ? clean.slice('YDRBN-DNA:'.length).trim()
+    : clean;
+
+  let parsed: any;
+  try {
+    const json = decodeURIComponent(atob(rawBase64));
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error('Invalid or corrupted Pressing DNA code.');
+  }
+
+  if (!parsed || !parsed.b || !parsed.t) {
+    throw new Error('DNA code is missing band or album title metadata.');
+  }
+
+  const recipe: CanvasRecipe = parsed.rc || {
+    backdrop: 'radial_sunburst',
+    subject: 'tooth',
+    modifier: 'caution_stamp',
+    palette: '70s Earth',
+    seed: 1977,
+  };
+
+  await loadRecipeAssets(String(recipe.backdrop || ''), String(recipe.subject || ''));
+  const coverImageUrl = gagCanvasEngine.renderCover(parsed.b, parsed.t, recipe);
+  const fallbackCond = resolveConditionGrade(`${parsed.b}-${parsed.t}`);
+
+  return {
+    id: `dna-clone-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    bandName: parsed.b,
+    albumTitle: parsed.t,
+    year: parsed.y || '1977',
+    catalogNumber: parsed.c || `DNA-${parsed.y || '1977'}-CLONE`,
+    artDirectorPrompt: `Cloned via Pressing DNA: ${parsed.b} - ${parsed.t}`,
+    tracks: Array.isArray(parsed.tr) && parsed.tr.length > 0 ? parsed.tr : ['Track 1'],
+    fauxReviews: Array.isArray(parsed.rv) ? parsed.rv : ['"Cloned from archival DNA." — The Ledger'],
+    bandBio: parsed.bio || 'Reconstructed directly from an offline Pressing DNA sequence.',
+    coverImageUrl,
+    timestamp: Date.now(),
+    isFavorite: false,
+    skewDeg: typeof parsed.sk === 'number' ? parsed.sk : 0,
+    stickers: Array.isArray(parsed.st) ? parsed.st : [],
+    recipe,
+    audioPreset: parsed.ap || 'analog-synth',
+    fontFamily: parsed.ff || 'chrome',
+    textColor: parsed.tc || '#fef08a',
+    shadowStyle: parsed.ss || 'harsh-black',
+    titleLayout: parsed.tl || 'bottom-banner',
+    conditionGrade: parsed.cg || fallbackCond.grade,
+    isWarpedAudio: typeof parsed.w === 'boolean' ? parsed.w : fallbackCond.isWarped,
+    isCustomPressing: true,
+    customPressingTag: 'DNA CLONE',
+  };
+}
+
+// =========================================================================
+// MAIN DAILY DROP & CUSTOM DROP GENERATORS
+// =========================================================================
 
 export async function generateDailyDrop(): Promise<AlbumEntry> {
   await hydrateContentPools();
@@ -1796,7 +2153,6 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
   historyRegistry.add(newBandName);
   const bandName = newBandName;
 
-  // 1. Dynamic Album Title with Rolling Memory (capped at 28 items)
   let recentAlbums: string[] = [];
   try {
     const stored = localStorage.getItem('ydrbn_recent_albums');
@@ -1822,7 +2178,6 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
   localStorage.setItem('ydrbn_recent_albums', JSON.stringify(recentAlbums));
   const albumTitle = candidateTitle;
 
-  // Release year generator (1960–2060)
   const currentYear = new Date().getFullYear();
   const isTemporalEasterEgg = Math.random() < 0.04;
 
@@ -1841,11 +2196,10 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
 
   const combo = selectModularCombination(bandName, albumTitle);
 
-  // Minimalist chance (20%) — bypassed during Elbow Failsafe Mode so the giant emoji & warning sticker always appear
   let forceNoStickers = false;
   if (IS_ELBOW_FAILSAFE_MODE) {
     combo.backdrop = (Math.random() < 0.5 ? 'elbow_selfie_backdrop' : 'elbow_mech_backdrop') as any;
-    if ( getPreferences().disableDefaultSubjects && ACTIVE_SUBJECTS.length === 0 ) {
+    if (getPreferences().disableDefaultSubjects && ACTIVE_SUBJECTS.length === 0) {
       combo.subject = 'none' as any;
     }
   } else if (Math.random() < 0.20) {
@@ -1875,7 +2229,6 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
     seed: Math.floor(Math.random() * 2147483647),
   };
 
-  // Grammatically aware 8-track generator
   const tracks: string[] = [];
   const shuffledThemes = [...pool.trackThemes].sort(() => 0.5 - Math.random());
   const trackExclusions = new Set<string>();
@@ -1917,7 +2270,6 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
         () => `A Room Full of ${tPluralOrMass}`,
         () => `${tSingular} in the Basement`,
         () => `${tSingular} for President`,
-        () => `${tSingular} on the Run`,
         () => `The ${tSingular} Nobody Saw`,
         () => `A Question of ${tPluralOrMass}`,
         () => `${tSingular} at the Gates`,
@@ -1925,193 +2277,89 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
         () => `${tSingular} Without End`,
         () => `Waltz for ${withAOrAn(tAdj)} ${tSingular}`,
         () => `Nothing but ${tPluralOrMass}`,
-        () => `${tPluralOrMass} in the Distance`,
         () => `Don't Touch the ${tPluralOrMass}`,
-        () => `The Night of ${tPluralOrMass}`,
         () => `${tAdj} ${tPluralOrMass} (Part ${i - 1})`,
         () => `The ${tSingular} Equation`,
-        () => `${tSingular} in Question`,
-        () => `After the ${tSingular}`,
-        () => `${tSingular} and Consequences`,
         () => `A World Without ${tPluralOrMass}`,
-        () => `The Rise of ${tSingular}`,
         () => `The ${tAdj} ${tSingular} Forecast`,
-        () => `The Day of the ${tSingular}`,
         () => `A Fine Mess of ${tPluralOrMass}`,
-        () => `A Little More ${tPluralOrMass}`,
-        () => `The ${tSingular} Is a Lie`,
-        () => `The ${tSingular} Parade`,
         () => `How to Lose a ${tSingular}`,
-        () => `Between the ${tPluralOrMass}`,
-        () => `A Song for ${tSingular}`,
-        () => `The ${tSingular} Effect`,
         () => `${tSingular} Across the Hall`,
-        () => `The ${tSingular} Backstage`,
-        () => `A Very ${tAdj} Affair`,
-        () => `A Universe of ${tPluralOrMass}`,
-        () => `Behind the ${tSingular}`,
-        () => `The ${tSingular} Was Here`,
         () => `The ${tAdj} ${tSingular} Method`,
-        () => `An Excess of ${tPluralOrMass}`,
         () => `An Inconvenient ${tSingular}`,
-        () => `The ${tAdj} ${tSingular} Connection`,
-        () => `${tSingular} Without Regret`,
-        () => `The Mystery of ${tSingular}`,
-        () => `The ${tAdj} ${tSingular}`,
-        () => `The Case of the ${tSingular}`,
-        () => `The World According to ${tSingular}`,
-        () => `The ${tSingular} Spotlight`,
         () => `${tSingular} in the Wrong Place`,
-        () => `Where Did the ${tSingular} Go`,
-        () => `The ${tSingular} Countdown`,
-        () => `The ${tSingular} of Tomorrow`,
-        () => `A Moment of ${tPluralOrMass}`,
-        () => `A Collection of ${tPluralOrMass}`,
-        () => `The ${tSingular} Overture`,
-        () => `${tSingular} in Motion`,
-        () => `${tSingular} in the Wild`,
-        () => `Inside the ${tSingular}`,
-        () => `The ${tSingular} Duet`,
-        () => `A History of ${tPluralOrMass}`,
-        () => `${tPluralOrMass} on Parade`,
         () => `The ${tSingular} Has Left the Building`,
-        () => `Tomorrow's ${tSingular}`,
-        () => `The ${tAdj} ${tSingular} Breakdown`,
         () => `What Have We Done with ${tPluralOrMass}`,
-        () => `${tSingular} Without Warning`,
-        () => `The ${tAdj} ${tSingular} Revival`,
-        () => `The ${tSingular} Ritual`,
-        () => `The ${tSingular} Chorus`,
-        () => `The ${tSingular} Melody`,
-        () => `Outside the ${tSingular}`,
-        () => `The ${tSingular} Conspiracy`,
-        () => `A Little Less ${tPluralOrMass}`,
-        () => `The ${tSingular} Soundtrack`,
         () => `${tSingular} Under Investigation`,
-        () => `${tPluralOrMass} from the Past`,
-        () => `The ${tSingular} of Yesterday`,
-        () => `Can You Hear the ${tSingular}`,
-        () => `${tPluralOrMass} at Work`,
         () => `The ${tSingular} Appreciation Society`,
-        () => `The Fall of ${tSingular}`,
-        () => `A Song of ${tPluralOrMass}`,
-        () => `The ${tSingular} Never Ends`,
-        () => `The ${tSingular} Goes Electric`,
         () => `Nobody Likes a ${tSingular}`,
-        () => `A Place for ${tPluralOrMass}`,
         () => `The ${tSingular} Has Opinions`,
-        () => `${tSingular} in Exile`,
-        () => `The ${tSingular} Performance`,
-        () => `A Future Made of ${tPluralOrMass}`,
-        () => `A Guide to ${tPluralOrMass}`,
-        () => `The ${tSingular} Stage`,
-        () => `A Strange Kind of ${tSingular}`,
-        () => `The Beginning of ${tSingular}`,
-        () => `Yesterday's ${tSingular}`,
-        () => `A Lifetime of ${tPluralOrMass}`,
-        () => `Beneath the ${tSingular}`,
-        () => `The ${tSingular} Archive`,
-        () => `The ${tAdj} ${tSingular} Show`,
-        () => `The ${tSingular} Department`,
-        () => `${tSingular} from Nowhere`,
-        () => `A Season of ${tPluralOrMass}`,
-        () => `${tSingular} Without a Map`,
         () => `${tPluralOrMass} Under Pressure`,
-        () => `The ${tSingular} Symphony`,
-        () => `The Story of ${tSingular}`,
-        () => `${tSingular} for Beginners`,
-        () => `The ${tSingular} Department Store`,
-        () => `The ${tSingular} Mystery`,
-        () => `A Study in ${tPluralOrMass}`,
-        () => `${tSingular} Without Explanation`,
-        () => `The ${tAdj} Side of ${tSingular}`,
-        () => `The ${tSingular} Handbook`,
-        () => `The ${tSingular} We Deserve`,
-        () => `A Bad Day for ${tPluralOrMass}`,
-        () => `${tSingular} in Reverse`,
-        () => `One More ${tSingular}`,
-        () => `A Thousand ${tPluralOrMass}`,
-        () => `The ${tSingular} Rebellion`,
-        () => `The ${tAdj} End`,
-        () => `${tPluralOrMass} on Demand`,
-        () => `A Brief History of ${tPluralOrMass}`,
         () => `Don't Wake the ${pluralizeWord(tSingular)}`,
-        () => `All the ${tPluralOrMass}`,
         () => `Please Hold the ${tPluralOrMass}`,
-        () => `The ${tSingular} We Forgot`,
-        () => `The Color of ${tSingular}`,
-        () => `Across the ${tPluralOrMass}`,
-        () => `${tSingular} in the Mirror`,
-        () => `The ${tSingular} in Concert`,
         () => `${tSingular} Under New Management`,
-        () => `The ${tAdj} ${tSingular} Machine`,
-        () => `${tPluralOrMass} on the Record`,
-        () => `Above the ${tPluralOrMass}`,
-        () => `The ${tSingular} Reprise`,
-        () => `${tPluralOrMass} in Stereo`,
-        () => `The ${tSingular} Hotline`,
-        () => `A Final Word on ${tPluralOrMass}`,
-        () => `The ${tSingular} Must Go On`,
-        () => `The ${tSingular} at the Window`,
-        () => `The ${tAdj} ${tSingular} Escape`,
-        () => `The ${tSingular} Problem`,
-        () => `The ${tSingular} Remedy`,
-        () => `How Much for the ${tSingular}`,
-        () => `${tSingular} in the Rain`,
-        () => `${tSingular} for the Last Time`,
-        () => `The ${tSingular} You Remember`,
-        () => `The ${tSingular} Returns`,
-        () => `The ${tAdj} Unknown`,
-        () => `The ${tSingular} Rhythm`,
-        () => `A Catalogue of ${tPluralOrMass}`,
-        () => `A Brief Encounter with ${tPluralOrMass}`,
-        () => `${tSingular} in the Distance`,
         () => `Who Ordered the ${tSingular}`,
-        () => `${tSingular} and Other Stories`,
-        () => `${tSingular} on Credit`,
-        () => `A Matter of ${tPluralOrMass}`,
         () => `${tSingular} and Other Disasters`,
-        () => `Somewhere in ${tPluralOrMass}`,
-        () => `The ${tSingular} Solo`,
-        () => `A Taste of ${tPluralOrMass}`,
-        () => `${tSingular} for the Masses`,
-        () => `The Other Side of ${tSingular}`,
-        () => `A Thousand Miles from ${tSingular}`,
-        () => `The ${tAdj} ${tSingular} Blues`,
-        () => `The ${tSingular} Arrangement`,
-        () => `The ${tSingular} Cover-Up`,
-        () => `${tPluralOrMass} from Outer Space`,
-        () => `The Curse of ${tSingular}`,
         () => `${tSingular} Without Permission`,
-        () => `The Shape of ${tPluralOrMass}`,
-        () => `Beyond the ${tSingular}`,
-        () => `An Ode to ${tPluralOrMass}`,
-        () => `${tPluralOrMass} in Disguise`,
-        () => `A Shortage of ${tPluralOrMass}`,
-        () => `${tSingular} Under Construction`,
-        () => `The ${tSingular} Is Listening`,
-        () => `The End of ${tSingular}`,
-        () => `${tPluralOrMass} Against the World`,
-        () => `${tPluralOrMass} in Uniform`,
-        () => `${tSingular} After Dark`,
-        () => `The Last ${tSingular}`,
-        () => `The Sound of ${tSingular}`,
-        () => `The Return of ${pluralizeWord(tSingular)}`,
-        () => `The ${tSingular} Situation Room`,
-        () => `${tSingular} at Midnight`,
-        () => `The ${tSingular} Goes On`,
-        () => `${tSingular} in Progress`,
-        () => `Through the ${tSingular}`,
-        () => `${tSingular} at the Crossroads`,
-        () => `The ${tSingular} Finale`,
-        () => `${tSingular} at Closing Time`,
-        () => `${tPluralOrMass} for the Weekend`,
-        () => `A Perfectly ${tAdj} Day`,
-        () => `The ${tAdj} Art of ${tSingular}`,
-        () => `The ${tSingular} Encore`,
-        () => `Longing for ${tPluralOrMass}`,
-        () => `${tSingular} on the Moon`,
         () => `A Pocket Full of ${tPluralOrMass}`,
+        // --- Additional Track Patterns ---
+        () => `Where the ${tSingular} Sleeps`,
+        () => `All the King's ${tPluralOrMass}`,
+        () => `The Last ${tSingular} in Town`,
+        () => `Somewhere Between ${tSingular} and ${tPluralOrMass}`,
+        () => `${tSingular} of the Month`,
+        () => `The ${tPluralOrMass} Convention`,
+        () => `Ways to Misplace a ${tSingular}`,
+        () => `An Open Letter to ${tPluralOrMass}`,
+        () => `The ${tSingular} Situation`,
+        () => `Nobody's ${tPluralOrMass}`,
+        () => `${tPluralOrMass} at Midnight`,
+        () => `The Trouble with ${tSingular}`,
+        () => `A Brief History of ${tPluralOrMass}`,
+        () => `${tSingular} by Committee`,
+        () => `The ${tAdj} ${tPluralOrMass} Parade`,
+        () => `Everything Must Go, Including the ${tSingular}`,
+        () => `An Ode to ${tPluralOrMass}`,
+        () => `The Day the ${tSingular} Arrived`,
+        () => `${tSingular} in Disguise`,
+        () => `Notes from the ${tSingular} Department`,
+        () => `The ${tSingular} Next Door`,
+        () => `Too Many ${tPluralOrMass}`,
+        () => `${tPluralOrMass} of the Future`,
+        () => `The Unfinished ${tSingular}`,
+        () => `${tSingular} for the Recently Departed`,
+        () => `Please Explain the ${tSingular}`,
+        () => `A Thousand ${tPluralOrMass}`,
+        () => `The ${tSingular} Problem`,
+        () => `Last Call for ${tPluralOrMass}`,
+        () => `${tSingular} in a Minor Key`,
+        () => `The Curious Case of ${tSingular}`,
+        () => `An Evening with ${tPluralOrMass}`,
+        () => `Keep Your ${tPluralOrMass} Close`,
+        () => `The ${tAdj} Art of ${tSingular}`,
+        () => `Some Assembly Required for ${tSingular}`,
+        () => `${tSingular} Has Entered the Chat`,
+        () => `The ${tPluralOrMass} Must Be Stopped`,
+        () => `Anatomy of a ${tSingular}`,
+        () => `Everything's Fine, Except the ${tSingular}`,
+        () => `${tSingular} from Another Room`,
+        () => `The ${tPluralOrMass} Have It`,
+        () => `One Last ${tSingular}`,
+        () => `A Very ${tAdj} ${tSingular}`,
+        () => `Return of the ${pluralizeWord(tSingular)}`,
+        () => `Instructions for ${tPluralOrMass}`,
+        () => `The ${tSingular} Beneath the Floor`,
+        () => `An Appointment with ${tSingular}`,
+        () => `${tPluralOrMass} Don't Grow on Trees`,
+        () => `The ${tAdj} Side of ${tSingular}`,
+        () => `Lost Among the ${tPluralOrMass}`,
+        () => `${tSingular} Is a Serious Matter`,
+        () => `The ${tSingular} Memorial`,
+        () => `Please Remain Calm Around the ${tPluralOrMass}`,
+        () => `${tSingular}, More or Less`,
+        () => `The ${tPluralOrMass} Are Listening`,
+        () => `An Unusual Amount of ${tPluralOrMass}`,
+        () => `Tomorrow Belongs to ${tSingular}`,
         () => {
           if (!usedKeyInTracklist && Math.random() < 0.25) {
             usedKeyInTracklist = true;
@@ -2132,7 +2380,6 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
     'A dry acoustic shock',
     'Alarmingly crunchy',
     'Bewildering yet irresistible',
-    'An utter affront to standard recording protocol',
     'Deeply obstinate',
     'Audaciously quiet',
     'Rhythmically bewildered',
@@ -2147,88 +2394,69 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
     'Sonically uncooperative',
     'Administratively magnificent',
     'Profoundly miscalibrated',
-    'Melodically noncompliant',
-    'Uncomfortably symmetrical',
-    'Resistant to interpretation',
-    'Excessively provincial',
-    'A triumph of misplaced confidence',
-    'Strangely municipal',
-    'Unnecessarily elaborate',
+    'Uncomfortably harmonious',
+    'Delightfully misinformed',
+    'Relentlessly middle-of-the-road',
+    'Ceremonially cacophonous',
+    'Inexplicably sophisticated',
+    'Stubbornly atmospheric',
+    'Magnificently underprepared',
+    'Excessively contemplative',
+    'Unnecessarily orchestral',
+    'Suspiciously well-organized',
+    'Fiercely underwhelming',
+    'Accidentally transcendent',
+    'Remarkably ill-advised',
     'Quietly catastrophic',
-    'Remarkably underqualified',
-    'A masterpiece of acoustic inconvenience',
-    'Deeply suspicious',
-    'Unusually particulate',
-    'Grotesquely restrained',
-    'Intriguingly unfinished',
-    'Relentlessly beige',
-    'Formally incoherent',
-    'Unreasonably ceremonial',
-    'Accidentally majestic',
-    'A landmark in avoidable noise',
-    'Melodramatically underpowered',
-    'Alarmingly procedural',
-    'Inexplicably dignified',
-    'Rhythmically litigious',
-    'A small triumph of dysfunction',
-    'Historically misinformed',
-    'Unmistakably provisional',
-    'Strikingly resistant to improvement',
-    'Acoustically overconfident',
-    'A baffling exercise in restraint',
+    'Painstakingly unlistenable',
+    'Unapologetically lopsided',
+    'Strangely municipal',
+    'Acoustically bewildering',
+    'Impressively disorganized',
+    'Melodically noncompliant',
   ];
 
   const reviewTemplates = [
     (adj: string, pub: string) => `"${adj}; an utter affront to conventional recording etiquette." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; they played three whole songs without touching their instruments." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; the vinyl itself seemed embarrassed to rotate." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the central committee would nod with solemn approval." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; acoustic vibrations resembling a small tractor in a parlor." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; genuinely impossible to categorize, let alone endorse." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; recommended exclusively for domestic appliances." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; bewildering yet completely inevitable." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; sounds like an encyclopedia falling down a spiral staircase." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a monumental achievement in acoustic stubbornness." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; the rhythm section appears to be appealing a zoning decision." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; a recording that treats silence as a hostile witness." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; every instrument sounds as though it arrived by separate courier." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a brave rejection of the commonly accepted concept of timing." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; the production budget was clearly spent on paperwork." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; sounds like a rehearsal interrupted by a very polite fire alarm." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; an ambitious study in how little consensus a band can achieve." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the bass line seems to be operating under a different permit." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; it has the unmistakable texture of a damp filing cabinet." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a rare album that makes the metronome seem emotional." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; all discernible melodies appear to have been left in transit." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; an astonishing refusal to resolve even the simplest musical question." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; the engineers deserve hazard pay and a written apology." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; sounds like several unrelated committees sharing one microphone." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a surprisingly moving tribute to equipment that should have been replaced." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the pauses are longer than the band's documented employment history." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; it occupies the narrow space between folk music and a maintenance report." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; every chorus arrives with the confidence of an incorrect invoice." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a persuasive argument for keeping the studio door locked." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the stereo image resembles a disagreement over property boundaries." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the album's strongest instrument may be the room tone." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; listeners are advised to retain their receipts." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; it sounds like a municipal parade planned exclusively by mail." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; an impressive quantity of sound has been produced with limited musical consequence." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the snare drum appears to have filed a formal grievance." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; one suspects the mastering engineer simply left the building." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the melodies are technically present but socially unavailable." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the record's emotional climax resembles a printer running out of toner." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a compelling case for separating the musicians by several postal codes." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the liner notes exhibit greater rhythmic precision than the actual recording." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; its most consistent quality is the refusal to become consistent." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a curious blend of basement acoustics and executive-level confidence." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the songs appear to have been assembled from rejected introductions." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; no known instrument has publicly accepted responsibility." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; a substantial contribution to the study of avoidable feedback." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; the tempo suggests a dispute over who is authorized to begin." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; it manages to sound both overproduced and recently unpacked." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; every track ends as though someone has discovered an accounting error." — ${pub}`,
-    (adj: string, pub: string) => `"${adj}; an album of uncommon conviction and almost no supporting evidence." — ${pub}`,
     (adj: string, pub: string) => `"${adj}; future historians may classify this as a preventable incident." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; a bold refusal to acknowledge the existence of conventional tempo." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; sounds like a filing cabinet attempting to remember its childhood." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the bass line has apparently been operating without a permit." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; an ambitious experiment in making every note seem slightly misplaced." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the melodies arrive late and leave before the refreshments." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; one suspects the drummer was given entirely different instructions." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; an extraordinary achievement in avoiding a recognizable chorus." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; sounds like an orchestra assembled from the contents of a municipal lost-property office." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the recording process appears to have involved several unnecessary committees." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; a curious reminder that not every noise requires documentation." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the guitar tone suggests a dispute between two incompatible electrical outlets." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; even the reverb sounds as though it would rather be somewhere else." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; an album that repeatedly mistakes technical difficulty for artistic ambition." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the compositions possess all the structural confidence of a folding chair." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; listeners are advised to maintain a respectful distance from the speakers." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; a remarkable collection of sounds that seem to have missed their scheduled appointments." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the arrangements suggest an unresolved disagreement with basic geometry." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the mastering engineer has reportedly requested reassignment." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; sounds like a particularly expensive mistake being made in slow motion." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; a confident demonstration of what happens when nobody checks the instructions." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the final mix resembles a weather report delivered by malfunctioning machinery." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; its artistic intentions remain unclear, even to the people responsible." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the percussion seems to be negotiating independently with the melody." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; a sonic document of events that nobody has agreed actually occurred." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the album's strongest feature is its apparent indifference to criticism." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; a thoroughly convincing argument against unsupervised studio access." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the compositions display a curious hostility toward the concept of resolution." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; sounds like an emergency broadcast from a very unmusical civilization." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; an oddly moving tribute to the limitations of available equipment." — ${pub}`,
+    (adj: string, pub: string) => `"${adj}; the result is less an album than a lengthy correspondence with a malfunctioning amplifier." — ${pub}`,
   ];
 
   const generateSingleReview = (): string => {
@@ -2254,157 +2482,112 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
     (band: string, yr: string) => `Conceived during a widespread power fluctuation in late ${yr}, ${band}`,
     (band: string, yr: string) => `Emerging from the industrial periphery of Flumptown in ${yr}, ${band}`,
     (band: string, yr: string) => `Organized under emergency municipal bylaws in ${yr}, ${band}`,
-    (band: string, yr: string) => `Originally operating as an unregistered civic improvement society in ${yr}, ${band}`,
-    (band: string, yr: string) => `Formed after an administrative error at the regional patent office in ${yr}, ${band}`,
     (band: string, yr: string) => `Founded in ${yr} behind a shuttered appliance wholesaler, ${band}`,
-    (band: string, yr: string) => `Established in ${yr} by individuals with conflicting recollections of having met previously, ${band}`,
-    (band: string, yr: string) => `Brought together by an outbreak of administrative confusion in ${yr}, ${band}`,
     (band: string, yr: string) => `First convened in ${yr} after a neighborhood committee mistook a noise complaint for an audition, ${band}`,
-    (band: string, yr: string) => `Registered provisionally in ${yr} as a subsidiary of an insolvent bowling association, ${band}`,
     (band: string, yr: string) => `Formed in ${yr} during an unauthorized after-hours equipment inventory, ${band}`,
-    (band: string, yr: string) => `Recruited in ${yr} from the waiting room of a defunct municipal licensing office, ${band}`,
-    (band: string, yr: string) => `First documented in ${yr} after a local newspaper misidentified a storage-unit auction, ${band}`,
-    (band: string, yr: string) => `Assembled in ${yr} to provide ceremonial music for a bridge that was never completed, ${band}`,
-    (band: string, yr: string) => `Originating in ${yr} from a dispute over the ownership of a broken amplifier, ${band}`,
-    (band: string, yr: string) => `Established in ${yr} after a local radio station accidentally broadcast their equipment test, ${band}`,
-    (band: string, yr: string) => `Convened in ${yr} under circumstances omitted from the town's official minutes, ${band}`,
-    (band: string, yr: string) => `Founded in ${yr} following the unexplained disappearance of a rehearsal-room key, ${band}`,
-    (band: string, yr: string) => `Formed in ${yr} by former employees of an unprofitable novelty instrument distributor, ${band}`,
-    (band: string, yr: string) => `Began operating in ${yr} from the basement of a building awaiting demolition, ${band}`,
-    (band: string, yr: string) => `First assembled in ${yr} to settle an argument about the proper storage of cables, ${band}`,
-    (band: string, yr: string) => `Created in ${yr} after a clerical error awarded them a grant intended for a drainage project, ${band}`,
-    (band: string, yr: string) => `Organized in ${yr} by a committee whose original purpose remains disputed, ${band}`,
-    (band: string, yr: string) => `Founded in ${yr} following a brief but consequential power-grid irregularity, ${band}`,
-    (band: string, yr: string) => `First rehearsed in ${yr} inside a former records annex scheduled for conversion into offices, ${band}`,
-    (band: string, yr: string) => `Formed in ${yr} after several unrelated musicians responded to the same misprinted advertisement, ${band}`,
-    (band: string, yr: string) => `Assembled in ${yr} during a regional shortage of functional rehearsal spaces, ${band}`,
-    (band: string, yr: string) => `Established in ${yr} by a temporary working group that declined to disband, ${band}`,
-    (band: string, yr: string) => `Founded in ${yr} following an unsuccessful attempt to standardize local marching tempos, ${band}`,
-    (band: string, yr: string) => `First appeared in ${yr} at an event whose organizers deny having hired any musicians, ${band}`,
-    (band: string, yr: string) => `Formed in ${yr} after a surplus auction distributed instruments to the wrong addresses, ${band}`,
-    (band: string, yr: string) => `Assembled in ${yr} in response to a public notice requesting volunteers for an unspecified cultural initiative, ${band}`,
-    (band: string, yr: string) => `Founded in ${yr} following an unresolved disagreement over a shared extension cord, ${band}`,
-    (band: string, yr: string) => `Organized in ${yr} by residents of a building with unusually poor acoustic insulation, ${band}`,
-    (band: string, yr: string) => `Established in ${yr} after a rehearsal was mistaken for a regional emergency test, ${band}`,
-    (band: string, yr: string) => `First listed in a directory in ${yr} under the category of miscellaneous civic services, ${band}`,
-    (band: string, yr: string) => `Created in ${yr} to provide background music for a conference that was subsequently canceled, ${band}`,
-    (band: string, yr: string) => `Formed in ${yr} when a community-center booking system assigned the same room to five musicians, ${band}`,
-    (band: string, yr: string) => `Assembled in ${yr} after a retired engineer offered to repair equipment in exchange for rehearsals, ${band}`,
-    (band: string, yr: string) => `Founded in ${yr} during an unusually prolonged dispute over the venue's thermostat, ${band}`,
-    (band: string, yr: string) => `First documented in ${yr} by an archivist who could not determine whether they were a band or a committee, ${band}`,
-    (band: string, yr: string) => `Organized in ${yr} after an obsolete public-address system began receiving unexplained signals, ${band}`,
-    (band: string, yr: string) => `Established in ${yr} as an experimental extension of a neighborhood maintenance cooperative, ${band}`,
-    (band: string, yr: string) => `Formed in ${yr} following the accidental merger of two rehearsal-room reservation lists, ${band}`,
-    (band: string, yr: string) => `Began in ${yr} when a warehouse manager authorized one rehearsal and forgot to revoke the permission, ${band}`,
-    (band: string, yr: string) => `Founded in ${yr} after a local council classified their practice sessions as a recurring public assembly, ${band}`,
-    (band: string, yr: string) => `Assembled in ${yr} under a provisional charter drafted on the back of a repair invoice, ${band}`,
-    (band: string, yr: string) => `First gathered in ${yr} to investigate why the rehearsal room's clock ran seven minutes slow, ${band}`,
+    (band: string, yr: string) => `Established in ${yr} following a dispute over communal storage space, ${band}`,
+    (band: string, yr: string) => `Gathered in ${yr} beneath the offices of a defunct insurance broker, ${band}`,
+    (band: string, yr: string) => `Founded in ${yr} after an unsuccessful public address system demonstration, ${band}`,
+    (band: string, yr: string) => `Assembled in ${yr} by a group of reluctant neighborhood volunteers, ${band}`,
+    (band: string, yr: string) => `Originating in ${yr} from an abandoned municipal rehearsal room, ${band}`,
+    (band: string, yr: string) => `Formed in ${yr} after a routine equipment inspection became contentious, ${band}`,
+    (band: string, yr: string) => `Conceived in ${yr} during a prolonged regional telephone outage, ${band}`,
+    (band: string, yr: string) => `Organized in ${yr} by former members of a dissolved gardening association, ${band}`,
+    (band: string, yr: string) => `Emerging in ${yr} from a dispute over an incorrectly delivered piano, ${band}`,
+    (band: string, yr: string) => `Founded in ${yr} following an incident at the local community hall, ${band}`,
+    (band: string, yr: string) => `First assembled in ${yr} during an unusually lengthy lunch break, ${band}`,
+    (band: string, yr: string) => `Formed in ${yr} after a faulty intercom attracted unexpected attention, ${band}`,
+    (band: string, yr: string) => `Brought together in ${yr} by a shared interest in obsolete machinery, ${band}`,
+    (band: string, yr: string) => `Established in ${yr} inside a disused regional printing office, ${band}`,
+    (band: string, yr: string) => `Conceived in ${yr} during a particularly confusing residents' meeting, ${band}`,
+    (band: string, yr: string) => `Assembled in ${yr} after an unclaimed instrument auction, ${band}`,
+    (band: string, yr: string) => `Founded in ${yr} by individuals with no prior musical correspondence, ${band}`,
+    (band: string, yr: string) => `Formed in ${yr} following a disagreement over rehearsal room heating, ${band}`,
+    (band: string, yr: string) => `Emerging in ${yr} from the basement of a closed furniture showroom, ${band}`,
+    (band: string, yr: string) => `Organized in ${yr} under the supervision of an absent committee chair, ${band}`,
+    (band: string, yr: string) => `Founded in ${yr} after a warehouse inventory produced an unexplained amplifier, ${band}`,
+    (band: string, yr: string) => `Assembled in ${yr} during a regional shortage of suitable meeting rooms, ${band}`,
+    (band: string, yr: string) => `Formed in ${yr} following an accidental broadcast over the town intercom, ${band}`,
+    (band: string, yr: string) => `Conceived in ${yr} behind the loading bay of a wholesale stationery supplier, ${band}`,
+    (band: string, yr: string) => `Established in ${yr} after a misplaced council document brought them together, ${band}`,
   ];
-
   const BEHAVIOR_CLAUSES = [
     'quickly gained a reputation for concluding performances several minutes before audiences realized',
     'insisted on recording every master take in a single uninterrupted burst of stubborn obstinacy',
     'conducted rehearsals in complete darkness to eliminate accidental commercial appeal',
-    'became notorious for refusing to confirm whether their lineup was fixed or purely circumstantial',
     'engineered an abrasive signature tone by running rhythm tracks through defective voltage regulators',
     'treated studio time as an endurance trial between musicians, engineers, and local building inspectors',
-    'developed an enduring interest in poorly grounded instruments and prolonged public pauses',
-    'established a strict policy of appearing onstage approximately when expected and leaving immediately',
     'required all prospective members to submit a written explanation of their preferred silence',
-    'insisted that every rehearsal begin with a unanimous vote on whether rehearsal was necessary',
-    'refused to identify the instruments used on their recordings, citing unresolved contractual matters',
-    'developed a complex system for determining tempos by consulting municipal traffic reports',
-    'routinely replaced finished lyrics with notes copied from obsolete equipment manuals',
-    'insisted that all studio disputes be settled by drawing lots from an unmarked envelope',
-    'maintained a strict policy against tuning instruments in the presence of witnesses',
-    'scheduled rehearsals around the availability of a particularly unreliable freight elevator',
     'used a filing cabinet as the official repository for all musical decisions',
-    'required engineers to document every accidental noise as a potential compositional contribution',
-    'refused to perform encores unless the audience completed a brief satisfaction survey',
-    'developed an elaborate notation system that no member could consistently interpret',
     'treated the soundcheck as the main performance and the concert as an administrative formality',
-    'insisted on approving every microphone placement by secret ballot',
-    'spent rehearsals debating whether the concept of a chorus remained legally binding',
-    'recorded percussion parts using objects borrowed from the venues maintenance department',
-    'maintained an unofficial waiting list for musicians who had not yet joined the group',
-    'required each song to receive a provisional title before anyone was permitted to hear it',
-    'avoided conventional song endings in favor of abrupt procedural conclusions',
-    'rejected several promising arrangements because they appeared excessively confident',
-    'insisted that all volume adjustments be accompanied by a written justification',
-    'held lengthy meetings to determine which members were authorized to count in a song',
-    'developed a reputation for leaving equipment behind but taking every music stand',
-    'used rehearsal breaks to conduct informal audits of the bands collective memory',
-    'refused to release session notes until every participant had initialed each page',
-    'routinely recorded the rooms ventilation system as a featured ensemble member',
-    'required all new compositions to survive a trial period of deliberate neglect',
-    'treated spontaneous improvisation as a procedural exception requiring advance approval',
-    'maintained separate rehearsal schedules for musicians who disagreed about the downbeat',
-    'insisted that the studio clock be stopped whenever anyone made a useful suggestion',
-    'approached every recording session as though preparing evidence for a future inquiry',
-    'replaced conventional drum fills with carefully timed stretches of bureaucratic hesitation',
-    'developed a distinctive performance style based on missed cues and impeccable paperwork',
-    'refused to acknowledge applause until the final echo had been independently verified',
-    'conducted elaborate experiments to determine how little amplification a song could tolerate',
-    'required each completed track to be reviewed by an unofficial committee of former members',
-    'treated the mastering process as a negotiation with an increasingly uncooperative machine',
-    'insisted that all promotional photographs be taken during equipment breakdowns',
-    'routinely rehearsed songs in the wrong order to preserve a sense of institutional uncertainty',
-    'kept detailed records of every instrument that had ever failed during a performance',
-    'refused to repeat a successful arrangement on the grounds that it might establish precedent',
-    'maintained an unusual commitment to making every recording sound like an unresolved technical issue',
+    'refused to perform until all cables had been alphabetically arranged',
+    'insisted that every rehearsal begin with a formal attendance review',
+    'maintained a strict policy of avoiding recognizable musical structures',
+    'replaced the traditional encore with a brief equipment inspection',
+    'allowed the bass player to approve all matters of public correspondence',
+    'conducted lengthy debates over the correct duration of a pause',
+    'insisted that all recording sessions conclude with a written assessment',
+    'developed a signature sound using poorly maintained domestic appliances',
+    'refused to acknowledge the existence of standard tuning procedures',
+    'required audiences to remain seated during all instrumental adjustments',
+    'maintained an elaborate filing system for rejected melodies',
+    'treated every missed note as an opportunity for further discussion',
+    'scheduled performances according to the availability of nearby parking',
+    'insisted that all song titles receive provisional committee approval',
+    'conducted soundchecks at volumes considered excessive by local authorities',
+    'used rehearsal time primarily to discuss the storage of unused equipment',
+    'adopted an unusual policy of never repeating a successful arrangement',
+    'required all members to sign off on the final silence of each song',
+    'performed with the determined confidence of an underfunded research team',
+    'frequently interrupted songs to verify the condition of the lighting',
+    'maintained that mistakes were only valid when properly documented',
+    'insisted on using instruments with unresolved maintenance histories',
+    'treated audience applause as an optional administrative requirement',
+    'developed a rehearsal schedule based entirely on disputed recollections',
+    'refused to release any recording without a corresponding inventory number',
+    'conducted lengthy improvisations around a single unresolved chord',
   ];
-
   const AFTERMATH_CLAUSES = [
     (album: string) => `leaving "${album}" as their sole officially acknowledged physical pressing.`,
     (album: string) => `resulting in "${album}", an effort critics classified as both an acoustic triumph and an environmental liability.`,
     (album: string) => `culminating in "${album}", despite persistent claims by the label that the session tapes were destroyed.`,
-    (album: string) => `and "${album}" remains preserved here in its original unvarnished frequency spectrum.`,
-    (album: string) => `with "${album}" standing as an accidental testament to mid-century mechanical persistence.`,
     (album: string) => `leaving behind "${album}" as an unclassified anomaly in the distributor's catalog.`,
-    (album: string) => `leaving "${album}" to circulate exclusively among listeners who appreciated music that sounded assembled from spare parts.`,
     (album: string) => `producing "${album}", which the distributor listed under both music and miscellaneous office supplies.`,
-    (album: string) => `yielding "${album}", a release whose most reliable feature was the inconsistent placement of its track numbers.`,
-    (album: string) => `with "${album}" eventually cited in a local report on preventable recording expenses.`,
-    (album: string) => `leaving "${album}" as the only surviving evidence that the group had ever agreed on anything.`,
-    (album: string) => `resulting in "${album}", which was briefly mistaken for a test pressing of an unrelated record.`,
-    (album: string) => `with "${album}" withdrawn from circulation after the label could not agree on which side was side one.`,
     (album: string) => `leaving "${album}" to be rediscovered years later in a box marked "miscellaneous electrical parts."`,
-    (album: string) => `culminating in "${album}", a release that reportedly caused three separate playback systems to request servicing.`,
-    (album: string) => `with "${album}" retained in the archive under a classification reserved for unresolved cultural incidents.`,
-    (album: string) => `leaving "${album}" as a cautionary example in an internal guide to studio management.`,
-    (album: string) => `producing "${album}", which received its only formal review from a regional equipment-supply newsletter.`,
-    (album: string) => `with "${album}" eventually distributed in sleeves originally intended for a discontinued stationery product.`,
-    (album: string) => `leaving "${album}" as the final entry in a catalog whose remaining pages were inexplicably blank.`,
-    (album: string) => `resulting in "${album}", later described by the label as a complete success subject to several definitions.`,
-    (album: string) => `with "${album}" surviving primarily through copies whose provenance could not be established.`,
-    (album: string) => `leaving "${album}" in the hands of collectors who disagreed about whether it had actually been released.`,
-    (album: string) => `culminating in "${album}", which the band reportedly considered unfinished despite having disbanded.`,
-    (album: string) => `with "${album}" filed among the distributor's least easily searchable catalog entries.`,
-    (album: string) => `leaving "${album}" as a curious footnote in the history of unrequested regional releases.`,
-    (album: string) => `producing "${album}", a record whose promotional campaign ended before the artwork was approved.`,
-    (album: string) => `with "${album}" briefly adopted as the unofficial soundtrack to a municipal equipment auction.`,
-    (album: string) => `leaving "${album}" to circulate in quantities too small to justify an official sales figure.`,
-    (album: string) => `resulting in "${album}", a release that appeared in the accounts under the category of unforeseen expenses.`,
-    (album: string) => `with "${album}" becoming a reference point for critics studying the boundaries of acceptable rehearsal noise.`,
-    (album: string) => `leaving "${album}" as the sole item in a collection otherwise devoted to building inspection records.`,
-    (album: string) => `culminating in "${album}", which the pressing plant reportedly labeled "please verify before proceeding."`,
-    (album: string) => `with "${album}" preserved in a private collection alongside several unrelated instruction manuals.`,
-    (album: string) => `leaving "${album}" as an unresolved matter in the label's annual inventory.`,
-    (album: string) => `producing "${album}", whose final running order was reportedly decided by the warehouse staff.`,
-    (album: string) => `with "${album}" becoming known for its unusually detailed credits and remarkably vague contents.`,
-    (album: string) => `leaving "${album}" as the only release the band never publicly denied making.`,
-    (album: string) => `resulting in "${album}", a recording that was once submitted as evidence in a noise dispute.`,
-    (album: string) => `with "${album}" ultimately categorized as a limited release, although no one could confirm the limit.`,
-    (album: string) => `leaving "${album}" to be circulated among former members under an informal non-distribution agreement.`,
-    (album: string) => `culminating in "${album}", which the mastering engineer described as technically complete but spiritually pending.`,
-    (album: string) => `with "${album}" archived under a title that differed from the one printed on the sleeve.`,
-    (album: string) => `leaving "${album}" as an accidental record of the band's most organized period.`,
-    (album: string) => `producing "${album}", later cited in a trade journal as a reason to label every tape reel twice.`,
-    (album: string) => `with "${album}" remaining unavailable until a dispute over the original invoice was settled.`,
-    (album: string) => `leaving "${album}" as the only known recording to receive a formal maintenance inspection.`,
-    (album: string) => `resulting in "${album}", a release whose reissue plans were postponed indefinitely pending clarification.`,
-    (album: string) => `with "${album}" eventually included in an archive after being mistaken for an obsolete training recording.`,
-    (album: string) => `leaving "${album}" as a final, poorly indexed artifact of the group's brief administrative existence.`,
+    (album: string) => `resulting in "${album}", later withdrawn over a disagreement about its running order.`,
+    (album: string) => `leaving "${album}" as the only surviving record of their activities.`,
+    (album: string) => `producing "${album}", which received limited attention from regional appliance dealers.`,
+    (album: string) => `leaving "${album}" in the care of an increasingly confused distributor.`,
+    (album: string) => `resulting in "${album}", released without an agreed track listing.`,
+    (album: string) => `leaving "${album}" as an enduring monument to poor scheduling.`,
+    (album: string) => `producing "${album}", whose original master remains unaccounted for.`,
+    (album: string) => `leaving "${album}" to circulate among a handful of municipal employees.`,
+    (album: string) => `resulting in "${album}", briefly mistaken for an instructional recording.`,
+    (album: string) => `leaving "${album}" as their final documented act of cooperation.`,
+    (album: string) => `producing "${album}", later filed under an unrelated catalog number.`,
+    (album: string) => `leaving "${album}" to acquire an unlikely reputation among collectors.`,
+    (album: string) => `resulting in "${album}", which the label declined to explain publicly.`,
+    (album: string) => `leaving "${album}" as evidence of their prolonged disagreement.`,
+    (album: string) => `producing "${album}", a release that nobody officially remembers approving.`,
+    (album: string) => `leaving "${album}" in a warehouse awaiting further instructions.`,
+    (album: string) => `resulting in "${album}", later cited in an unrelated insurance claim.`,
+    (album: string) => `leaving "${album}" as a curious footnote in local recording history.`,
+    (album: string) => `producing "${album}", which the pressing plant refused to reproduce.`,
+    (album: string) => `leaving "${album}" as the subject of several unresolved ownership claims.`,
+    (album: string) => `resulting in "${album}", eventually discovered beneath a stack of invoices.`,
+    (album: string) => `leaving "${album}" to survive long after the group ceased communicating.`,
+    (album: string) => `producing "${album}", later described as an avoidable technical incident.`,
+    (album: string) => `leaving "${album}" as their only known commercial achievement.`,
+    (album: string) => `resulting in "${album}", which briefly appeared in a school equipment catalog.`,
+    (album: string) => `leaving "${album}" to circulate without an identifiable publisher.`,
+    (album: string) => `producing "${album}", whose liner notes contained several disputed facts.`,
+    (album: string) => `leaving "${album}" as a permanent fixture of the label's back catalog.`,
+    (album: string) => `resulting in "${album}", a recording that defied every available classification.`,
+    (album: string) => `leaving "${album}" behind after an unexplained change of address.`,
+    (album: string) => `producing "${album}", which was later returned to the sender.`,
+    (album: string) => `leaving "${album}" as an unresolved matter of historical record.`,
+    (album: string) => `resulting in "${album}", preserved despite repeated requests for its removal.`,
+    (album: string) => `leaving "${album}" as the group's only undisputed accomplishment.`,
   ];
 
   const origin = ORIGIN_CLAUSES[Math.floor(Math.random() * ORIGIN_CLAUSES.length)](bandName, year);
@@ -2414,59 +2597,23 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
   const bandBio = `${origin}. The group ${behavior}, ${aftermath}`;
 
   const fontFamilies: TitleFontFamily[] = [
-    'medieval',
-    'bubble',
-    'comic',
-    'marker',
-    'monospace',
-    'chrome',
-    'typewriter',
-    'western',
-    'arcade',
-    'graffiti',
-    'serif',
-    'handwritten',
-    'stencil',
-    'space',
-    'circus',
-    'newspaper',
-    'industrial',
-    'schoolbook',
-    'futuristic',
-    'ornamental',
+    'medieval', 'bubble', 'comic', 'marker', 'monospace',
+    'chrome', 'typewriter', 'western', 'arcade', 'graffiti',
+    'serif', 'handwritten', 'stencil', 'space', 'circus',
+    'newspaper', 'industrial', 'schoolbook', 'futuristic', 'ornamental',
   ];
   const fontFamily = fontFamilies[Math.floor(Math.random() * fontFamilies.length)];
 
   const textColors = [
-    '#fef08a',
-    '#fde047',
-    '#fed7aa',
-    '#ffedd5',
-    '#fecdd3',
-    '#e0f2fe',
-    '#d1fae5',
-    '#ffffff',
-    '#fb923c',
-    '#a7f3d0',
+    '#fef08a', '#fde047', '#fed7aa', '#ffedd5', '#fecdd3',
+    '#e0f2fe', '#d1fae5', '#ffffff', '#fb923c', '#a7f3d0',
   ];
   const textColor = textColors[Math.floor(Math.random() * textColors.length)];
 
   const shadowStyles: TitleShadowStyle[] = [
-    'harsh-black',
-    'neon-glow',
-    'chromatic-3d',
-    'retro-bevel',
-    'long-shadow',
-    'double-outline',
-    'offset-print',
-    'inner-glow',
-    'embossed',
-    'sticker-outline',
-    'halftone-shadow',
-    'electric-outline',
-    'ghosted',
-    'rubber-stamp',
-    'none',
+    'harsh-black', 'neon-glow', 'chromatic-3d', 'retro-bevel', 'long-shadow',
+    'double-outline', 'offset-print', 'inner-glow', 'embossed', 'sticker-outline',
+    'halftone-shadow', 'electric-outline', 'ghosted', 'rubber-stamp', 'none',
   ];
   const shadowStyle = shadowStyles[Math.floor(Math.random() * shadowStyles.length)];
 
@@ -2560,6 +2707,8 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
   const audioPreset =
     audioPresets[Math.floor(Math.random() * audioPresets.length)];
 
+  const cond = resolveConditionGrade();
+
   return {
     id: `ydrbn-drop-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     bandName,
@@ -2581,18 +2730,36 @@ export async function generateDailyDrop(): Promise<AlbumEntry> {
     textColor,
     shadowStyle,
     titleLayout,
+    conditionGrade: cond.grade,
+    isWarpedAudio: cond.isWarped,
   };
 }
 
 export const generateProceduralBand = generateDailyDrop;
 
 export async function forgeCustomDrop(input: CustomDropInput): Promise<AlbumEntry> {
+  // 1. If cloned directly from a Pressing DNA string, return it immediately
+  if (input.dnaClonedAlbum) {
+    return input.dnaClonedAlbum;
+  }
+
+  // 2. If user checked "Add to Generator Rotation", harvest novel words & image into IndexedDB first
+  if (input.harvestToRotation && input.harvestedWords) {
+    await harvestCustomDropToPack(
+      input.harvestedWords,
+      input.coverImageBase64,
+      input.harvestImageMode || 'none',
+      input.bandName || input.albumTitle || 'custom'
+    );
+  }
+
   const base = await generateDailyDrop();
 
   const bandName = input.bandName?.trim() || base.bandName;
   const albumTitle = input.albumTitle?.trim() || base.albumTitle;
 
-  if (input.bandName?.trim()) {
+  // Only lock out bandName in historyRegistry if user did NOT allow recurrence
+  if (input.bandName?.trim() && !input.allowBandNameRecurrence) {
     historyRegistry.add(bandName);
   }
 
@@ -2615,9 +2782,14 @@ export async function forgeCustomDrop(input: CustomDropInput): Promise<AlbumEntr
   const audioPreset = input.audioPreset || base.audioPreset;
 
   let coverImageUrl = base.coverImageUrl;
+  const matchedBackdrop = detectContextualBackdrop(bandName, albumTitle);
+  const matchedSubject = detectContextualSubject(bandName, albumTitle);
+
   const recipe: CanvasRecipe = {
     ...base.recipe,
-    focalItem: base.recipe?.focalItem,
+    backdrop: matchedBackdrop || base.recipe?.backdrop,
+    subject: matchedSubject || base.recipe?.subject,
+    focalItem: matchedSubject || base.recipe?.focalItem,
   };
 
   if (input.coverImageBase64) {
