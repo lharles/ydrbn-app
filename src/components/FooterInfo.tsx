@@ -1,0 +1,90 @@
+import React from 'react';
+import { Settings, ShieldAlert, HelpCircle, Info } from 'lucide-react';
+
+interface FooterInfoProps {
+  onOpenSettings: () => void;
+  onOpenHelp: () => void;
+  onOpenInfo: () => void;
+  hasSeenHelp: boolean;
+  hasSeenInfo: boolean;
+  isDevMode: boolean;
+}
+
+export const FooterInfo: React.FC<FooterInfoProps> = ({
+  onOpenSettings,
+  onOpenHelp,
+  onOpenInfo,
+  hasSeenHelp,
+  hasSeenInfo,
+  isDevMode,
+}) => {
+  return (
+    <footer className="w-full px-3 py-1.5 flex items-center justify-between border-t border-slate-800/80 bg-[#0c101d]/90 text-[10px] text-slate-400 select-none">
+      <div className="flex flex-col min-w-0 pr-2">
+        <div className="flex items-center gap-1.5">
+          <span className="font-bold text-slate-200 tracking-tight">
+            Y.D.R.B.N. &mdash; Your Daily Random Band Name
+          </span>
+          {isDevMode && (
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 inline-flex items-center gap-0.5">
+              <ShieldAlert className="w-2.5 h-2.5" />
+              DEV
+            </span>
+          )}
+        </div>
+        <span className="text-slate-500 truncate">
+          New random band daily &bull; 100% Offline PWA
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* 1. Help Button (Circle ?): First on the left */}
+        <button
+          type="button"
+          onClick={onOpenHelp}
+          aria-label="Field Guide and Instructions"
+          title="Field Guide & Instructions"
+          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative cursor-pointer ${
+            !hasSeenHelp
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 animate-pulse hover:bg-amber-500/30'
+              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border-slate-700/80'
+          }`}
+        >
+          <HelpCircle className="w-4 h-4" />
+          {!hasSeenHelp && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          )}
+        </button>
+
+        {/* 2. Info Button (Circle i): Second in the middle */}
+        <button
+          type="button"
+          onClick={onOpenInfo}
+          aria-label="System Specifications and Credits"
+          title="System Specs & Credits"
+          className={`p-1.5 rounded-lg border transition-all active:scale-95 shadow-sm relative cursor-pointer ${
+            !hasSeenInfo
+              ? 'bg-sky-500/20 text-sky-300 border-sky-500/60 animate-pulse hover:bg-sky-500/30'
+              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-sky-400 border-slate-700/80'
+          }`}
+        >
+          <Info className="w-4 h-4" />
+          {!hasSeenInfo && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+          )}
+        </button>
+
+        {/* 3. Settings Button (Gear): Third on the right */}
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="Settings and Developer Mode"
+          title="Settings & Dev Mode"
+          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-all active:scale-95 shadow-sm cursor-pointer"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+      </div>
+    </footer>
+  );
+};

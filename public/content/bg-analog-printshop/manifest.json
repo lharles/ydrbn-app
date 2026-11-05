@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-bg-analog-printshop",
+  "name": "1970s Printshop & Halftones",
+  "version": "1.1.0",
+  "description": "8 analog printshop halftones, microfiche grids, and distressed sleeve textures.",
+  "stamps": [
+    "PRINTSHOP-Misregistered_cyan_magenta_halftone.jpg",
+    "PRINTSHOP-Distressed_cardboard_mailer_sleeve.jpg",
+    "PRINTSHOP-1974_microfiche_phosphor_grid.jpg",
+    "PRINTSHOP-Sun_bleached_record_bin_divider.jpg",
+    "PRINTSHOP-Mimeograph_purple_ink_test_sheet.jpg",
+    "PRINTSHOP-Peeling_municipal_notice_board.jpg",
+    "PRINTSHOP-Burnt_amber_darkroom_contact_sheet.jpg",
+    "PRINTSHOP-Warped_woodgrain_receiver_veneer.jpg"
+  ]
+}

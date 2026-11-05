@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+video_build/
+repomix-dump.txt
+repomix-dump*.txt
+screenshots/
+src_v10_backup/
+assemble_guide.sh
+build_guide_video.py
+build_packs.py
+capture_user_guide_screenshots.mjs
+record_guide.mjs
+scripts/

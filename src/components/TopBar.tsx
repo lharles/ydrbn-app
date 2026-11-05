@@ -1,0 +1,160 @@
+import React from 'react';
+import { Archive, Heart, Share2, Shirt, Download } from 'lucide-react';
+import { VipEdition, VIP_EDITION_CONFIG } from '../services/preferencesService';
+
+interface TopBarProps {
+  onOpenArchive: () => void;
+  isToday: boolean;
+  onGoToToday: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  onShare: () => void;
+  onOpenApparel?: () => void;
+  hasEntries: boolean;
+  hasAtjBadge?: boolean;
+  onOpenAtjVideo?: () => void;
+  isStandalone?: boolean;
+  onInstall?: () => void;
+  vipEdition?: VipEdition;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({
+  onOpenArchive,
+  isToday,
+  onGoToToday,
+  isFavorite,
+  onToggleFavorite,
+  onShare,
+  onOpenApparel,
+  hasEntries,
+  hasAtjBadge,
+  onOpenAtjVideo,
+  isStandalone = false,
+  onInstall,
+  vipEdition = 'none',
+}) => {
+  const vipMeta = VIP_EDITION_CONFIG[vipEdition] || VIP_EDITION_CONFIG.none;
+
+  return (
+    <header className="w-full flex items-center justify-between gap-1.5 px-2.5 py-1.5 border-b border-slate-800/80 bg-[#0c101d]/90 backdrop-blur-md z-30 select-none overflow-hidden">
+      {/* Left: Archive Button */}
+      <button
+        type="button"
+        onClick={onOpenArchive}
+        aria-label="Archive"
+        title="View Record Archive"
+        className="h-8 w-8 flex items-center justify-center rounded-md bg-slate-800/80 hover:bg-slate-700/80 text-amber-300 border border-amber-500/30 transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
+      >
+        <Archive className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+      </button>
+
+      {/* Center: 1970s Receiver Chassis Nameplate (auto-scales to fit available chassis width) */}
+      <div className="h-8 flex items-center justify-center px-2 rounded bg-gradient-to-b from-[#221c16] via-[#1a1511] to-[#100d0a] border border-amber-800/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_3px_rgba(0,0,0,0.7)] min-w-0 shrink">
+        {/* Incandescent Dial Lamp Jewel */}
+        <span
+          className={`w-1.5 h-1.5 rounded-full mr-1.5 shrink-0 border transition-colors ${
+            isStandalone
+              ? 'bg-emerald-400 shadow-[0_0_6px_#10b981] border-emerald-200/40'
+              : 'bg-amber-400 shadow-[0_0_6px_#f59e0b] border-amber-200/40 animate-pulse'
+          }`}
+          title={isStandalone ? 'Deck Mounted (Standalone PWA)' : 'Unmounted Deck (Browser Mode)'}
+        />
+
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-mono font-black text-[11px] tracking-[0.08em] text-[#f3ede4] uppercase drop-shadow shrink-0">
+            Y.D.R.B.N.
+          </span>
+
+          {/* DYNAMIC TRANSFORM: SN: CRK3 morphs into lit ATJ trigger badge */}
+          {hasAtjBadge ? (
+            <button
+              type="button"
+              onClick={onOpenAtjVideo}
+              aria-label="Play Archival Transmission"
+              title="Archival Vault // ATJ-01 (Tap to play)"
+              className="cursor-pointer text-[8px] font-mono font-bold tracking-widest text-emerald-300 uppercase px-1 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/60 shadow-[0_0_8px_rgba(16,185,129,0.4)] hover:bg-emerald-900 active:scale-90 transition-all animate-in fade-in shrink-0"
+            >
+              ATJ
+            </button>
+          ) : (
+            <span
+              className={`text-[7.5px] font-mono font-bold tracking-wider uppercase px-1 py-0.5 rounded border truncate ${vipMeta.serialBadgeClass}`}
+            >
+              {vipMeta.serialBadgeText}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Right Action Cluster */}
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Hardware Install Icon */}
+        {!isStandalone && onInstall && (
+          <button
+            type="button"
+            onClick={onInstall}
+            className="h-8 w-8 flex items-center justify-center rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.25)] transition-all active:scale-95 cursor-pointer animate-pulse shrink-0"
+            title="Install Y.D.R.B.N. to Device"
+            aria-label="Install app"
+          >
+            <Download className="w-3.5 h-3.5 text-amber-400" />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onGoToToday}
+          disabled={isToday || !hasEntries}
+          className={`h-8 flex items-center justify-center text-[10.5px] font-bold px-2 rounded-md transition-all border cursor-pointer shrink-0 ${
+            isToday
+              ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 shadow-sm'
+              : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:text-white active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed'
+          }`}
+          title="Jump to Today's Record"
+        >
+          Today
+        </button>
+
+        <button
+          type="button"
+          onClick={onToggleFavorite}
+          disabled={!hasEntries}
+          aria-label="Favorite"
+          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          className={`h-8 w-8 flex items-center justify-center rounded-md transition-all border cursor-pointer shrink-0 ${
+            isFavorite
+              ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 active:scale-90'
+              : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:text-rose-400 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed'
+          }`}
+        >
+          <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+        </button>
+
+        <button
+          type="button"
+          onClick={onShare}
+          disabled={!hasEntries}
+          aria-label="Share"
+          title="Share Album Card"
+          className="h-8 w-8 flex items-center justify-center rounded-md bg-slate-800/60 text-slate-400 border border-slate-700 hover:text-amber-300 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Apparel / Merch Button */}
+        {onOpenApparel && (
+          <button
+            type="button"
+            onClick={onOpenApparel}
+            disabled={!hasEntries}
+            aria-label="Apparel Fabrication"
+            title="Open Apparel Fabrication Terminal"
+            className="h-8 w-8 flex items-center justify-center rounded-md bg-slate-800/60 text-amber-400/90 border border-slate-700 hover:text-amber-300 hover:border-amber-500/40 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+          >
+            <Shirt className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+    </header>
+  );
+};
