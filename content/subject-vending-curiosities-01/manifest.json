@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-vending-curiosities-01",
+  "name": "Vending Machine Curiosities (Vol. 01)",
+  "version": "1.1.0",
+  "description": "8 curated subject cutouts: Stuck Coils, Mystery Capsules & Breakroom Vending Relics.",
+  "subjects": [
+    "vending_coil_sandwich_01.png",
+    "vending_mystery_capsule_02.png",
+    "vending_stale_pretzel_03.png",
+    "vending_coin_return_04.png",
+    "vending_wax_lips_05.png",
+    "vending_pocket_comb_06.png",
+    "vending_hot_soup_cup_07.png",
+    "vending_crumpled_dollar_08.png"
+  ]
+}
