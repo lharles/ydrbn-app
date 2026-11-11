@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-stick-figure-ish-01",
+  "name": "Stick Figure-ish-01",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Stick Figure-ish-01.",
+  "subjects": [
+    "Assembling_a_temporal_loom_diagram.png",
+    "Blueprint_for_maintenance_of_device.png",
+    "Stick_figure_assembling_device.png",
+    "Stick_figure_melting_into_puddle.png",
+    "Stick_figure_sipping_tea.png",
+    "Stick_figure_sitting_in_despair.png",
+    "Stick_figure_slipping_on_banana.png",
+    "Stick_figures_assembling_machine.png"
+  ]
+}

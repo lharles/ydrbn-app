@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Y.D.R.B.N. — Installation Guide</title>
+  <style>
+    :root {
+      --bg: #12100e;
+      --card: #1c1814;
+      --border: #4a3d31;
+      --amber: #f59e0b;
+      --amber-light: #fde047;
+      --text: #f3ede4;
+      --muted: #a39480;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      line-height: 1.5;
+    }
+    .container { max-width: 520px; margin: 0 auto; }
+    header {
+      text-align: center;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 4px 0; font-size: 1.15rem; letter-spacing: 0.08em; color: var(--amber-light); }
+    .subtitle { font-size: 0.8rem; color: var(--muted); margin: 0 0 10px 0; }
+    .lang-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .lang-bar select {
+      background: #100e0c;
+      color: var(--amber-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 0.78rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: var(--amber-light);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    ul, ol { margin: 0; padding-left: 20px; color: #d6cbbd; font-size: 0.85rem; }
+    li { margin-bottom: 6px; }
+    .btn-launch {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background: var(--amber);
+      color: #12100e;
+      border: none;
+    }
+    .txt-links {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+    .txt-links a { color: var(--amber); text-decoration: none; margin: 0 4px; }
+    .txt-links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="t-header">Y.D.R.B.N. INSTALLATION GUIDE</h1>
+      <p id="t-sub" class="subtitle">Standalone Offline Receiver Setup</p>
+      <div class="lang-bar">
+        <label for="lang-select" style="font-size:0.75rem; color:var(--muted);">🌐 Language:</label>
+        <select id="lang-select" onchange="changeLang(this.value)">
+          <option value="en">English (EN)</option>
+          <option value="es">Español (ES)</option>
+          <option value="pt">Português (PT)</option>
+          <option value="fr">Français (FR)</option>
+          <option value="de">Deutsch (DE)</option>
+          <option value="id">Bahasa Indonesia (ID)</option>
+          <option value="ja">日本語 (JA)</option>
+          <option value="zh">中文 (ZH)</option>
+          <option value="hi">हिन्दी (HI)</option>
+          <option value="bn">বাংলা (BN)</option>
+          <option value="ur">اردو (UR)</option>
+          <option value="ar">العربية (AR)</option>
+          <option value="ru">Русский (RU)</option>
+          <option value="tlh">tlhIngan Hol (TLH)</option>
+          <option value="pig">Igpay Atinlay (PIG)</option>
+        </select>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2 id="t-ios-h2">🍎 iPhone & iPad (Safari)</h2>
+      <ol id="t-ios-steps">
+        <li>Open <strong>Safari</strong> and navigate to <code>https://lharles.github.io/ydrbn-app/</code>.</li>
+        <li>Tap the <strong>Share</strong> button (box with an upward arrow) in the bottom toolbar.</li>
+        <li>Scroll down the action sheet and tap <strong>Add to Home Screen</strong>.</li>
+        <li>Confirm the title and tap <strong>Add</strong> in the top-right corner.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2 id="t-android-h2">🤖 Android (Chrome)</h2>
+      <ol id="t-android-steps">
+        <li>Open <strong>Chrome</strong> and navigate to <code>https://lharles.github.io/ydrbn-app/</code>.</li>
+        <li>Tap the pulsing <strong>Install</strong> icon in the top receiver bar (or open Chrome's three-dot <strong>⋮</strong> menu).</li>
+        <li>Select <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
+        <li>Confirm the prompt. The app will install directly into your app drawer as a standalone PWA.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2 id="t-desktop-h2">💻 Desktop (Chrome, Edge, Brave)</h2>
+      <ol id="t-desktop-steps">
+        <li>Navigate to the application URL in any Chromium-based browser.</li>
+        <li>Click the <strong>Install</strong> icon located on the right side of the address bar.</li>
+        <li>Click <strong>Install</strong> to launch Y.D.R.B.N. inside its own distraction-free desktop window.</li>
+      </ol>
+    </section>
+
+    <a id="t-launch" href="./" class="btn-launch">Launch Y.D.R.B.N. App →</a>
+
+    <div class="txt-links">
+      <div>Plain Text Versions (ASCII):</div>
+      <a href="install.txt">English</a> •
+      <a href="install_es.txt">Español</a> •
+      <a href="install_pt.txt">Português</a> •
+      <a href="install_fr.txt">Français</a> •
+      <a href="install_de.txt">Deutsch</a> •
+      <a href="install_id.txt">Indonesian</a> •
+      <a href="install_ja.txt">日本語</a> •
+      <a href="install_zh.txt">中文</a> •
+      <a href="install_hi.txt">हिन्दी</a> •
+      <a href="install_bn.txt">বাংলা</a> •
+      <a href="install_ur.txt">اردو</a> •
+      <a href="install_ar.txt">العربية</a> •
+      <a href="install_ru.txt">Русский</a> •
+      <a href="install_tlh.txt">Klingon</a> •
+      <a href="install_pig.txt">Pig-Latin</a>
+    </div>
+  </div>
+
+  <script>
+    const I18N = {
+      en: {
+        header: "Y.D.R.B.N. INSTALLATION GUIDE",
+        sub: "Standalone Offline Receiver Setup",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "Open <strong>Safari</strong> and navigate to <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Tap the <strong>Share</strong> button (box with upward arrow) in the bottom toolbar.",
+          "Scroll down the sheet and tap <strong>Add to Home Screen</strong>.",
+          "Confirm the title and tap <strong>Add</strong> in the top-right corner."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Open <strong>Chrome</strong> and navigate to <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Tap the pulsing <strong>Install</strong> icon in the top receiver bar (or Chrome's three-dot <strong>⋮</strong> menu).",
+          "Select <strong>Install app</strong> (or <strong>Add to Home screen</strong>).",
+          "Confirm the prompt. The app installs as a standalone PWA."
+        ],
+        deskH2: "💻 Desktop (Chrome, Edge, Brave)",
+        desk: [
+          "Navigate to the application URL in any Chromium-based desktop browser.",
+          "Click the <strong>Install</strong> icon on the right side of the address bar.",
+          "Click <strong>Install</strong> to launch Y.D.R.B.N. in its own window."
+        ],
+        launch: "Launch Y.D.R.B.N. App →"
+      },
+      es: {
+        header: "GUÍA DE INSTALACIÓN Y.D.R.B.N.",
+        sub: "Instalación del Receptor Autónomo sin Conexión",
+        iosH2: "🍎 iPhone y iPad (Safari)",
+        ios: [
+          "Abre <strong>Safari</strong> y visita <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Toca el botón <strong>Compartir</strong> (cuadrado con flecha hacia arriba) en la barra inferior.",
+          "Baja por las opciones y toca <strong>Añadir a pantalla de inicio</strong>.",
+          "Confirma el nombre y toca <strong>Añadir</strong> en la esquina superior derecha."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Abre <strong>Chrome</strong> y visita <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Toca el icono pulsante <strong>Instalar</strong> en la barra superior (o el menú <strong>⋮</strong> de Chrome).",
+          "Selecciona <strong>Instalar aplicación</strong> (o <strong>Añadir a pantalla de inicio</strong>).",
+          "Confirma el aviso para instalar la PWA en tu cajón de aplicaciones."
+        ],
+        deskH2: "💻 Ordenador de Escritorio (Chrome, Edge, Brave)",
+        desk: [
+          "Abre la app en cualquier navegador basado en Chromium.",
+          "Haz clic en el icono de <strong>Instalar</strong> a la derecha de la barra de direcciones.",
+          "Haz clic en <strong>Instalar</strong> para abrir Y.D.R.B.N. en su propia ventana autónoma."
+        ],
+        launch: "Abrir App Y.D.R.B.N. →"
+      },
+      pt: {
+        header: "GUIA DE INSTALAÇÃO Y.D.R.B.N.",
+        sub: "Instalação da Vitrola Offline Autônoma",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "Abra o <strong>Safari</strong> e acerte <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Toque no botão <strong>Compartilhar</strong> (quadrado com seta) na barra inferior.",
+          "Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>.",
+          "Confirme o nome e toque em <strong>Adicionar</strong> no canto superior direito."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Abra o <strong>Chrome</strong> e acesse <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Toque no ícone <strong>Instalar</strong> na barra superior (ou no menu <strong>⋮</strong> do Chrome).",
+          "Selecione <strong>Instalar aplicativo</strong> (ou <strong>Adicionar à tela inicial</strong>).",
+          "Confirme o aviso para fixar o app no modo offline autônomo."
+        ],
+        deskH2: "💻 Desktop (Chrome, Edge, Brave)",
+        desk: [
+          "Acesse a URL do aplicativo em qualquer navegador Chromium.",
+          "Clique no ícone <strong>Instalar</strong> à direita da barra de endereços.",
+          "Clique em <strong>Instalar</strong> para iniciar o app em sua própria janela."
+        ],
+        launch: "Iniciar App Y.D.R.B.N. →"
+      },
+      fr: {
+        header: "GUIDE D'INSTALLATION Y.D.R.B.N.",
+        sub: "Installation de la Platine Autonome Hors-Ligne",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "Ouvrez <strong>Safari</strong> et allez sur <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Touchez le bouton <strong>Partager</strong> (carré avec flèche vers le haut) en bas.",
+          "Faites défiler vers le bas et touchez <strong>Sur l'écran d'accueil</strong>.",
+          "Confirmez et touchez <strong>Ajouter</strong> en haut à droite."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Ouvrez <strong>Chrome</strong> et accédez à <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Touchez l'icône clignotante <strong>Installer</strong> en haut (ou le menu <strong>⋮</strong>).",
+          "Sélectionnez <strong>Installer l'application</strong> (ou <strong>Ajouter à l'écran d'accueil</strong>).",
+          "Confirmez l'invite pour installer la PWA autonome."
+        ],
+        deskH2: "💻 Ordinateur (Chrome, Edge, Brave)",
+        desk: [
+          "Accédez à l'URL dans n'importe quel navigateur Chromium.",
+          "Cliquez sur l'icône <strong>Installer</strong> à droite de la barre d'adresse.",
+          "Cliquez sur <strong>Installer</strong> pour lancer l'application dans sa propre fenêtre."
+        ],
+        launch: "Lancer l'App Y.D.R.B.N. →"
+      },
+      de: {
+        header: "Y.D.R.B.N. INSTALLATIONS-ANLEITUNG",
+        sub: "Einrichtung des Eigenständigen Offline-Empfängers",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "Öffne <strong>Safari</strong> und navigiere zu <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Tippe in der unteren Leiste auf <strong>Teilen</strong> (Quadrat mit Pfeil nach oben).",
+          "Scrolle nach unten und tippe auf <strong>Zum Home-Bildschirm</strong>.",
+          "Bestätige den Namen und tippe oben rechts auf <strong>Hinzufügen</strong>."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Öffne <strong>Chrome</strong> und navigiere zu <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Tippe auf das pulsierende <strong>Installieren</strong>-Symbol oben (oder das Dreipunkt-Menü <strong>⋮</strong>).",
+          "Wähle <strong>App installieren</strong> (oder <strong>Zum Startbildschirm hinzufügen</strong>).",
+          "Bestätige die Meldung. Die App installiert sich als eigenständige PWA."
+        ],
+        deskH2: "💻 Desktop (Chrome, Edge, Brave)",
+        desk: [
+          "Öffne die URL in einem beliebigen Chromium-basierten Desktop-Browser.",
+          "Klicke auf das <strong>Installieren</strong>-Symbol rechts in der Adressleiste.",
+          "Klicke auf <strong>Installieren</strong>, um Y.D.R.B.N. im eigenen Fenster zu starten."
+        ],
+        launch: "Y.D.R.B.N. Starten →"
+      },
+      id: {
+        header: "PANDUAN PEMASANGAN Y.D.R.B.N.",
+        sub: "Pemasangan Dek Mandiri Tanpa Sambungan",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "Buka <strong>Safari</strong> dan buka <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Ketuk tombol <strong>Bagikan</strong> (kotak dengan panah ke atas) di bilah bawah.",
+          "Gulir ke bawah dan ketuk <strong>Tambah ke Layar Utama</strong>.",
+          "Konfirmasi nama dan ketuk <strong>Tambah</strong> di sudut kanan atas."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Buka <strong>Chrome</strong> dan kunjungi <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Ketuk ikon <strong>Pasang</strong> di bilah atas (atau menu tiga titik <strong>⋮</strong> Chrome).",
+          "Pilih <strong>Instal aplikasi</strong> (atau <strong>Tambahkan ke Layar Utama</strong>).",
+          "Konfirmasi untuk memasang aplikasi PWA mandiri."
+        ],
+        deskH2: "💻 Komputer Desktop (Chrome, Edge, Brave)",
+        desk: [
+          "Kunjungi tautan aplikasi di peramban berbasis Chromium.",
+          "Klik ikon <strong>Instal</strong> di sebelah kanan bilah alamat.",
+          "Klik <strong>Instal</strong> untuk menjalankan Y.D.R.B.N. di jendelanya sendiri."
+        ],
+        launch: "Jalankan App Y.D.R.B.N. →"
+      },
+      ja: {
+        header: "Y.D.R.B.N. インストール手順",
+        sub: "オフライン専用スタンドアロン受信機の設定",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "<strong>Safari</strong> を開き、<code>https://lharles.github.io/ydrbn-app/</code> にアクセスします。",
+          "画面下部のツールバーにある<strong>共有ボタン</strong>（上矢印アイコン）をタップします。",
+          "メニューを下にスクロールし、<strong>「ホーム画面に追加」</strong>をタップします。",
+          "右上の<strong>「追加」</strong>をタップして完了です。"
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "<strong>Chrome</strong> を開き、<code>https://lharles.github.io/ydrbn-app/</code> にアクセスします。",
+          "上部バーの点滅する<strong>「設置」アイコン</strong>をタップ（または右上の <strong>⋮</strong> メニューを開きます）。",
+          "<strong>「アプリをインストール」</strong>（または「ホーム画面に追加」）を選択します。",
+          "確認ダイアログで「インストール」を押すと独立PWAとして登録されます。"
+        ],
+        deskH2: "💻 PC (Chrome / Edge / Brave)",
+        desk: [
+          "Chromium系ブラウザで上記URLを開きます。",
+          "アドレスバー右側に表示される<strong>「インストール」アイコン</strong>をクリックします。",
+          "「インストール」をクリックすると独立ウィンドウで起動します。"
+        ],
+        launch: "Y.D.R.B.N. を起動する →"
+      },
+      zh: {
+        header: "Y.D.R.B.N. 安装指南",
+        sub: "独立离线唱机设置说明",
+        iosH2: "🍎 iPhone 与 iPad (Safari)",
+        ios: [
+          "打开 <strong>Safari</strong> 并访问 <code>https://lharles.github.io/ydrbn-app/</code>。",
+          "点击底部工具栏上的<strong>分享按钮</strong>（带箭头的方形图标）。",
+          "向下滚动并点击<strong>“添加到主屏幕”</strong>。",
+          "确认名称并点击右上角的<strong>“添加”</strong>。"
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "打开 <strong>Chrome</strong> 并访问 <code>https://lharles.github.io/ydrbn-app/</code>。",
+          "点击顶部栏上的脉冲<strong>“安装”图标</strong>（或点击右上角 <strong>⋮</strong> 菜单）。",
+          "选择<strong>“安装应用”</strong>（或<strong>“添加到主屏幕”</strong>）。",
+          "确认提示，应用将作为独立离线 PWA 安装。"
+        ],
+        deskH2: "💻 桌面电脑 (Chrome, Edge, Brave)",
+        desk: [
+          "在任意 Chromium 浏览器中打开应用链接。",
+          "点击地址栏右侧出现的<strong>“安装”图标</strong>。",
+          "点击<strong>“安装”</strong>即可在专属无干扰窗口中运行 Y.D.R.B.N.。"
+        ],
+        launch: "启动 Y.D.R.B.N. 应用 →"
+      },
+      hi: {
+        header: "Y.D.R.B.N. इंस्टॉलेशन गाइड",
+        sub: "ऑफ़लाइन स्टैंडअलोन रिसीवर सेटअप",
+        iosH2: "🍎 iPhone और iPad (Safari)",
+        ios: [
+          "<strong>Safari</strong> खोलें और <code>https://lharles.github.io/ydrbn-app/</code> पर जाएँ।",
+          "नीचे टूलबार में <strong>शेयर</strong> बटन (ऊपर तीर वाला बॉक्स) दबाएँ।",
+          "नीचे स्क्रॉल करें और <strong>Add to Home Screen</strong> पर टैप करें।",
+          "शीर्षक की पुष्टि करें और ऊपर दाईं ओर <strong>Add</strong> दबाएँ।"
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "<strong>Chrome</strong> खोलें और <code>https://lharles.github.io/ydrbn-app/</code> पर जाएँ।",
+          "शीर्ष बार में <strong>Install</strong> आइकन पर टैप करें (या Chrome के <strong>⋮</strong> मेनू पर टैप करें)।",
+          "<strong>Install app</strong> (या <strong>Add to Home screen</strong>) चुनें।",
+          "पुष्टि करें। ऐप स्टैंडअलोन PWA के रूप में इंस्टॉल हो जाएगा।"
+        ],
+        deskH2: "💻 डेस्कटॉप (Chrome, Edge, Brave)",
+        desk: [
+          "किसी भी क्रोमियम-आधारित डेस्कटॉप ब्राउज़र में ऐप URL खोलें।",
+          "एड्रेस बार के दाईं ओर <strong>Install</strong> आइकन पर क्लिक करें।",
+          "अपनी अलग विंडो में Y.D.R.B.N. चलाने के लिए <strong>Install</strong> पर क्लिक करें।"
+        ],
+        launch: "Y.D.R.B.N. ऐप शुरू करें →"
+      },
+      bn: {
+        header: "Y.D.R.B.N. ইনস্টলেশন নির্দেশিকা",
+        sub: "স্ট্যান্ডঅ্যালোন অফলাইন রিসিভার সেটআপ",
+        iosH2: "🍎 iPhone ও iPad (Safari)",
+        ios: [
+          "<strong>Safari</strong> খুলুন এবং <code>https://lharles.github.io/ydrbn-app/</code>-এ যান।",
+          "নিচের টুলবারে <strong>শেয়ার</strong> বোতামে (তীর সহ বাক্স) ট্যাপ করুন।",
+          "নিচে স্ক্রোল করে <strong>Add to Home Screen</strong> চাপুন।",
+          "শিরোনাম নিশ্চিত করে উপরে ডানে <strong>Add</strong> ট্যাপ করুন।"
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "<strong>Chrome</strong> খুলুন এবং <code>https://lharles.github.io/ydrbn-app/</code>-এ যান।",
+          "উপরের বারে থাকা <strong>Install</strong> আইকনে চাপুন (বা ৩-ডট <strong>⋮</strong> মেনু খুলুন)।",
+          "<strong>Install app</strong> (বা <strong>Add to Home screen</strong>) নির্বাচন করুন।",
+          "কনফার্ম করুন। অ্যাপটি স্বাধীন PWA হিসেবে ইনস্টল হবে।"
+        ],
+        deskH2: "💻 ডেস্কটপ (Chrome, Edge, Brave)",
+        desk: [
+          "যেকোনো ক্রোমিয়াম ব্রাউজারে অ্যাপটির লিঙ্ক খুলুন।",
+          "অ্যাড্রেস বারের ডানপাশে <strong>Install</strong> আইকনে ক্লিক করুন।",
+          "স্বতন্ত্র উইন্ডোতে চালাতে <strong>Install</strong> বাটনে ক্লিক করুন।"
+        ],
+        launch: "Y.D.R.B.N. চালু করুন →"
+      },
+      ur: {
+        header: "Y.D.R.B.N. انسٹالیشن گائیڈ",
+        sub: "آف لائن اسٹینڈ الون ریسیور سیٹ اپ",
+        iosH2: "🍎 iPhone اور iPad (Safari)",
+        ios: [
+          "<strong>Safari</strong> کھولیں اور <code>https://lharles.github.io/ydrbn-app/</code> پر جائیں۔",
+          "نیچے ٹول بار میں <strong>شیئر</strong> بٹن (اوپر تیر والا باکس) دبائیں۔",
+          "نیچے سکرول کر کے <strong>Add to Home Screen</strong> پر ٹیپ کریں۔",
+          "عنوان کی تصدیق کریں اور اوپر دائیں کونے میں <strong>Add</strong> دبائیں۔"
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "<strong>Chrome</strong> کھولیں اور <code>https://lharles.github.io/ydrbn-app/</code> پر جائیں۔",
+          "اوپر بار میں <strong>Install</strong> آئیکن دبائیں (یا تین نقطوں والے <strong>⋮</strong> مینو کو کھولیں)۔",
+          "<strong>Install app</strong> (یا <strong>Add to Home screen</strong>) منتخب کریں۔",
+          "تصدیق کریں؛ ایپ خودکار طور پر الگ PWA کے طور پر انسٹال ہو جائے گی۔"
+        ],
+        deskH2: "💻 ڈیسک ٹاپ (Chrome, Edge, Brave)",
+        desk: [
+          "کسی بھی کرومیم پر مبنی ڈیسک ٹاپ براؤزر میں ایپ لنک کھولیں۔",
+          "ایڈریس بار کے دائیں جانب <strong>Install</strong> آئیکن پر کلک کریں۔",
+          "الگ ونڈو میں Y.D.R.B.N. چلانے کے لیے <strong>Install</strong> پر کلک کریں۔"
+        ],
+        launch: "Y.D.R.B.N. ایپ شروع کریں ←"
+      },
+      ar: {
+        header: "دليل تثبيت Y.D.R.B.N.",
+        sub: "إعداد جهاز الاستقبال المستقل بدون إنترنت",
+        iosH2: "🍎 أجهزة iPhone وiPad (Safari)",
+        ios: [
+          "افتح <strong>Safari</strong> وتوجه إلى <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "اضغط على زر <strong>المشاركة</strong> (مربع به سهم للأعلى) في الشريط السفلي.",
+          "مرر لأسفل واضغط على <strong>إضافة إلى الشاشة الرئيسية</strong>.",
+          "أكّد الاسم واضغط على <strong>إضافة</strong> في الزاوية العلوية."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "افتح <strong>Chrome</strong> وتوجه إلى <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "اضغط على أيقونة <strong>التثبيت</strong> في الشريط العلوي (أو قائمة <strong>⋮</strong>).",
+          "اختر <strong>تثبيت التطبيق</strong> (أو <strong>إضافة إلى الشاشة الرئيسية</strong>).",
+          "أكد الطلب ليتم تثبيت التطبيق كـ PWA مستقل."
+        ],
+        deskH2: "💻 الكمبيوتر المكتبي (Chrome, Edge, Brave)",
+        desk: [
+          "انتقل إلى رابط التطبيق في أي متصفح يعتمد على Chromium.",
+          "انقر على أيقونة <strong>التثبيت</strong> على الجانب الأيمن من شريط العناوين.",
+          "انقر على <strong>تثبيت</strong> لتشغيل التطبيق في نافذة مستقلة."
+        ],
+        launch: "تشغيل تطبيق Y.D.R.B.N. ←"
+      },
+      ru: {
+        header: "РУКОВОДСТВО ПО УСТАНОВКЕ Y.D.R.B.N.",
+        sub: "Установка автономного офлайн-приложения",
+        iosH2: "🍎 iPhone и iPad (Safari)",
+        ios: [
+          "Откройте <strong>Safari</strong> и перейдите на <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Нажмите кнопку <strong>Поделиться</strong> (квадрат со стрелкой вверх) на нижней панели.",
+          "Прокрутите меню вниз и выберите <strong>На экран «Домой»</strong>.",
+          "Подтвердите название и нажмите <strong>Добавить</strong> в правом верхнем углу."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Откройте <strong>Chrome</strong> и перейдите на <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Нажмите пульсирующую кнопку <strong>Установить</strong> на верхней панели (или меню <strong>⋮</strong>).",
+          "Выберите <strong>Установить приложение</strong> (или <strong>Добавить на главный экран</strong>).",
+          "Подтвердите установку PWA-приложения в систему."
+        ],
+        deskH2: "💻 ПК (Chrome, Edge, Brave)",
+        desk: [
+          "Откройте адрес приложения в любом браузере на базе Chromium.",
+          "Нажмите значок <strong>Установить</strong> в правой части адресной строки.",
+          "Нажмите <strong>Установить</strong> для запуска Y.D.R.B.N. в отдельном окне."
+        ],
+        launch: "Запустить Y.D.R.B.N. →"
+      },
+      tlh: {
+        header: "Y.D.R.B.N. JOMMEH PAQ",
+        sub: "De'wI'Qo' Deck ghuHmoH",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "<strong>Safari</strong> yIpoSmoH 'ej <code>https://lharles.github.io/ydrbn-app/</code> yIghoSlI'.",
+          "bIng toolbarDaq <strong>Share</strong> leQ (ngaSwI' & pup) yI'uy.",
+          "bIng yISuD 'ej <strong>Add to Home Screen</strong> yI'uy.",
+          "pong yIwuq 'ej nIH-DungDaq <strong>Add</strong> yI'uy."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "<strong>Chrome</strong> yIpoSmoH 'ej <code>https://lharles.github.io/ydrbn-app/</code> yIghoSlI'.",
+          "Dung BarDaq <strong>Install</strong> Icon yI'uy (pagh Chrome <strong>⋮</strong> Menu).",
+          "<strong>Install app</strong> (pagh <strong>Add to Home screen</strong>) yIwIv.",
+          "yIwuq. De'wI'lIjDaq Standalone PWA jomlu'ta'."
+        ],
+        deskH2: "💻 Desktop (Chrome, Edge, Brave)",
+        desk: [
+          "Chromium BrowserDaq App URL yIpoSmoH.",
+          "Address Bar nIHDaq <strong>Install</strong> Icon yI'uy.",
+          "Y.D.R.B.N. chu'meH <strong>Install</strong> yI'uy."
+        ],
+        launch: "Y.D.R.B.N. chu' →"
+      },
+      pig: {
+        header: "Y.D.R.B.N. INSTALLATIONWAY UIDEGAY",
+        sub: "Andalonestay Offlineway Eceiverray Etupsay",
+        iosH2: "🍎 iPhone & iPad (Safari)",
+        ios: [
+          "Openway <strong>Safari</strong> andway avigatenay otay <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Aptay ethay <strong>Areshay</strong> uttonbay inway ethay ottombay oolbartay.",
+          "Ollscray ownday andway aptay <strong>Addway otay Omehay Eenscray</strong>.",
+          "Onfirmcay ethay itletay andway aptay <strong>Addway</strong> inway ethay optay-ightray ornercay."
+        ],
+        andH2: "🤖 Android (Chrome)",
+        and: [
+          "Openway <strong>Chrome</strong> andway avigatenay otay <code>https://lharles.github.io/ydrbn-app/</code>.",
+          "Aptay ethay ulsingpay <strong>Installway</strong> iconway inway ethay optay arbay (orway <strong>⋮</strong> enumay).",
+          "Electsay <strong>Installway appway</strong> (orway <strong>Addway otay Omehay eenscray</strong>).",
+          "Onfirmcay ethay omptpray. Ethay appway installsнициализируется asway away andalonestay PWA."
+        ],
+        deskH2: "💻 Desktopway (Chrome, Edge, Brave)",
+        desk: [
+          "Avigatenay otay ethay URL inway anyway Chromium-asedbay owserbray.",
+          "Ickclay ethay <strong>Installway</strong> iconway onway ethay ightray idesay ofway ethay addressway arbay.",
+          "Ickclay <strong>Installway</strong> otay aunchlay Y.D.R.B.N. inway itsway ownway indowway."
+        ],
+        launch: "Aunchlay Y.D.R.B.N. Appway →"
+      }
+    };
+
+    function renderLang(lang) {
+      const d = I18N[lang] || I18N.en;
+      document.getElementById('t-header').textContent = d.header;
+      document.getElementById('t-sub').textContent = d.sub;
+      document.getElementById('t-ios-h2').textContent = d.iosH2;
+      document.getElementById('t-ios-steps').innerHTML = d.ios.map(s => `<li>${s}</li>`).join('');
+      document.getElementById('t-android-h2').textContent = d.andH2;
+      document.getElementById('t-android-steps').innerHTML = d.and.map(s => `<li>${s}</li>`).join('');
+      document.getElementById('t-desktop-h2').textContent = d.deskH2;
+      document.getElementById('t-desktop-steps').innerHTML = d.desk.map(s => `<li>${s}</li>`).join('');
+      document.getElementById('t-launch').textContent = d.launch;
+      document.documentElement.lang = lang;
+      document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
+    }
+
+    function changeLang(lang) {
+      localStorage.setItem('ydrbn_lang_static', lang);
+      renderLang(lang);
+    }
+
+    (function init() {
+      const urlLang = new URLSearchParams(window.location.search).get('lang');
+      let prefLang = 'en';
+      try {
+        const stored = JSON.parse(localStorage.getItem('ydrbn_preferences') || '{}');
+        if (stored.language && stored.language !== 'auto') prefLang = stored.language;
+      } catch (e) {}
+      const active = urlLang || localStorage.getItem('ydrbn_lang_static') || prefLang || navigator.language.slice(0, 2);
+      const chosen = I18N[active] ? active : 'en';
+      document.getElementById('lang-select').value = chosen;
+      renderLang(chosen);
+    })();
+  </script>
+</body>
+</html>

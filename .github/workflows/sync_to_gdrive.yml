@@ -1,0 +1,140 @@
+name: Sync Codebase to Google Drive
+
+on:
+  schedule:
+    # Runs every day at midnight UTC
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+          
+      - name: Create Formatting Script
+        run: |
+          cat << 'EOF' > format_repo.py
+          import os
+          OUTPUT_FILE = "consolidated_repo.txt"
+          EXCLUDED_DIRS = {".git", ".github", "node_modules", "venv", "__pycache__"}
+          ALLOWED_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".json", ".html", ".css", ".yaml", ".yml"}
+          def main():
+              with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
+                  for root, dirs, files in os.walk("."):
+                      dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
+                      for file in files:
+                          ext = os.path.splitext(file)[1]
+                          if ext in ALLOWED_EXTENSIONS and file != OUTPUT_FILE:
+                              path = os.path.join(root, file)
+                              outfile.write(f"\n\n--- FILE: {path} ---\n\n")
+                              try:
+                                  with open(path, "r", encoding="utf-8") as infile:
+                                      outfile.write(infile.read())
+                              except Exception as e:
+                                  outfile.write(f"[Error reading file: {e}]")
+
+          if __name__ == "__main__":
+              main()
+          EOF
+          
+      - name: Format Repository Content
+        run: python format_repo.py
+        
+      - name: Create Upload Script
+        run: |
+          cat << 'EOF' > upload_to_drive.py
+          import os
+          from google.oauth2.credentials import Credentials
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          # Ensure the required environment variables are set
+          required_env_vars = ['GDRIVE_CLIENT_ID', 'GDRIVE_CLIENT_SECRET', 'GDRIVE_REFRESH_TOKEN']
+          for var in required_env_vars:
+              if not os.environ.get(var):
+                  print(f"Error: {var} environment variable is not set.")
+                  exit(1)
+
+          client_id = os.environ['GDRIVE_CLIENT_ID']
+          client_secret = os.environ['GDRIVE_CLIENT_SECRET']
+          refresh_token = os.environ['GDRIVE_REFRESH_TOKEN']
+          file_name = 'consolidated_repo.txt'
+          folder_name = 'NotebookLM_Sync'
+
+          # Reconstruct the credentials object
+          creds = Credentials(
+              None, # We don't have the access token, it will be refreshed
+              refresh_token=refresh_token,
+              token_uri="https://oauth2.googleapis.com/token",
+              client_id=client_id,
+              client_secret=client_secret
+          )
+
+          try:
+              service = build('drive', 'v3', credentials=creds)
+
+              # 1. Check if our target folder exists, if not create it.
+              query_folder = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+              results_folder = service.files().list(q=query_folder, spaces='drive', fields='files(id, name)').execute()
+              folders = results_folder.get('files', [])
+              
+              if not folders:
+                  print(f"Folder '{folder_name}' not found. Creating...")
+                  folder_metadata = {
+                      'name': folder_name,
+                      'mimeType': 'application/vnd.google-apps.folder'
+                  }
+                  folder = service.files().create(body=folder_metadata, fields='id').execute()
+                  folder_id = folder.get('id')
+              else:
+                  folder_id = folders[0]['id']
+                  print(f"Folder '{folder_name}' found. ID: {folder_id}")
+
+
+              # 2. Check if the file already exists in the folder
+              query_file = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
+              results_file = service.files().list(q=query_file, spaces='drive', fields='files(id, name)').execute()
+              items = results_file.get('files', [])
+
+              media = MediaFileUpload(file_name, mimetype='text/plain', resumable=True)
+
+              if not items:
+                  # File doesn't exist, create it
+                  print(f"File '{file_name}' not found in folder. Creating...")
+                  file_metadata = {
+                      'name': file_name,
+                      'parents': [folder_id]
+                  }
+                  file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+                  print(f"File created successfully. File ID: {file.get('id')}")
+              else:
+                  # File exists, update it
+                  file_id = items[0]['id']
+                  print(f"File '{file_name}' found. Updating file ID: {file_id}...")
+                  file = service.files().update(fileId=file_id, media_body=media, fields='id').execute()
+                  print(f"File updated successfully.")
+
+          except Exception as e:
+              print(f"An error occurred: {e}")
+              exit(1)
+          EOF
+
+      - name: Upload to Google Drive
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+        run: python upload_to_drive.py

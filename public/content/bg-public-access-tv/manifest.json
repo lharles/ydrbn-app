@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-bg-public-access-tv",
+  "name": "Public Access TV & Static",
+  "version": "1.1.0",
+  "description": "8 late-night UHF color bars, VHS tracking lines, and community access studio backdrops.",
+  "stamps": [
+    "PUBLICACCESS-UHF_channel_83_color_bars.jpg",
+    "PUBLICACCESS-3AM_tracking_error_snow.jpg",
+    "PUBLICACCESS-Community_calendar_blue_screen.jpg",
+    "PUBLICACCESS-Wood_paneled_talk_show_set.jpg",
+    "PUBLICACCESS-Chroma_key_green_spill_backdrop.jpg",
+    "PUBLICACCESS-Telethon_pledge_board_tote.jpg",
+    "PUBLICACCESS-VHS_pause_jitter_gradient.jpg",
+    "PUBLICACCESS-Test_pattern_bullseye_card.jpg"
+  ]
+}
