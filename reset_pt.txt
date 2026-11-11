@@ -1,0 +1,23 @@
+========================================================
+Y.D.R.B.N. - GUIA DE ATUALIZACAO E RESTAURACAO
+Locale: PT | Utility: https://lharles.github.io/ydrbn-app/reset.html
+========================================================
+
+--------------------------------------------------------
+RECOMMENDED TESTER RECOVERY OPTIONS:
+--------------------------------------------------------
+1. ATUALIZACAO SEGURA: Abra reset.html -> toque em '1. Safe Update' (Mantem discos e packs).
+2. RESTAURACAO DE FABRICA: Abra reset.html -> toque em '2. Factory Wipe' (Limpeza total).
+
+--------------------------------------------------------
+REINSTALLING HOME SCREEN ICONS:
+- iOS: Delete old bookmark icon before visiting reset.html.
+- Android: Uninstall old PWA before visiting reset.html.
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+reset.txt (English), reset_es.txt, reset_pt.txt,
+reset_fr.txt, reset_de.txt, reset_id.txt, reset_ja.txt,
+reset_zh.txt, reset_hi.txt, reset_bn.txt, reset_ur.txt,
+reset_ar.txt, reset_ru.txt, reset_tlh.txt, reset_pig.txt
+========================================================

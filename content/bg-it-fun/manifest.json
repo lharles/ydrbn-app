@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-bg-it-fun",
+  "name": "Information Technology Fun Backdrops",
+  "version": "1.1.0",
+  "description": "8 greenbar tractor-feed printouts, PCB copper traces, and server rack matrices.",
+  "stamps": [
+    "ITFUN-Greenbar_tractor_feed_printout.jpg",
+    "ITFUN-Motherboard_copper_PCB_traces.jpg",
+    "ITFUN-Blue_screen_of_death_phosphor.jpg",
+    "ITFUN-Server_rack_blinking_LED_matrix.jpg",
+    "ITFUN-Amber_monochrome_CRT_terminal.jpg",
+    "ITFUN-Punch_card_Hollerith_slots.jpg",
+    "ITFUN-Spaghetti_patch_panel_cables.jpg",
+    "ITFUN-Defrag_cluster_map_mosaic.jpg"
+  ]
+}

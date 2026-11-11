@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Y.D.R.B.N. — Reset & Update Deck</title>
+  <style>
+    :root {
+      --bg: #12100e;
+      --card: #161310;
+      --border: #b45309;
+      --amber: #f59e0b;
+      --amber-light: #fbbf24;
+      --text: #f3ede4;
+      --muted: #a39480;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 4px 0;
+      color: var(--amber-light);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .sub { font-size: 10.5px; color: var(--muted); margin-bottom: 12px; }
+    .lang-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    select {
+      background: #100e0c;
+      color: var(--amber-light);
+      border: 1px solid #4a3d31;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 11px;
+    }
+    .box {
+      background: #100e0c;
+      border: 1px solid #352b22;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .box h2 {
+      font-size: 12px;
+      margin: 0 0 6px 0;
+      color: #fcd34d;
+      text-transform: uppercase;
+    }
+    .box p {
+      font-size: 11px;
+      line-height: 1.45;
+      color: #c8bcab;
+      margin: 0 0 10px 0;
+    }
+    button {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: bold;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-safe { background: #f59e0b; color: #12100e; }
+    .btn-safe:hover { background: #fbbf24; }
+    .btn-wipe { background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444; }
+    .btn-wipe:hover { background: #991b1b; }
+    #status {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #34d399;
+      text-align: center;
+      min-height: 16px;
+    }
+    .tips {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #352b22;
+      font-size: 10.5px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .txt-links {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #292019;
+      line-height: 1.6;
+    }
+    .txt-links a { color: var(--amber); text-decoration: none; margin: 0 3px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="lang-row">
+      <label for="lang-select" style="font-size:10px; color:var(--muted);">🌐 Language:</label>
+      <select id="lang-select" onchange="changeLang(this.value)">
+        <option value="en">English (EN)</option>
+        <option value="es">Español (ES)</option>
+        <option value="pt">Português (PT)</option>
+        <option value="fr">Français (FR)</option>
+        <option value="de">Deutsch (DE)</option>
+        <option value="id">Bahasa Indonesia (ID)</option>
+        <option value="ja">日本語 (JA)</option>
+        <option value="zh">中文 (ZH)</option>
+        <option value="hi">हिन्दी (HI)</option>
+        <option value="bn">বাংলা (BN)</option>
+        <option value="ur">اردو (UR)</option>
+        <option value="ar">العربية (AR)</option>
+        <option value="ru">Русский (RU)</option>
+        <option value="tlh">tlhIngan Hol (TLH)</option>
+        <option value="pig">Igpay Atinlay (PIG)</option>
+      </select>
+    </div>
+
+    <h1 id="t-h1">Y.D.R.B.N. // Service &amp; Update Deck</h1>
+    <div id="t-sub" class="sub">Foolproof Cache Refresh &amp; Tester Recovery Utility (v1.2)</div>
+
+    <div class="box">
+      <h2 id="t-opt1-h2">Option 1: Safe Update (Recommended)</h2>
+      <p id="t-opt1-p">Unregisters old Service Workers and loads the latest app code while <strong>keeping your saved records, favorites, and Cargo Bay packs</strong> intact.</p>
+      <button class="btn-safe" id="t-btn-safe" onclick="runSafeUpdate()">1. Safe Update (Keep My Crate &amp; Packs)</button>
+    </div>
+
+    <div class="box">
+      <h2 id="t-opt2-h2">Option 2: Full Factory Wipe</h2>
+      <p id="t-opt2-p">Erases all cached code, saved records, downloaded packs, and preferences for a 100% clean first-launch test state.</p>
+      <button class="btn-wipe" id="t-btn-wipe" onclick="runFactoryWipe()">2. Full Factory Wipe &amp; Launch Fresh</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="t-tips" class="tips">
+      <strong>Reinstalling to Home Screen?</strong><br/>
+      • <strong>iPhone (Safari):</strong> Delete old icon &rarr; run Option 1/2 &rarr; tap Share &rarr; Add to Home Screen.<br/>
+      • <strong>Android (Chrome):</strong> Uninstall old icon &rarr; run Option 1/2 &rarr; tap Chrome's ⋮ menu &rarr; Install app.
+    </div>
+
+    <div class="txt-links">
+      <div>Plain Text Versions (ASCII):</div>
+      <a href="reset.txt">English</a> •
+      <a href="reset_es.txt">Español</a> •
+      <a href="reset_pt.txt">Português</a> •
+      <a href="reset_fr.txt">Français</a> •
+      <a href="reset_de.txt">Deutsch</a> •
+      <a href="reset_id.txt">Indonesian</a> •
+      <a href="reset_ja.txt">日本語</a> •
+      <a href="reset_zh.txt">中文</a> •
+      <a href="reset_hi.txt">हिन्दी</a> •
+      <a href="reset_bn.txt">বাংলা</a> •
+      <a href="reset_ur.txt">اردو</a> •
+      <a href="reset_ar.txt">العربية</a> •
+      <a href="reset_ru.txt">Русский</a> •
+      <a href="reset_tlh.txt">Klingon</a> •
+      <a href="reset_pig.txt">Pig-Latin</a>
+    </div>
+  </div>
+
+  <script>
+    const DICT = {
+      en: {
+        h1: "Y.D.R.B.N. // Service & Update Deck",
+        sub: "Foolproof Cache Refresh & Tester Recovery Utility (v1.2)",
+        opt1H2: "Option 1: Safe Update (Recommended)",
+        opt1P: "Unregisters old Service Workers and loads the latest app code while <strong>keeping your saved records, favorites, and Cargo Bay packs</strong> intact.",
+        btnSafe: "1. Safe Update (Keep My Crate & Packs)",
+        opt2H2: "Option 2: Full Factory Wipe",
+        opt2P: "Erases all cached code, saved records, downloaded packs, and preferences for a 100% clean first-launch test state.",
+        btnWipe: "2. Full Factory Wipe & Launch Fresh",
+        tips: "<strong>Reinstalling to Home Screen?</strong><br/>• <strong>iPhone (Safari):</strong> Delete old icon &rarr; run Option 1/2 &rarr; tap Share &rarr; Add to Home Screen.<br/>• <strong>Android (Chrome):</strong> Uninstall old icon &rarr; run Option 1/2 &rarr; tap Chrome's ⋮ menu &rarr; Install app.",
+        msgSafe: "Refreshing app code & Service Workers (keeping crate)...",
+        msgWipe: "Purging all storage, IndexedDB & Service Workers..."
+      },
+      es: {
+        h1: "Y.D.R.B.N. // Panel de Servicio y Actualización",
+        sub: "Herramienta Segura de Caché y Recuperación para Testers (v1.2)",
+        opt1H2: "Opción 1: Actualización Segura (Recomendada)",
+        opt1P: "Desregistra Service Workers antiguos y carga el código nuevo <strong>conservando intactos tus discos, favoritos y paquetes</strong>.",
+        btnSafe: "1. Actualización Segura (Conservar Discos y Packs)",
+        opt2H2: "Opción 2: Borrado Completo de Fábrica",
+        opt2P: "Elimina todo el código en caché, discos guardados, paquetes y preferencias para un estado limpio de primer inicio.",
+        btnWipe: "2. Borrado de Fábrica e Inicio Limpio",
+        tips: "<strong>¿Reinstalando en Pantalla de Inicio?</strong><br/>• <strong>iPhone (Safari):</strong> Borra el icono viejo &rarr; ejecuta la Opción 1 o 2 &rarr; Compartir &rarr; Añadir a pantalla de inicio.<br/>• <strong>Android (Chrome):</strong> Desinstala el icono viejo &rarr; ejecuta la Opción 1 o 2 &rarr; menú ⋮ &rarr; Instalar app.",
+        msgSafe: "Actualizando código y Service Workers (conservando caja)...",
+        msgWipe: "Borrando almacenamiento, IndexedDB y Service Workers..."
+      },
+      pt: {
+        h1: "Y.D.R.B.N. // Painel de Serviço e Atualização",
+        sub: "Utilitário Seguro de Cache e Recuperação (v1.2)",
+        opt1H2: "Opção 1: Atualização Segura (Recomendada)",
+        opt1P: "Desregistra Service Workers antigos e carrega o código novo <strong>mantendo seus discos, favoritos e pacotes</strong> intactos.",
+        btnSafe: "1. Atualização Segura (Manter Discos e Pacotes)",
+        opt2H2: "Opção 2: Restauração Completa de Fábrica",
+        opt2P: "Apaga todo o código em cache, discos salvos, pacotes baixados e preferências para um estado limpo de teste.",
+        btnWipe: "2. Restauração de Fábrica e Início Limpo",
+        tips: "<strong>Reinstalando na Tela Inicial?</strong><br/>• <strong>iPhone (Safari):</strong> Apague o ícone antigo &rarr; execute a Opção 1 ou 2 &rarr; Compartilhar &rarr; Adicionar à Tela de Início.<br/>• <strong>Android (Chrome):</strong> Desinstale o app antigo &rarr; execute a Opção 1 ou 2 &rarr; menu ⋮ &rarr; Instalar aplicativo.",
+        msgSafe: "Atualizando código e Service Workers (mantendo caixa)...",
+        msgWipe: "Apagando armazenamento, IndexedDB e Service Workers..."
+      },
+      fr: {
+        h1: "Y.D.R.B.N. // Platine de Maintenance & Mise à Jour",
+        sub: "Utilitaire de Rafraîchissement & Restauration pour Testeurs (v1.2)",
+        opt1H2: "Option 1 : Mise à Jour Sécurisée (Recommandée)",
+        opt1P: "Supprime les anciens Service Workers et charge le nouveau code tout en <strong>conservant vos disques, favoris et packs</strong>.",
+        btnSafe: "1. Mise à Jour Sécurisée (Conserver la Caisse)",
+        opt2H2: "Option 2 : Remise à Zéro Totale (Usine)",
+        opt2P: "Efface tout le code en cache, les disques, les packs et les réglages pour un état de test parfaitement propre.",
+        btnWipe: "2. Réinitialisation Usine Complète",
+        tips: "<strong>Réinstallation sur l'écran d'accueil ?</strong><br/>• <strong>iPhone (Safari) :</strong> Supprimez l'ancienne icône &rarr; Option 1 ou 2 &rarr; Partager &rarr; Sur l'écran d'accueil.<br/>• <strong>Android (Chrome) :</strong> Désinstallez l'ancienne app &rarr; Option 1 ou 2 &rarr; menu ⋮ &rarr; Installer l'application.",
+        msgSafe: "Actualisation du code et des Service Workers (caisse préservée)...",
+        msgWipe: "Purge de tout le stockage, d'IndexedDB et des Service Workers..."
+      },
+      de: {
+        h1: "Y.D.R.B.N. // Service- & Update-Deck",
+        sub: "Sicheres Cache-Aktualisierungs- & Tester-Tool (v1.2)",
+        opt1H2: "Option 1: Sicheres Update (Empfohlen)",
+        opt1P: "Löscht alte Service Worker und lädt den neuesten Code, während <strong>gespeicherte Platten, Favoriten und Pakete</strong> erhalten bleiben.",
+        btnSafe: "1. Sicheres Update (Kiste & Pakete behalten)",
+        opt2H2: "Option 2: Vollständiger Werksreset",
+        opt2P: "Löscht sämtlichen Cache, gespeicherte Platten, heruntergeladene Pakete und Einstellungen für einen sauberen Neuanfang.",
+        btnWipe: "2. Werksreset & Frisch Starten",
+        tips: "<strong>Neuinstallation auf dem Startbildschirm?</strong><br/>• <strong>iPhone (Safari):</strong> Altes Icon löschen &rarr; Option 1/2 oben ausführen &rarr; Teilen &rarr; Zum Home-Bildschirm.<br/>• <strong>Android (Chrome):</strong> Altes Icon deinstallieren &rarr; Option 1/2 oben ausführen &rarr; ⋮ Menü &rarr; App installieren.",
+        msgSafe: "App-Code & Service Worker werden aktualisiert (Kiste bleibt)...",
+        msgWipe: "Speicher, IndexedDB & Service Worker werden gelöscht..."
+      },
+      id: {
+        h1: "Y.D.R.B.N. // Dek Layanan & Pembaruan",
+        sub: "Alat Penyegaran Cache & Pemulihan Penguji Aman (v1.2)",
+        opt1H2: "Opsi 1: Pembaruan Aman (Disarankan)",
+        opt1P: "Menghapus Service Worker lama dan memuat kode terbaru sambil <strong>menyimpan piringan, favorit, dan paket kargo Anda</strong>.",
+        btnSafe: "1. Pembaruan Aman (Simpan Kotak & Paket)",
+        opt2H2: "Opsi 2: Hapus Pabrik Menyeluruh",
+        opt2P: "Menghapus semua cache, piringan tersimpan, paket unduhan, dan pengaturan untuk kondisi pengujian awal yang bersih.",
+        btnWipe: "2. Hapus Pabrik & Mulai Baru",
+        tips: "<strong>Memasang Ulang ke Layar Utama?</strong><br/>• <strong>iPhone (Safari):</strong> Hapus ikon lama &rarr; jalankan Opsi 1/2 &rarr; Bagikan &rarr; Tambah ke Layar Utama.<br/>• <strong>Android (Chrome):</strong> Copot pemasangan app lama &rarr; jalankan Opsi 1/2 &rarr; menu ⋮ &rarr; Instal aplikasi.",
+        msgSafe: "Menyegarkan kode aplikasi & Service Worker (menyimpan kotak)...",
+        msgWipe: "Membersihkan semua penyimpanan, IndexedDB & Service Worker..."
+      },
+      ja: {
+        h1: "Y.D.R.B.N. // サービス＆更新デッキ",
+        sub: "安全なキャッシュ更新＆テスター復元ユーティリティ (v1.2)",
+        opt1H2: "オプション1：安全な更新 (推奨)",
+        opt1P: "古いService Workerを解除し、<strong>保存済みレコードやお気に入り、拡張パックを保持したまま</strong>最新コードを読み込みます。",
+        btnSafe: "1. 安全な更新 (クレートとパックを保持)",
+        opt2H2: "オプション2：完全初期化 (工場出荷時)",
+        opt2P: "キャッシュ、保存レコード、パック、設定を全消去し、初回起動のテスト状態へ戻します。",
+        btnWipe: "2. 工場出荷時リセット＆新規起動",
+        tips: "<strong>ホーム画面への再追加手順:</strong><br/>• <strong>iPhone (Safari):</strong> 古いアイコンを削除 &rarr; 上のオプション1または2を実行 &rarr; 共有 &rarr; ホーム画面に追加。<br/>• <strong>Android (Chrome):</strong> 古いアプリをアンインストール &rarr; オプション1または2を実行 &rarr; ⋮ メニュー &rarr; アプリをインストール。",
+        msgSafe: "最新コードとService Workerを更新中 (クレート保持)...",
+        msgWipe: "全ストレージ、IndexedDB、キャッシュを完全消去中..."
+      },
+      zh: {
+        h1: "Y.D.R.B.N. // 维护与更新工作台",
+        sub: "安全缓存刷新与测试员数据恢复工具 (v1.2)",
+        opt1H2: "选项 1：安全更新（推荐）",
+        opt1P: "注销旧版 Service Worker 并加载最新代码，同时<strong>完整保留您的已存唱片、收藏及扩展包</strong>。",
+        btnSafe: "1. 安全更新（保留唱片箱与扩展包）",
+        opt2H2: "选项 2：恢复出厂设置（清除所有数据）",
+        opt2P: "彻底清除所有缓存代码、唱片、下载的扩展包和偏好设置，恢复至首次启动的纯净测试状态。",
+        btnWipe: "2. 恢复出厂设置并全新启动",
+        tips: "<strong>重新安装到主屏幕？</strong><br/>• <strong>iPhone (Safari)：</strong>长按删除旧图标 &rarr; 运行上述选项 1 或 2 &rarr; 分享 &rarr; 添加到主屏幕。<br/>• <strong>Android (Chrome)：</strong>卸载旧应用 &rarr; 运行上述选项 1 或 2 &rarr; 点击 Chrome ⋮ 菜单 &rarr; 安装应用。",
+        msgSafe: "正在更新应用代码与 Service Worker（保留唱片箱数据）...",
+        msgWipe: "正在彻底清除所有存储、IndexedDB 与 Service Worker..."
+      },
+      hi: {
+        h1: "Y.D.R.B.N. // सर्विस और अपडेट डेक",
+        sub: "सुरक्षित कैश रिफ्रेश और परीक्षक पुनर्प्राप्ति टूल (v1.2)",
+        opt1H2: "विकल्प 1: सुरक्षित अपडेट (अनुशंसित)",
+        opt1P: "पुराने सर्विस वर्कर्स को हटाकर नया कोड लोड करता है जबकि <strong>आपके सेव किए गए रिकॉर्ड, पसंदीदा और पैक सुरक्षित रहते हैं</strong>।",
+        btnSafe: "1. सुरक्षित अपडेट (क्रेट और पैक सुरक्षित रखें)",
+        opt2H2: "विकल्प 2: फ़ैक्टरी रीसेट (सारा डेटा मिटाएँ)",
+        opt2P: "नए सिरे से परीक्षण के लिए सभी कैश किए गए कोड, रिकॉर्ड, पैक और सेटिंग्स को पूरी तरह मिटा देता है।",
+        btnWipe: "2. फ़ैक्टरी रीसेट करें और नया शुरू करें",
+        tips: "<strong>होम स्क्रीन पर पुनः इंस्टॉल कर रहे हैं?</strong><br/>• <strong>iPhone (Safari):</strong> पुराना आइकन हटाएँ &rarr; ऊपर विकल्प 1/2 चलाएँ &rarr; शेयर दबाएँ &rarr; Add to Home Screen।<br/>• <strong>Android (Chrome):</strong> पुराना ऐप अनइंस्टॉल करें &rarr; ऊपर विकल्प 1/2 चलाएँ &rarr; ⋮ मेनू &rarr; Install app।",
+        msgSafe: "ऐप कोड और सर्विस वर्कर्स रिफ्रेश हो रहे हैं (क्रेट सुरक्षित है)...",
+        msgWipe: "सभी स्टोरेज, IndexedDB और सर्विस वर्कर्स मिटाए जा रहे हैं..."
+      },
+      bn: {
+        h1: "Y.D.R.B.N. // সার্ভিস ও আপডেট ডেক",
+        sub: "নিরাপদ ক্যাশে রিফ্রেশ ও টেস্টার রিকভারি টুল (v1.2)",
+        opt1H2: "বিকল্প ১: নিরাপদ আপডেট (প্রস্তাবিত)",
+        opt1P: "পুরনো সার্ভিস ওয়ার্কার বাদ দিয়ে নতুন কোড লোড করে এবং <strong>আপনার সংরক্ষিত রেকর্ড, ফেভারিট ও প্যাক অক্ষত রাখে</strong>।",
+        btnSafe: "১. নিরাপদ আপডেট (ক্রেট ও প্যাক রাখুন)",
+        opt2H2: "বিকল্প ২: সম্পূর্ণ ফ্যাক্টরি রিসেট",
+        opt2P: "সব ক্যাশ করা কোড, রেকর্ড, ডাউনলোড করা প্যাক এবং সেটিংস মুছে ফেলে একদম নতুন টেস্ট স্টেটে ফিরিয়ে আনে।",
+        btnWipe: "২. ফ্যাক্টরি রিসেট ও নতুন শুরু",
+        tips: "<strong>হোম স্ক্রিনে পুনরায় ইনস্টল করছেন?</strong><br/>• <strong>iPhone (Safari):</strong> পুরনো আইকন ডিলিট করুন &rarr; উপরের অপশন ১/২ চালান &rarr; শেয়ার &rarr; Add to Home Screen।<br/>• <strong>Android (Chrome):</strong> পুরনো অ্যাপ আনইনস্টল করুন &rarr; উপরের অপশন ১/২ চালান &rarr; ⋮ মেনু &rarr; Install app।",
+        msgSafe: "অ্যাপ কোড ও সার্ভিস ওয়ার্কার রিফ্রেশ হচ্ছে (ক্রেট অক্ষত)...",
+        msgWipe: "সব স্টোরেজ, IndexedDB ও সার্ভিস ওয়ার্কার মুছে ফেলা হচ্ছে..."
+      },
+      ur: {
+        h1: "Y.D.R.B.N. // سروس اور اپ ڈیٹ ڈیک",
+        sub: "محفوظ کیش ریفریش اور ٹیسٹر ریکوری ٹول (v1.2)",
+        opt1H2: "آپشن 1: محفوظ اپ ڈیٹ (تجویز کردہ)",
+        opt1P: "پرانے سروس ورکرز کو ہٹا کر نیا کوڈ لوڈ کرتا ہے جبکہ <strong>آپ کے محفوظ ریکارڈز، پسندیدہ اور پیکس برقرار رہتے ہیں</strong>۔",
+        btnSafe: "1. محفوظ اپ ڈیٹ (کریٹ اور پیکس محفوظ رکھیں)",
+        opt2H2: "آپشن 2: مکمل فیکٹری ری سیٹ",
+        opt2P: "نئے سرے سے ٹیسٹ کرنے کے لیے تمام کیش شدہ کوڈ، ریکارڈز، پیکس اور ترجیحات کو مکمل طور پر مٹا دیتا ہے۔",
+        btnWipe: "2. فیکٹری وائپ اور نیا آغاز",
+        tips: "<strong>ہوم اسکرین پر دوبارہ انسٹال کر رہے ہیں؟</strong><br/>• <strong>iPhone (Safari):</strong> پرانا آئیکن ڈیلیٹ کریں &rarr; آپشن 1/2 چلائیں &rarr; شیئر &rarr; Add to Home Screen۔<br/>• <strong>Android (Chrome):</strong> پرانی ایپ ان انسٹال کریں &rarr; آپشن 1/2 چلائیں &rarr; ⋮ مینو &rarr; Install app۔",
+        msgSafe: "ایپ کوڈ اور سروس ورکرز ریفریش ہو رہے ہیں (کریٹ محفوظ ہے)...",
+        msgWipe: "تمام اسٹوریج، IndexedDB اور سروس ورکرز صاف کیے جا رہے ہیں..."
+      },
+      ar: {
+        h1: "Y.D.R.B.N. // منصة الخدمة والتحديث",
+        sub: "أداة آمنة لتحديث الذاكرة المؤقتة واستعادة النظام (v1.2)",
+        opt1H2: "الخيار 1: تحديث آمن (موصى به)",
+        opt1P: "يلغي تسجيل Service Workers القديمة ويحمل الكود الأحدث مع <strong>الاحتفاظ الكامل باسطواناتك ومفضلاتك وحزمك</strong>.",
+        btnSafe: "1. تحديث آمن (الاحتفاظ بالصندوق والحزم)",
+        opt2H2: "الخيار 2: مسح كامل لإعدادات المصنع",
+        opt2P: "يمسح جميع الأكواد والاسطوانات والحزم والإعدادات المخزنة مؤقتاً للعودة إلى حالة التشغيل الأولى النظيفة.",
+        btnWipe: "2. مسح المصنع وبدء تشغيل جديد",
+        tips: "<strong>إعادة التثبيت على الشاشة الرئيسية؟</strong><br/>• <strong>iPhone (Safari):</strong> احذف الأيقونة القديمة &rarr; شغّل الخيار 1 أو 2 &rarr; مشاركة &rarr; إضافة إلى الشاشة الرئيسية.<br/>• <strong>Android (Chrome):</strong> ألغِ تثبيت التطبيق القديم &rarr; شغّل الخيار 1 أو 2 &rarr; قائمة ⋮ &rarr; تثبيت التطبيق.",
+        msgSafe: "جارٍ تحديث كود التطبيق وService Workers (مع حفظ الصندوق)...",
+        msgWipe: "جارٍ مسح الذاكرة المؤقتة وIndexedDB وService Workers..."
+      },
+      ru: {
+        h1: "Y.D.R.B.N. // Сервисная панель обновления",
+        sub: "Безопасное обновление кэша и восстановление для тестеров (v1.2)",
+        opt1H2: "Вариант 1: Безопасное обновление (Рекомендуется)",
+        opt1P: "Перерегистрирует Service Worker и загружает свежий код, <strong>сохраняя все пластинки, избранное и пакеты</strong>.",
+        btnSafe: "1. Безопасное обновление (сохранить ящик)",
+        opt2H2: "Вариант 2: Полный сброс до заводских настроек",
+        opt2P: "Стирает весь кэш, сохранённые пластинки, скачанные пакеты и настройки для чистого тестирования.",
+        btnWipe: "2. Заводской сброс и чистый запуск",
+        tips: "<strong>Переустановка на главный экран?</strong><br/>• <strong>iPhone (Safari):</strong> Удалите старую иконку &rarr; выполните вариант 1 или 2 &rarr; Поделиться &rarr; На экран «Домой».<br/>• <strong>Android (Chrome):</strong> Удалите старое приложение &rarr; выполните вариант 1 или 2 &rarr; меню ⋮ &rarr; Установить приложение.",
+        msgSafe: "Обновление кода и Service Worker (ящик сохранён)...",
+        msgWipe: "Полная очистка хранилища, IndexedDB и Service Worker..."
+      },
+      tlh: {
+        h1: "Y.D.R.B.N. // Service & Update Deck",
+        sub: "Cache chu'moHwI' & QA Tool (v1.2)",
+        opt1H2: "Option 1: Safe Update (chup)",
+        opt1P: "Service Worker ngo' teq 'ej App chu' lIngtaHvIS <strong>ngaSwI'lIj, parHa'bogh QoQ, Packmey je pol</strong>.",
+        btnSafe: "1. Safe Update (ngaSwI' yIpol)",
+        opt2H2: "Option 2: Factory Wipe (Hoch Qaw')",
+        opt2P: "Hoch Cache, pollu'bogh QoQ, Packmey, SeHlaw je Qaw' 'ej chu'chu'qa'.",
+        btnWipe: "2. Factory Wipe & chu'qa'",
+        tips: "<strong>jIHlIjDaq jomqa'meH:</strong><br/>• <strong>iPhone (Safari):</strong> Icon ngo' yIteq &rarr; Option 1/2 yIlo' &rarr; Share &rarr; Add to Home Screen.<br/>• <strong>Android (Chrome):</strong> App ngo' yIteq &rarr; Option 1/2 yIlo' &rarr; Chrome ⋮ &rarr; Install app.",
+        msgSafe: "App & Service Worker chu'moHtaH (ngaSwI' pollu')...",
+        msgWipe: "Hoch Storage, IndexedDB & Service Worker Qaw'taH..."
+      },
+      pig: {
+        h1: "Y.D.R.B.N. // Ervicesay & Updateway Eckday",
+        sub: "Oolprooffay Achecay Efreshray & Ecoveryray (v1.2)",
+        opt1H2: "Optionway 1: Afesay Updateway (Ecommendedray)",
+        opt1P: "Unregistersway oldway Erviceway Orkersway andway oadslay ewnay odecay ilewhay <strong>eepingkay ouryay atecray andway ackspay</strong>.",
+        btnSafe: "1. Afesay Updateway (Eepkay Atecray)",
+        opt2H2: "Optionway 2: Ullfay Actoryfay Ipeway",
+        opt2P: "Erasesway allway achedcay odecay, avedsay ecordsray, ownloadedday ackspay, andway eferencespray.",
+        btnWipe: "2. Actoryfay Ipeway & Aunchlay Eshfray",
+        tips: "<strong>Einstallingray otay Omehay Eenscray?</strong><br/>• <strong>iPhone (Safari):</strong> Eleteday oldway iconway &rarr; unray Optionway 1/2 &rarr; Areshay &rarr; Addway otay Omehay Eenscray.<br/>• <strong>Android (Chrome):</strong> Uninstallway oldway iconway &rarr; unray Optionway 1/2 &rarr; ⋮ enumay &rarr; Installway appway.",
+        msgSafe: "Efreshingray appway odecay & Erviceway Orkersway (eepingkay atecray)...",
+        msgWipe: "Urgingpay allway oragestay, IndexedDB & Erviceway Orkersway..."
+      }
+    };
+
+    function renderLang(lang) {
+      const d = DICT[lang] || DICT.en;
+      document.getElementById('t-h1').textContent = d.h1;
+      document.getElementById('t-sub').textContent = d.sub;
+      document.getElementById('t-opt1-h2').textContent = d.opt1H2;
+      document.getElementById('t-opt1-p').innerHTML = d.opt1P;
+      document.getElementById('t-btn-safe').textContent = d.btnSafe;
+      document.getElementById('t-opt2-h2').textContent = d.opt2H2;
+      document.getElementById('t-opt2-p').innerHTML = d.opt2P;
+      document.getElementById('t-btn-wipe').textContent = d.btnWipe;
+      document.getElementById('t-tips').innerHTML = d.tips;
+      document.documentElement.lang = lang;
+      document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
+    }
+
+    function changeLang(lang) {
+      localStorage.setItem('ydrbn_lang_static', lang);
+      renderLang(lang);
+    }
+
+    async function clearWorkersAndCaches() {
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    }
+
+    async function runSafeUpdate() {
+      const lang = document.getElementById('lang-select').value;
+      const d = DICT[lang] || DICT.en;
+      document.getElementById('status').textContent = d.msgSafe;
+      try { await clearWorkersAndCaches(); } catch (e) {}
+      setTimeout(() => { window.location.href = './?updated=' + Date.now(); }, 350);
+    }
+
+    async function runFactoryWipe() {
+      const lang = document.getElementById('lang-select').value;
+      const d = DICT[lang] || DICT.en;
+      document.getElementById('status').textContent = d.msgWipe;
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+      try {
+        if ('indexedDB' in window) {
+          indexedDB.deleteDatabase('ydrbn_packs_db');
+        }
+      } catch (e) {}
+      try { await clearWorkersAndCaches(); } catch (e) {}
+      setTimeout(() => { window.location.href = './?reset=' + Date.now(); }, 450);
+    }
+
+    (function init() {
+      const urlLang = new URLSearchParams(window.location.search).get('lang');
+      let prefLang = 'en';
+      try {
+        const stored = JSON.parse(localStorage.getItem('ydrbn_preferences') || '{}');
+        if (stored.language && stored.language !== 'auto') prefLang = stored.language;
+      } catch (e) {}
+      const active = urlLang || localStorage.getItem('ydrbn_lang_static') || prefLang || navigator.language.slice(0, 2);
+      const chosen = DICT[active] ? active : 'en';
+      document.getElementById('lang-select').value = chosen;
+      renderLang(chosen);
+    })();
+  </script>
+</body>
+</html>

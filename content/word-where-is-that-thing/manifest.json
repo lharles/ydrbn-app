@@ -1,0 +1,8 @@
+{
+  "id": "ydrbn-words-where-is-that-thing",
+  "name": "Where Is That Thing",
+  "version": "1.0.0",
+  "description": "61 curated words (21N, 26A, 14E): Where Is That Thing.",
+  "words": "words.json",
+  "stamps": []
+}

@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - PANDUAN PEMASANGAN
+Locale: ID | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+APPLE / iPHONE (SAFARI)
+--------------------------------------------------------
+1. Buka Safari ke: https://lharles.github.io/ydrbn-app/
+2. Ketuk tombol Bagikan (kotak dengan panah ke atas).
+3. Gulir ke bawah dan pilih 'Tambah ke Layar Utama'.
+
+--------------------------------------------------------
+ANDROID (CHROME)
+--------------------------------------------------------
+1. Buka Chrome ke: https://lharles.github.io/ydrbn-app/
+2. Ketuk ikon 'Pasang' di bilah atas dek.
+3. Atau ketuk menu tiga titik (⋮) lalu pilih 'Instal aplikasi'.
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

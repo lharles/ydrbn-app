@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Y.D.R.B.N. — Video Walkthrough Demo</title>
+  <style>
+    :root {
+      --bg: #12100e;
+      --card: #1c1814;
+      --border: #4a3d31;
+      --amber: #f59e0b;
+      --amber-light: #fde047;
+      --text: #f3ede4;
+      --muted: #a39480;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      line-height: 1.5;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    header {
+      text-align: center;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 4px 0; font-size: 1.15rem; letter-spacing: 0.08em; color: var(--amber-light); }
+    .subtitle { font-size: 0.8rem; color: var(--muted); margin: 0 0 10px 0; }
+    .lang-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .lang-bar select {
+      background: #100e0c;
+      color: var(--amber-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 0.78rem;
+    }
+    .video-wrap {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.8);
+    }
+    video {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    video::cue {
+      background-color: rgba(0, 0, 0, 0.50);
+      color: #fde047;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+    }
+    .btn-launch {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background: var(--amber);
+      color: #12100e;
+      border: none;
+    }
+    .nav-links {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+    .nav-links a { color: var(--amber); text-decoration: none; margin: 0 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="t-header">Y.D.R.B.N. VIDEO WALKTHROUGH</h1>
+      <p id="t-sub" class="subtitle">14-Step Feature &amp; Turntable Guide</p>
+      <div class="lang-bar">
+        <label for="lang-select" style="font-size:0.75rem; color:var(--muted);">🌐 Subtitle Language:</label>
+        <select id="lang-select" onchange="changeLang(this.value)">
+          <option value="en">English (EN)</option>
+          <option value="es">Español (ES)</option>
+          <option value="pt">Português (PT)</option>
+          <option value="fr">Français (FR)</option>
+          <option value="de">Deutsch (DE)</option>
+          <option value="id">Bahasa Indonesia (ID)</option>
+          <option value="ja">日本語 (JA)</option>
+          <option value="zh">中文 (ZH)</option>
+          <option value="hi">हिन्दी (HI)</option>
+          <option value="bn">বাংলা (BN)</option>
+          <option value="ur">اردو (UR)</option>
+          <option value="ar">العربية (AR)</option>
+          <option value="ru">Русский (RU)</option>
+          <option value="tlh">tlhIngan Hol (TLH)</option>
+          <option value="pig">Igpay Atinlay (PIG)</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="video-wrap">
+      <video id="guide-video" controls playsinline crossorigin="anonymous">
+        <source src="video/guide.mp4" type="video/mp4" />
+        <track kind="subtitles" src="video/subtitles/guide_en.vtt" srclang="en" label="English" />
+        <track kind="subtitles" src="video/subtitles/guide_es.vtt" srclang="es" label="Español" />
+        <track kind="subtitles" src="video/subtitles/guide_pt.vtt" srclang="pt" label="Português" />
+        <track kind="subtitles" src="video/subtitles/guide_fr.vtt" srclang="fr" label="Français" />
+        <track kind="subtitles" src="video/subtitles/guide_de.vtt" srclang="de" label="Deutsch" />
+        <track kind="subtitles" src="video/subtitles/guide_id.vtt" srclang="id" label="Bahasa Indonesia" />
+        <track kind="subtitles" src="video/subtitles/guide_ja.vtt" srclang="ja" label="日本語" />
+        <track kind="subtitles" src="video/subtitles/guide_zh.vtt" srclang="zh" label="中文" />
+        <track kind="subtitles" src="video/subtitles/guide_hi.vtt" srclang="hi" label="हिन्दी" />
+        <track kind="subtitles" src="video/subtitles/guide_bn.vtt" srclang="bn" label="বাংলা" />
+        <track kind="subtitles" src="video/subtitles/guide_ur.vtt" srclang="ur" label="اردو" />
+        <track kind="subtitles" src="video/subtitles/guide_ar.vtt" srclang="ar" label="العربية" />
+        <track kind="subtitles" src="video/subtitles/guide_ru.vtt" srclang="ru" label="Русский" />
+        <track kind="subtitles" src="video/subtitles/guide_tlh.vtt" srclang="tlh" label="tlhIngan Hol" />
+        <track kind="subtitles" src="video/subtitles/guide_pig.vtt" srclang="pig" label="Igpay Atinlay" />
+      </video>
+    </div>
+
+    <div class="card" id="t-desc">
+      Watch the 14-step overview of Y.D.R.B.N. covering procedural vinyl pressing, multi-instrument vintage audio stems, 300 DPI apparel fabrication, custom drop word harvesting, and offline crate creation.
+    </div>
+
+    <a id="t-launch" href="./" class="btn-launch">Launch Y.D.R.B.N. App →</a>
+
+    <div class="nav-links">
+      <a href="install.html" id="t-lnk-inst">Installation Guide</a> •
+      <a href="reset.html" id="t-lnk-rst">Reset &amp; Recovery Utility</a>
+    </div>
+  </div>
+
+  <script>
+    const DEMO_DICT = {
+      en: {
+        h1: "Y.D.R.B.N. VIDEO WALKTHROUGH",
+        sub: "14-Step Feature & Turntable Guide",
+        desc: "Watch the 14-step overview of Y.D.R.B.N. covering procedural vinyl pressing, multi-instrument vintage audio stems, 300 DPI apparel fabrication, custom drop word harvesting, and offline crate creation.",
+        launch: "Launch Y.D.R.B.N. App →",
+        inst: "Installation Guide",
+        rst: "Reset & Recovery Utility"
+      },
+      es: {
+        h1: "DEMOSTRACIÓN EN VIDEO Y.D.R.B.N.",
+        sub: "Guía de Funciones y Tocadiscos en 14 Pasos",
+        desc: "Mira el recorrido de 14 pasos de Y.D.R.B.N. que cubre el prensado procedural de vinilos, stems de audio vintage, fabricación de ropa a 300 DPI, recolección de palabras y creación de cajas sin conexión.",
+        launch: "Abrir App Y.D.R.B.N. →",
+        inst: "Guía de Instalación",
+        rst: "Herramienta de Reinicio"
+      },
+      pt: {
+        h1: "DEMONSTRAÇÃO EM VÍDEO Y.D.R.B.N.",
+        sub: "Guia de Funções e Vitrola em 14 Passos",
+        desc: "Assista à visão geral de 14 passos cobrindo prensagem de vinil procedural, stems de áudio vintage, confecção de roupas em 300 DPI e criação de caixas offline.",
+        launch: "Iniciar App Y.D.R.B.N. →",
+        inst: "Guia de Instalação",
+        rst: "Utilitário de Restauração"
+      },
+      fr: {
+        h1: "DÉMONSTRATION VIDÉO Y.D.R.B.N.",
+        sub: "Guide de la Platine et des Fonctions en 14 Étapes",
+        desc: "Découvrez la démonstration en 14 étapes de Y.D.R.B.N. : pressage vinyle procédural, pistes d'instruments vintage, impression textile 300 DPI et création de caisses hors-ligne.",
+        launch: "Lancer l'App Y.D.R.B.N. →",
+        inst: "Guide d'Installation",
+        rst: "Utilitaire de Réinitialisation"
+      },
+      de: {
+        h1: "Y.D.R.B.N. VIDEO-WALKTHROUGH",
+        sub: "14-Schritte-Funktions- & Plattenspieler-Handbuch",
+        desc: "Sieh dir die 14-Schritte-Übersicht von Y.D.R.B.N. an: prozedurales Vinyl-Pressen, mehrspurige Vintage-Audio-Stems, 300-DPI-Textildruck und Offline-Kistenerstellung.",
+        launch: "Y.D.R.B.N. Starten →",
+        inst: "Installations-Anleitung",
+        rst: "Reset- & Recovery-Tool"
+      },
+      id: {
+        h1: "VIDEO PANDUAN Y.D.R.B.N.",
+        sub: "Panduan Fitur & Turntable 14 Langkah",
+        desc: "Tonton ikhtisar 14 langkah Y.D.R.B.N. yang mencakup pencetakan vinil prosedural, stem audio vintage multi-instrumen, sablon kaos 300 DPI, dan pembuatan kotak offline.",
+        launch: "Jalankan App Y.D.R.B.N. →",
+        inst: "Panduan Pemasangan",
+        rst: "Alat Reset & Pemulihan"
+      },
+      ja: {
+        h1: "Y.D.R.B.N. 機能ウォークスルー動画",
+        sub: "14ステップ機能＆ターンテーブル解説",
+        desc: "手続き型レコードプレス、マルチ音源ステム再生、300 DPIアパレルプリント出力、カスタム制作の単語収集、オフライン拡張クレート自作まで14ステップで解説します。",
+        launch: "Y.D.R.B.N. を起動する →",
+        inst: "インストール手順",
+        rst: "更新＆復元ユーティリティ"
+      },
+      zh: {
+        h1: "Y.D.R.B.N. 视频演示指南",
+        sub: "14 步功能与黑胶唱机详解",
+        desc: "观看 Y.D.R.B.N. 14 步功能演示，涵盖程序化黑胶压制、多乐器复古音轨采样、300 DPI 服饰印花导出、自定义词汇收集及离线扩展箱制作。",
+        launch: "启动 Y.D.R.B.N. 应用 →",
+        inst: "安装指南",
+        rst: "重置与恢复工具"
+      },
+      hi: {
+        h1: "Y.D.R.B.N. वीडियो वॉकथ्रू",
+        sub: "14-चरणीय फ़ंक्शन और टर्नटेबल गाइड",
+        desc: "Y.D.R.B.N. का 14-चरणीय अवलोकन देखें जिसमें विनाइल प्रेसिंग, विंटेज ऑडियो स्टेम, 300 DPI वस्त्र निर्माण और ऑफ़लाइन क्रेट निर्माण शामिल हैं।",
+        launch: "Y.D.R.B.N. ऐप शुरू करें →",
+        inst: "इंस्टॉलेशन गाइड",
+        rst: "रीसेट और रिकवरी टूल"
+      },
+      bn: {
+        h1: "Y.D.R.B.N. ভিডিও ওয়াকথ্রু",
+        sub: "১৪-ধাপের ফিচার ও টার্নটেবিল নির্দেশিকা",
+        desc: "Y.D.R.B.N.-এর ১৪-ধাপের ওয়াকথ্রু দেখুন: প্রসিডিউরাল ভিনাইল প্রেসিং, ভিন্টেজ অডিও স্টেম, ৩০০ DPI টি-শার্ট প্রিন্ট এবং অফলাইন ক্রেট তৈরি।",
+        launch: "Y.D.R.B.N. চালু করুন →",
+        inst: "ইনস্টলেশন নির্দেশিকা",
+        rst: "রিসেট ও রিকভারি টুল"
+      },
+      ur: {
+        h1: "Y.D.R.B.N. ویڈیو واک تھرو",
+        sub: "14 مراحل پر مشتمل فیچر اور ٹرن ٹیبل گائیڈ",
+        desc: "Y.D.R.B.N. کا 14 مراحل پر مشتمل جائزہ دیکھیں جس میں وینائل پریسنگ، ونٹیج آڈیو اسٹیمز، 300 DPI ملبوسات کی تیاری اور آف لائن کریٹ بنانا شامل ہے۔",
+        launch: "Y.D.R.B.N. ایپ شروع کریں ←",
+        inst: "انسٹالیشن گائیڈ",
+        rst: "ری سیٹ اور ریکوری ٹول"
+      },
+      ar: {
+        h1: "عرض الفيديو التوضيحي Y.D.R.B.N.",
+        sub: "دليل الميزات وجهاز الاسطوانات في 14 خطوة",
+        desc: "شاهد جولة الـ 14 خطوة لتطبيق Y.D.R.B.N. التي تشمل كبس الفينيل الإجرائي ومسارات الصوت الكلاسيكية وطباعة الملابس بدقة 300 DPI وصناعة الصناديق بدون إنترنت.",
+        launch: "تشغيل تطبيق Y.D.R.B.N. ←",
+        inst: "دليل التثبيت",
+        rst: "أداة إعادة الضبط والاستعادة"
+      },
+      ru: {
+        h1: "ВИДЕООБЗОР ФУНКЦИЙ Y.D.R.B.N.",
+        sub: "14 шагов по работе с виниловым проигрывателем",
+        desc: "Посмотрите обзор Y.D.R.B.N. из 14 шагов: процедурная штамповка винила, винтажные аудиодорожки, экспорт мерча в 300 DPI и создание офлайн-ящиков.",
+        launch: "Запустить Y.D.R.B.N. →",
+        inst: "Руководство по установке",
+        rst: "Панель сброса и восстановления"
+      },
+      tlh: {
+        h1: "Y.D.R.B.N. HASTA LO' PAQ",
+        sub: "14-mIw QoQ Deck ghuH",
+        desc: "Y.D.R.B.N. 14 mIwmey yIlegh: QoQ chenmoH, wabmey, 300 DPI Sut chovnatlh, 'ej De'wI'Qo' ngaSwI' chenmoH.",
+        launch: "Y.D.R.B.N. chu' →",
+        inst: "jom paq",
+        rst: "Reset & Recovery"
+      },
+      pig: {
+        h1: "Y.D.R.B.N. IDEOVAY ALKTHROUGHWAY",
+        sub: "14-Epstay Eaturefay & Urntabletay Uidegay",
+        desc: "Atchway ethay 14-epstay overviewway ofway Y.D.R.B.N. overingcay oceduralpray inylvay essingpray, intagevay audioway emsstay, 300 DPI apparelway, andway offlineway atecray eationcray.",
+        launch: "Aunchlay Y.D.R.B.N. Appway →",
+        inst: "Installationway Uidegay",
+        rst: "Esetray & Ecoveryray"
+      }
+    };
+
+    function renderLang(lang) {
+      const d = DEMO_DICT[lang] || DEMO_DICT.en;
+      document.getElementById('t-header').textContent = d.h1;
+      document.getElementById('t-sub').textContent = d.sub;
+      document.getElementById('t-desc').textContent = d.desc;
+      document.getElementById('t-launch').textContent = d.launch;
+      document.getElementById('t-lnk-inst').textContent = d.inst;
+      document.getElementById('t-lnk-rst').textContent = d.rst;
+      document.documentElement.lang = lang;
+      document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
+
+      const vid = document.getElementById('guide-video');
+      if (vid && vid.textTracks) {
+        for (let i = 0; i < vid.textTracks.length; i++) {
+          const trk = vid.textTracks[i];
+          trk.mode = trk.language === lang ? 'showing' : 'disabled';
+        }
+      }
+    }
+
+    function changeLang(lang) {
+      localStorage.setItem('ydrbn_lang_static', lang);
+      renderLang(lang);
+    }
+
+    (function init() {
+      const urlLang = new URLSearchParams(window.location.search).get('lang');
+      let prefLang = 'en';
+      try {
+        const stored = JSON.parse(localStorage.getItem('ydrbn_preferences') || '{}');
+        if (stored.language && stored.language !== 'auto') prefLang = stored.language;
+      } catch (e) {}
+      const active = urlLang || localStorage.getItem('ydrbn_lang_static') || prefLang || navigator.language.slice(0, 2);
+      const chosen = DEMO_DICT[active] ? active : 'en';
+      document.getElementById('lang-select').value = chosen;
+      renderLang(chosen);
+    })();
+  </script>
+</body>
+</html>

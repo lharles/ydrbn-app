@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-machines-ish-01",
+  "name": "Machines-ish-01",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Machines-ish-01.",
+  "subjects": [
+    "Hamster_wheel_powers_punch_card.png",
+    "Magnets_moving_iron_filings_calc.png",
+    "Rube_Goldberg_candle_calculating.png",
+    "Rube_Goldberg_computing_device_o.png",
+    "Rube_Goldberg_data_processor_typing.png",
+    "Rube_Goldberg_machine_sorting_bi.png",
+    "Rube_Goldberg_machine_triggers_k.png",
+    "Steam_engine_powering_mechanical.png"
+  ]
+}

@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - PWA INSTALLATION GUIDE
+Locale: EN | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+APPLE / iPHONE (SAFARI)
+--------------------------------------------------------
+1. Open Safari to: https://lharles.github.io/ydrbn-app/
+2. Tap the Share button (square with upward arrow) in bottom toolbar.
+3. Scroll down and select 'Add to Home Screen'.
+
+--------------------------------------------------------
+ANDROID (CHROME)
+--------------------------------------------------------
+1. Open Chrome to: https://lharles.github.io/ydrbn-app/
+2. Tap the pulsing 'Install' icon in top receiver bar.
+3. Or tap three dots (⋮) in top-right and tap 'Install app'.
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

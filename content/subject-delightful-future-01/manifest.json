@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-delightful-future-01",
+  "name": "The Unlikely, Delightful Future (Vol. 01)",
+  "version": "1.1.0",
+  "description": "8 curated subject cutouts: Levitating Teapots, Polite Robots & Solarpunk Wonders.",
+  "subjects": [
+    "future_hover_teapot_01.png",
+    "future_polite_bot_02.png",
+    "future_dome_terrarium_03.png",
+    "future_self_buttering_toast_04.png",
+    "future_jetpack_armchair_05.png",
+    "future_monorail_gondola_06.png",
+    "future_robo_bees_07.png",
+    "future_pneumatic_muffin_08.png"
+  ]
+}
