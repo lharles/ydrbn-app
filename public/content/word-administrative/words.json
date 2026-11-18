@@ -1,0 +1,41 @@
+{
+  "adjectives": [
+    "litigious",
+    "administrative",
+    "bureaucratic",
+    "contractual",
+    "mandatory",
+    "nonbinding",
+    "official",
+    "procedural",
+    "unofficial",
+    "administratively",
+    "contractually",
+    "officially",
+    "unofficially"
+  ],
+  "nouns": [
+    "administration",
+    "bureaucracy",
+    "mandate",
+    "procedure",
+    "subcommittee",
+    "mandate",
+    "subcommittee",
+    "procedure",
+    "compliance"
+  ],
+  "ensembles": [
+    "bureaucracy",
+    "Bureau",
+    "Bureaucracy",
+    "Bureaucratic Entity",
+    "Subcommittee",
+    "Bureaucracy",
+    "Procedure",
+    "Jurisdiction",
+    "Administration",
+    "Compliance",
+    "Litigation"
+  ]
+}

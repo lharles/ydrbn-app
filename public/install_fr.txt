@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - GUIDE D'INSTALLATION
+Locale: FR | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+APPLE / iPHONE (SAFARI)
+--------------------------------------------------------
+1. Ouvrez Safari sur : https://lharles.github.io/ydrbn-app/
+2. Touchez le bouton Partager (carre avec fleche vers le haut).
+3. Faites defiler vers le bas et choisissez 'Sur l'ecran d'accueil'.
+
+--------------------------------------------------------
+ANDROID (CHROME)
+--------------------------------------------------------
+1. Ouvrez Chrome sur : https://lharles.github.io/ydrbn-app/
+2. Touchez l'icone 'Installer' sur la barre superieure de la platine.
+3. Ou ouvrez le menu (⋮) et touchez 'Installer l'application'.
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

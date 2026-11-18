@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-17th-century-01",
+  "name": "17th Century Bits (Vol. 01)",
+  "version": "1.1.0",
+  "description": "8 curated subject cutouts: Plague Masks, Periwigs, Astrolabes & Baroque Oddities.",
+  "subjects": [
+    "baroque_plague_beak_01.png",
+    "baroque_powdered_periwig_02.png",
+    "baroque_brass_astrolabe_03.png",
+    "baroque_leech_jar_04.png",
+    "baroque_flintlock_blunderbuss_05.png",
+    "baroque_tallow_candlestick_06.png",
+    "baroque_ruff_collar_07.png",
+    "baroque_alchemical_retort_08.png"
+  ]
+}

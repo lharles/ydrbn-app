@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - PWA INSTALLATIONWAY UIDEGAY
+Locale: PIG | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+APPLEWAY / iPHONEWAY (SAFARIWAY)
+--------------------------------------------------------
+1. Openway Safariway otay: https://lharles.github.io/ydrbn-app/
+2. Aptay ethay Areshay uttonbay inway ethay ottombay arbay.
+3. Ollscray ownday andway electsay 'Addway otay Omehay Eenscray'.
+
+--------------------------------------------------------
+ANDROIDWAY (CHROMEWAY)
+--------------------------------------------------------
+1. Openway Chromeway otay: https://lharles.github.io/ydrbn-app/
+2. Aptay ethay ulsingpay 'Installway' iconway inway ethay optay arbay.
+3. Orway aptay ethay (⋮) enumay andway aptay 'Installway appway'.
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

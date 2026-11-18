@@ -1,0 +1,6 @@
+Y.D.R.B.N. - UTILITÀ DI AGGIORNAMENTO E RIPRISTINO (v1.2)
+=========================================================
+Apri nel browser: https://lharles.github.io/ydrbn-app/reset.html?lang=it
+
+Opzione 1 (Aggiornamento Sicuro): Aggiorna il codice e i Service Worker mantenendo cassa, preferiti e pacchetti.
+Opzione 2 (Reset di Fabbrica): Cancella cache, dischi salvati, pacchetti e impostazioni.
