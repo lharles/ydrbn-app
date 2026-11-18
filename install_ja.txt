@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - インストール手順 (テキスト版)
+Locale: JA | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+APPLE / iPHONE (SAFARI)
+--------------------------------------------------------
+1. Safariで https://lharles.github.io/ydrbn-app/ を開きます。
+2. 下部ツールバーの共有ボタン（上矢印アイコン）をタップ。
+3. メニューを下にスクロールし「ホーム画面に追加」をタップ。
+
+--------------------------------------------------------
+ANDROID (CHROME)
+--------------------------------------------------------
+1. Chromeで https://lharles.github.io/ydrbn-app/ を開きます。
+2. 上部バーの点滅する「設置」アイコンをタップ。
+3. または右上の三点リーダー(⋮)から「アプリをインストール」を選択。
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

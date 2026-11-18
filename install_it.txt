@@ -1,0 +1,14 @@
+Y.D.R.B.N. - GUIDA ALL'INSTALLAZIONE OFFLINE
+============================================
+URL: https://lharles.github.io/ydrbn-app/
+
+[iPhone / iPad - Safari]
+1. Apri Safari e vai su https://lharles.github.io/ydrbn-app/
+2. Tocca Condividi -> Aggiungi alla schermata Home -> Aggiungi.
+
+[Android - Chrome]
+1. Apri Chrome e vai su https://lharles.github.io/ydrbn-app/
+2. Tocca Installa (o menu ⋮ -> Installa app).
+
+[Desktop - Chrome / Edge / Brave]
+1. Apri l'URL e fai clic sull'icona Installa nella barra degli indirizzi.

@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-retro-contraptions-01",
+  "name": "Retro Contraptions (Vol. 01)",
+  "version": "1.1.0",
+  "description": "8 curated subject cutouts: Retro Contraptions & Lab Apparatus.",
+  "subjects": [
+    "contraption_centrifuge_01.png",
+    "contraption_punchcard_toaster_02.png",
+    "contraption_pneumatic_spork_03.png",
+    "contraption_tape_loop_organ_04.png",
+    "contraption_barometric_kazoo_05.png",
+    "contraption_rotary_metronome_06.png",
+    "contraption_oscilloscope_teapot_07.png",
+    "contraption_hydraulic_abacus_08.png"
+  ]
+}

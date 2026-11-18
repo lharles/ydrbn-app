@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-where-is-that-thing",
+  "name": "Where Is That Thing",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Where Is That Thing.",
+  "subjects": [
+    "where-is-that-thing-subjects01.png",
+    "where-is-that-thing-subjects02.png",
+    "where-is-that-thing-subjects03.png",
+    "where-is-that-thing-subjects04.png",
+    "where-is-that-thing-subjects05.png",
+    "where-is-that-thing-subjects06.png",
+    "where-is-that-thing-subjects07.png",
+    "where-is-that-thing-subjects08.png"
+  ]
+}

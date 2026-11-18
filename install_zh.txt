@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - 安装指南
+Locale: ZH | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+苹果 / iPHONE (SAFARI)
+--------------------------------------------------------
+1. 使用 Safari 访问: https://lharles.github.io/ydrbn-app/
+2. 点击底部工具栏的分享按钮（方框加向上箭头）。
+3. 向下滚动并选择“添加到主屏幕”。
+
+--------------------------------------------------------
+安卓 / ANDROID (CHROME)
+--------------------------------------------------------
+1. 使用 Chrome 访问: https://lharles.github.io/ydrbn-app/
+2. 点击顶部唱机栏上的“安装”图标。
+3. 或点击右上角三点菜单(⋮)并选择“安装应用”。
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

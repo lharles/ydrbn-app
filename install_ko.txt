@@ -1,0 +1,14 @@
+Y.D.R.B.N. - 오프라인 설치 가이드 (KOREAN)
+==========================================
+앱 주소: https://lharles.github.io/ydrbn-app/
+
+[iPhone / iPad - Safari]
+1. Safari에서 https://lharles.github.io/ydrbn-app/ 에 접속합니다.
+2. 하단 공유 버튼을 탭한 뒤 '홈 화면에 추가' -> '추가'를 선택합니다.
+
+[Android - Chrome]
+1. Chrome에서 https://lharles.github.io/ydrbn-app/ 에 접속합니다.
+2. 상단 바의 '설치' 아이콘을 탭하거나 ⋮ 메뉴 -> '앱 설치'를 선택합니다.
+
+[데스크톱 PC - Chrome / Edge / Brave]
+1. 위 주소에 접속한 뒤 주소창 오른쪽 끝의 '설치' 아이콘을 클릭합니다.
