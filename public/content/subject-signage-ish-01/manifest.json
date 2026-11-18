@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-signage-ish-01",
+  "name": "Signage-ish-01",
+  "version": "1.0.0",
+  "description": "8 curated subject cutouts: Signage-ish-01.",
+  "subjects": [
+    "Hand-drawn_blue_parking_sign.png",
+    "Hand-drawn_deer_crossing_sign.png",
+    "Hand-drawn_stop_sign.png",
+    "Hand-painted_no_bicycles_sign.png",
+    "Red_sign_reading_GO.png",
+    "Road_sign_showing_both_ways.png",
+    "White_road_sign_with_smiley.png",
+    "Yellow_road_sign_reading_faster.png"
+  ]
+}

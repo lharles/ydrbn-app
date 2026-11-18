@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="120" height="120">
+  <defs>
+    <radialGradient id="chassisGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#221c16"/>
+      <stop offset="100%" stop-color="#12100e"/>
+    </radialGradient>
+    <linearGradient id="sheenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.0"/>
+      <stop offset="46%" stop-color="#ffffff" stop-opacity="0.03"/>
+      <stop offset="50%" stop-color="#fde047" stop-opacity="0.22"/>
+      <stop offset="54%" stop-color="#ffffff" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </linearGradient>
+    <radialGradient id="labelGrad" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="55%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </radialGradient>
+  </defs>
+  <!-- Walnut Receiver Rounded Badge Frame -->
+  <rect x="6" y="6" width="244" height="244" rx="44" fill="url(#chassisGrad)" stroke="#35261b" stroke-width="8"/>
+  <rect x="12" y="12" width="232" height="232" rx="38" fill="none" stroke="#f59e0b" stroke-opacity="0.35" stroke-width="2"/>
+  <!-- Outer Vinyl Wax Disc -->
+  <circle cx="128" cy="128" r="102" fill="#09090b" stroke="#27272a" stroke-width="3"/>
+  <circle cx="128" cy="128" r="102" fill="url(#sheenGrad)"/>
+  <!-- Concentric Micro-Groove Rings -->
+  <circle cx="128" cy="128" r="92" fill="none" stroke="#27272a" stroke-width="1.5"/>
+  <circle cx="128" cy="128" r="82" fill="none" stroke="#18181b" stroke-width="1.2"/>
+  <circle cx="128" cy="128" r="72" fill="none" stroke="#27272a" stroke-width="1.5"/>
+  <circle cx="128" cy="128" r="62" fill="none" stroke="#18181b" stroke-width="1.2"/>
+  <circle cx="128" cy="128" r="52" fill="none" stroke="#27272a" stroke-width="1.5"/>
+  <!-- 1970s Amber/Orange Sunburst Center Label -->
+  <circle cx="128" cy="128" r="40" fill="url(#labelGrad)" stroke="#fef08a" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M 93 114 L 163 114" stroke="#12100e" stroke-width="2" stroke-opacity="0.45"/>
+  <path d="M 93 142 L 163 142" stroke="#12100e" stroke-width="2" stroke-opacity="0.45"/>
+  <text x="128" y="108" text-anchor="middle" fill="#12100e" font-family="monospace" font-weight="900" font-size="9.5" letter-spacing="1">Y.D.R.B.N.</text>
+  <text x="128" y="153" text-anchor="middle" fill="#12100e" font-family="monospace" font-weight="bold" font-size="7.5" letter-spacing="0.8">33⅓ HI-FI</text>
+  <!-- Center Turntable Spindle Hole -->
+  <circle cx="128" cy="128" r="8" fill="#12100e" stroke="#f3ede4" stroke-opacity="0.5" stroke-width="1.5"/>
+  <!-- Corner Incandescent Power Jewel -->
+  <circle cx="34" cy="34" r="5" fill="#10b981"/>
+</svg>

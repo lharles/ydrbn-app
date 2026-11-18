@@ -1,0 +1,17 @@
+# Dependencies & Build Output
+node_modules/
+dist/
+build/
+
+# Environment & OS / Editor caches
+.env
+.env.*
+.DS_Store
+Thumbs.db
+*.log
+
+# Python caches & virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
