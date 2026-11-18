@@ -1,0 +1,15 @@
+{
+  "id": "ydrbn-subject-huff-and-puff",
+  "name": "Huff And Puff",
+  "version": "1.0.2",
+  "description": "7 curated subject cutouts: Huff And Puff.",
+  "subjects": [
+    "huffpuffsubjects01.png",
+    "huffpuffsubjects02.png",
+    "huffpuffsubjects03.png",
+    "huffpuffsubjects04.png",
+    "huffpuffsubjects05.png",
+    "huffpuffsubjects06.png",
+    "huffpuffsubjects07.png"
+  ]
+}

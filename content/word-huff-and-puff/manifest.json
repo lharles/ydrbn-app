@@ -1,0 +1,8 @@
+{
+  "id": "ydrbn-words-huff-and-puff",
+  "name": "Huff And Puff",
+  "version": "1.0.2",
+  "description": "90 curated words (39N, 38A, 13E): Huff And Puff.",
+  "words": "words.json",
+  "stamps": []
+}

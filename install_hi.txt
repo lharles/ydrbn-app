@@ -1,0 +1,26 @@
+========================================================
+Y.D.R.B.N. - इंस्टॉलेशन गाइड
+Locale: HI | App: https://lharles.github.io/ydrbn-app/
+========================================================
+
+--------------------------------------------------------
+APPLE / iPHONE (SAFARI)
+--------------------------------------------------------
+1. Safari में खोलें: https://lharles.github.io/ydrbn-app/
+2. नीचे शेयर बटन (ऊपर तीर वाला बॉक्स) पर टैप करें।
+3. नीचे स्क्रॉल करें और 'Add to Home Screen' चुनें।
+
+--------------------------------------------------------
+ANDROID (CHROME)
+--------------------------------------------------------
+1. Chrome में खोलें: https://lharles.github.io/ydrbn-app/
+2. टॉप बार में 'Install' आइकन पर टैप करें।
+3. या ऊपर दाईं ओर तीन बिंदुओं (⋮) पर टैप करके 'Install app' चुनें।
+
+--------------------------------------------------------
+OTHER LOCALES AVAILABLE:
+install.txt (English), install_es.txt, install_pt.txt,
+install_fr.txt, install_de.txt, install_id.txt, install_ja.txt,
+install_zh.txt, install_hi.txt, install_bn.txt, install_ur.txt,
+install_ar.txt, install_ru.txt, install_tlh.txt, install_pig.txt
+========================================================

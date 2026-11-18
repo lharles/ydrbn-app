@@ -1,0 +1,16 @@
+{
+  "id": "ydrbn-subject-it-fun-01",
+  "name": "Information Technology Fun (Vol. 01)",
+  "version": "1.1.0",
+  "description": "8 curated subject cutouts: Beige Towers, Floppies, Trackballs & Helpdesk Relics.",
+  "subjects": [
+    "it_crt_bsod_01.png",
+    "it_floppy_stack_02.png",
+    "it_acoustic_modem_03.png",
+    "it_tangled_cat5_04.png",
+    "it_beige_tower_05.png",
+    "it_trackball_mouse_06.png",
+    "it_dot_matrix_jam_07.png",
+    "it_clippy_wire_08.png"
+  ]
+}
